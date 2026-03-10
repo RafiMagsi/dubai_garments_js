@@ -2,14 +2,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   convertLeadToDeal,
   createDeal,
+  getDealById,
   getDeals,
   getPipeline,
+  sendDealEmail,
+  updateDeal,
   updateDealStage,
 } from '@/features/admin/deals/services/deal-service';
 import {
   ConvertLeadToDealInput,
   DealCreateInput,
+  DealSendEmailInput,
   DealStageUpdateInput,
+  DealUpdateInput,
 } from '@/features/admin/deals/types/deal.types';
 
 export function usePipeline() {
@@ -20,10 +25,18 @@ export function usePipeline() {
   });
 }
 
-export function useDeals(stage?: string) {
+export function useDeals(filters?: { stage?: string; search?: string }) {
   return useQuery({
-    queryKey: ['deals', stage],
-    queryFn: () => getDeals(stage),
+    queryKey: ['deals', filters],
+    queryFn: () => getDeals(filters),
+  });
+}
+
+export function useDealById(dealId?: string) {
+  return useQuery({
+    queryKey: ['deal', dealId],
+    queryFn: () => getDealById(dealId as string),
+    enabled: Boolean(dealId),
   });
 }
 
@@ -59,6 +72,21 @@ export function useUpdateDealStage() {
   });
 }
 
+export function useUpdateDeal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ dealId, payload }: { dealId: string; payload: DealUpdateInput }) =>
+      updateDeal(dealId, payload),
+    onSuccess: (_, { dealId }) => {
+      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+    },
+  });
+}
+
 export function useConvertLeadToDeal() {
   const queryClient = useQueryClient();
 
@@ -73,6 +101,19 @@ export function useConvertLeadToDeal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+    },
+  });
+}
+
+export function useSendDealEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ dealId, payload }: { dealId: string; payload: DealSendEmailInput }) =>
+      sendDealEmail(dealId, payload),
+    onSuccess: (_, { dealId }) => {
+      queryClient.invalidateQueries({ queryKey: ['deal', dealId] });
       queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });

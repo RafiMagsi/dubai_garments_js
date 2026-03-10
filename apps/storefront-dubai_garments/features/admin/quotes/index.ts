@@ -1,5 +1,12 @@
-export { useQuoteById, useQuotes, useUpdateQuoteStatus } from '@/features/admin/quotes/hooks/use-quotes';
+export {
+  useCreateQuote,
+  useQuoteById,
+  useQuotes,
+  useUpdateQuoteStatus,
+} from '@/features/admin/quotes/hooks/use-quotes';
 export type {
+  AdminQuoteCreateInput,
+  AdminQuoteCreateItemInput,
   AdminQuote,
   AdminQuoteDetailResponse,
   AdminQuoteItem,

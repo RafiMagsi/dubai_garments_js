@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api/axios';
 import {
+  AdminQuoteCreateInput,
   AdminQuote,
   AdminQuoteDetailResponse,
   AdminQuoteStatusUpdateInput,
@@ -22,6 +23,11 @@ export async function getQuotes(filters?: {
 export async function getQuoteById(quoteId: string): Promise<AdminQuoteDetailResponse> {
   const response = await apiClient.get<AdminQuoteDetailResponse>(`/admin/quotes/${quoteId}`);
   return response.data;
+}
+
+export async function createQuote(payload: AdminQuoteCreateInput): Promise<AdminQuote> {
+  const response = await apiClient.post<{ item: AdminQuote }>('/admin/quotes', payload);
+  return response.data.item;
 }
 
 export async function updateQuoteStatus(

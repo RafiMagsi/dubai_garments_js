@@ -10,7 +10,7 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "./scripts/db-migrate.sh",
     "db:rollback": "./scripts/db-rollback.sh",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "./scripts/db-seed.sh",
     "db:seed:users": "./scripts/db-seed-users.sh"
   },
   "dependencies": {

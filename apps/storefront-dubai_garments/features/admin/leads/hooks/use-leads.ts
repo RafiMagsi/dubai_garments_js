@@ -3,11 +3,13 @@ import {
   createLead,
   getLeadById,
   getLeads,
+  sendLeadEmail,
   updateLead,
   updateLeadStatus,
 } from '@/features/admin/leads/services/lead-service';
 import {
   LeadCreateInput,
+  LeadSendEmailInput,
   LeadStatus,
   LeadStatusUpdateInput,
   LeadUpdateInput,
@@ -69,6 +71,25 @@ export function useUpdateLeadStatus() {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+    },
+  });
+}
+
+export function useSendLeadEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      leadId,
+      payload,
+    }: {
+      leadId: string;
+      payload: LeadSendEmailInput;
+    }) => sendLeadEmail(leadId, payload),
+    onSuccess: (_, { leadId }) => {
+      queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
     },
   });
 }

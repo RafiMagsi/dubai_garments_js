@@ -32,7 +32,10 @@ def _normalize_price_tiers(raw_tiers: Any) -> List[Dict[str, Any]]:
 
         min_qty = tier.get("min_qty", tier.get("minQty"))
         max_qty = tier.get("max_qty", tier.get("maxQty"))
-        unit_price = tier.get("unit_price", tier.get("unitPrice"))
+        unit_price = tier.get(
+            "unit_price",
+            tier.get("unitPrice", tier.get("unitPriceAED")),
+        )
 
         if min_qty is None or unit_price is None:
             continue

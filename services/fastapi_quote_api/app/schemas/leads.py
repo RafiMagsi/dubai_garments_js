@@ -38,3 +38,9 @@ class LeadUpdateRequest(BaseModel):
 class LeadStatusUpdateRequest(BaseModel):
     status: str
     notes: Optional[str] = None
+
+
+class LeadSendEmailRequest(BaseModel):
+    recipient_email: str
+    subject: str
+    message: str

@@ -47,7 +47,26 @@ export interface LeadsResponse {
 
 export interface LeadDetailResponse {
   item: Lead;
+  deal?: {
+    id: string;
+    stage: string;
+    title?: string | null;
+    expected_value?: number | null;
+    probability_pct?: number | null;
+    created_at?: string | null;
+  } | null;
+  communications?: LeadCommunication[];
   activities: LeadActivity[];
+}
+
+export interface LeadCommunication {
+  id: string;
+  channel: string;
+  direction: 'outbound' | 'inbound';
+  subject?: string | null;
+  message_text?: string | null;
+  sent_at?: string | null;
+  created_at: string;
 }
 
 export interface LeadCreateInput {
@@ -79,4 +98,10 @@ export interface LeadUpdateInput {
 export interface LeadStatusUpdateInput {
   status: LeadStatus;
   notes?: string;
+}
+
+export interface LeadSendEmailInput {
+  recipient_email: string;
+  subject: string;
+  message: string;
 }

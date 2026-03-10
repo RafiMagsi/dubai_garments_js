@@ -5,10 +5,13 @@ const FASTAPI_BASE_URL =
   process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ||
   'http://localhost:8000';
 
-export async function GET(request: NextRequest) {
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ dealId: string }> }
+) {
   try {
-    const query = request.nextUrl.search;
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/quotes${query}`, {
+    const { dealId } = await context.params;
+    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/deals/${dealId}`, {
       method: 'GET',
       cache: 'no-store',
     });
@@ -20,11 +23,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ dealId: string }> }
+) {
   try {
+    const { dealId } = await context.params;
     const body = await request.json();
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/quotes`, {
-      method: 'POST',
+    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/deals/${dealId}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       cache: 'no-store',

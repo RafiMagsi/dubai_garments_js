@@ -48,3 +48,30 @@ export interface AdminQuoteStatusUpdateInput {
   status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
   notes?: string;
 }
+
+export interface AdminQuoteCreateItemInput {
+  product_id: string;
+  product_variant_id?: string;
+  quantity: number;
+  customization_cost_per_unit?: number;
+  customization_flat_cost?: number;
+  is_rush?: boolean;
+  requested_delivery_days?: number;
+  rush_fee_pct?: number;
+  margin_pct?: number;
+  note?: string;
+}
+
+export interface AdminQuoteCreateInput {
+  customer_id: string;
+  lead_id?: string;
+  deal_id?: string;
+  created_by_user_id?: string;
+  currency?: string;
+  valid_until?: string;
+  terms?: string;
+  notes?: string;
+  discount_amount?: number;
+  tax_pct?: number;
+  items: AdminQuoteCreateItemInput[];
+}

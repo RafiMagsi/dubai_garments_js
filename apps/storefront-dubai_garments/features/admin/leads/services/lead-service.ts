@@ -3,6 +3,7 @@ import {
   Lead,
   LeadCreateInput,
   LeadDetailResponse,
+  LeadSendEmailInput,
   LeadsResponse,
   LeadStatus,
   LeadStatusUpdateInput,
@@ -46,4 +47,15 @@ export async function updateLeadStatus(
     payload
   );
   return response.data.item;
+}
+
+export async function sendLeadEmail(
+  leadId: string,
+  payload: LeadSendEmailInput
+): Promise<{ ok: boolean; message: string }> {
+  const response = await apiClient.post<{ ok: boolean; message: string }>(
+    `/admin/leads/${leadId}/send-email`,
+    payload
+  );
+  return response.data;
 }

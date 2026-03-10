@@ -6,7 +6,12 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.core.db import get_db_connection
 from app.core.queue import enqueue_lead_ai_job
-from app.schemas.leads import LeadCreateRequest, LeadStatusUpdateRequest, LeadUpdateRequest
+from app.schemas.leads import (
+    LeadCreateRequest,
+    LeadSendEmailRequest,
+    LeadStatusUpdateRequest,
+    LeadUpdateRequest,
+)
 from app.services.deals import stage_label
 from app.services.leads import get_lead_by_id, normalize_lead_status, track_lead_activity
 
@@ -97,6 +102,43 @@ def view_lead(lead_id: str) -> Dict[str, object]:
                 cursor.execute(
                     """
                     SELECT
+                      d.id::text,
+                      d.stage,
+                      d.title,
+                      d.expected_value::float8 AS expected_value,
+                      d.probability_pct,
+                      d.created_at
+                    FROM deals d
+                    WHERE d.lead_id = %s::uuid
+                    ORDER BY d.created_at DESC
+                    LIMIT 1
+                    """,
+                    (lead_id,),
+                )
+                deal = cursor.fetchone()
+
+                cursor.execute(
+                    """
+                    SELECT
+                      id::text,
+                      channel,
+                      direction,
+                      subject,
+                      message_text,
+                      COALESCE(sent_at, created_at) AS sent_at,
+                      created_at
+                    FROM communications
+                    WHERE lead_id = %s::uuid
+                    ORDER BY created_at DESC
+                    LIMIT 25
+                    """,
+                    (lead_id,),
+                )
+                communications = cursor.fetchall()
+
+                cursor.execute(
+                    """
+                    SELECT
                       id::text,
                       activity_type,
                       title,
@@ -117,7 +159,7 @@ def view_lead(lead_id: str) -> Dict[str, object]:
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Failed to fetch lead: {error}") from error
 
-    return {"item": lead, "activities": activities}
+    return {"item": lead, "deal": deal, "communications": communications, "activities": activities}
 
 
 @router.post("/leads")
@@ -313,3 +355,76 @@ def update_lead_status(lead_id: str, payload: LeadStatusUpdateRequest) -> Dict[s
         raise HTTPException(status_code=500, detail=f"Lead status update failed: {error}") from error
 
     return {"item": lead}
+
+
+@router.post("/leads/{lead_id}/send-email")
+def send_lead_email(lead_id: str, payload: LeadSendEmailRequest) -> Dict[str, object]:
+    recipient_email = payload.recipient_email.strip()
+    subject = payload.subject.strip()
+    message = payload.message.strip()
+
+    if not recipient_email or not subject or not message:
+        raise HTTPException(
+            status_code=422,
+            detail="recipient_email, subject, and message are required.",
+        )
+
+    try:
+        with get_db_connection() as connection:
+            lead = get_lead_by_id(connection, lead_id)
+            if not lead:
+                raise HTTPException(status_code=404, detail="Lead not found.")
+
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO communications (
+                      customer_id,
+                      lead_id,
+                      channel,
+                      direction,
+                      subject,
+                      message_text,
+                      sent_at
+                    )
+                    VALUES (%s::uuid, %s::uuid, 'email', 'outbound', %s, %s, NOW())
+                    RETURNING
+                      id::text,
+                      channel,
+                      direction,
+                      subject,
+                      message_text,
+                      sent_at,
+                      created_at
+                    """,
+                    (
+                        lead.get("customer_id"),
+                        lead_id,
+                        subject,
+                        f"To: {recipient_email}\n\n{message}",
+                    ),
+                )
+                communication = cursor.fetchone()
+                if not communication:
+                    raise HTTPException(status_code=500, detail="Failed to log communication.")
+
+                track_lead_activity(
+                    connection,
+                    lead_id,
+                    "email_sent",
+                    "Email sent",
+                    details=f"Email sent to {recipient_email}",
+                    metadata={"channel": "email", "recipientEmail": recipient_email, "subject": subject},
+                )
+
+            connection.commit()
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {error}") from error
+
+    return {
+        "ok": True,
+        "message": "Email communication logged successfully.",
+        "item": communication,
+    }

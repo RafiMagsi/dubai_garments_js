@@ -24,6 +24,21 @@ class DealStageUpdateRequest(BaseModel):
     notes: Optional[str] = None
 
 
+class DealUpdateRequest(BaseModel):
+    stage: Optional[str] = None
+    owner_user_id: Optional[str] = None
+    expected_value: Optional[float] = None
+    probability_pct: Optional[int] = None
+    expected_close_date: Optional[date] = None
+    notes: Optional[str] = None
+
+
+class DealSendEmailRequest(BaseModel):
+    recipient_email: str
+    subject: str
+    message: str
+
+
 class ConvertLeadRequest(BaseModel):
     title: Optional[str] = None
     owner_user_id: Optional[str] = None

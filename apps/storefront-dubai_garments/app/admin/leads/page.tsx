@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import AdminShell from '@/components/admin/admin-shell';
-import { LeadStatus, useLeadById, useLeads, useUpdateLeadStatus } from '@/features/admin/leads';
+import { LeadStatus, useLeads } from '@/features/admin/leads';
 
 const statusOptions: Array<{ label: string; value: LeadStatus | 'all' }> = [
   { label: 'All Statuses', value: 'all' },
@@ -22,17 +22,9 @@ function formatStatus(status: LeadStatus) {
   return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
-function nextStatus(current: LeadStatus): LeadStatus | null {
-  if (current === 'new') return 'qualified';
-  if (current === 'qualified') return 'quoted';
-  if (current === 'quoted') return 'won';
-  return null;
-}
-
 export default function AdminLeadsPage() {
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [searchInput, setSearchInput] = useState('');
-  const [selectedLeadId, setSelectedLeadId] = useState<string | undefined>(undefined);
 
   const [appliedStatus, setAppliedStatus] = useState<LeadStatus | 'all'>('all');
   const [appliedSearch, setAppliedSearch] = useState('');
@@ -46,11 +38,7 @@ export default function AdminLeadsPage() {
   );
 
   const { data, isLoading, isError, error } = useLeads(filters);
-  const { data: leadDetail, isLoading: isLeadLoading } = useLeadById(selectedLeadId);
-  const updateStatusMutation = useUpdateLeadStatus();
-
   const leads = data?.items ?? [];
-  const selectedLead = leadDetail?.item;
 
   function handleApplyFilters(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,13 +140,9 @@ export default function AdminLeadsPage() {
                         </td>
                         <td>{new Date(lead.created_at).toLocaleString()}</td>
                         <td>
-                          <button
-                            type="button"
-                            className="dg-btn-secondary"
-                            onClick={() => setSelectedLeadId(lead.id)}
-                          >
+                          <Link href={`/admin/leads/${lead.id}`} className="dg-btn-secondary">
                             View
-                          </button>
+                          </Link>
                         </td>
                       </tr>
                     ))
@@ -169,88 +153,6 @@ export default function AdminLeadsPage() {
           )}
         </div>
       </section>
-
-      {selectedLeadId && (
-        <section className="dg-admin-page">
-          <div className="dg-card dg-panel">
-            <div className="dg-admin-head">
-              <h2 className="dg-title-sm">Lead Details</h2>
-              {selectedLead ? (
-                <span className={statusPillClass(selectedLead.status)}>{formatStatus(selectedLead.status)}</span>
-              ) : null}
-            </div>
-
-            {isLeadLoading && <p className="dg-muted-sm">Loading lead details...</p>}
-            {!isLeadLoading && !selectedLead && (
-              <p className="dg-muted-sm">Unable to load selected lead details.</p>
-            )}
-
-            {selectedLead && (
-              <>
-                <div className="dg-detail-list">
-                  <div className="dg-detail-item">
-                    <span>Contact</span>
-                    <strong>{selectedLead.contact_name || '-'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Company</span>
-                    <strong>{selectedLead.company_name || '-'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Email</span>
-                    <strong>{selectedLead.email || '-'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Phone</span>
-                    <strong>{selectedLead.phone || '-'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Requested Quantity</span>
-                    <strong>{selectedLead.requested_qty ? `${selectedLead.requested_qty} pcs` : '-'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Notes</span>
-                    <strong>{selectedLead.notes || '-'}</strong>
-                  </div>
-                </div>
-
-                {nextStatus(selectedLead.status) && (
-                  <div className="dg-hero-actions">
-                    <button
-                      type="button"
-                      className="dg-btn-primary"
-                      disabled={updateStatusMutation.isPending}
-                      onClick={() =>
-                        updateStatusMutation.mutate({
-                          leadId: selectedLead.id,
-                          payload: { status: nextStatus(selectedLead.status) as LeadStatus },
-                        })
-                      }
-                    >
-                      {updateStatusMutation.isPending
-                        ? 'Updating...'
-                        : `Move To ${formatStatus(nextStatus(selectedLead.status) as LeadStatus)}`}
-                    </button>
-                    <button
-                      type="button"
-                      className="dg-btn-secondary"
-                      disabled={updateStatusMutation.isPending}
-                      onClick={() =>
-                        updateStatusMutation.mutate({
-                          leadId: selectedLead.id,
-                          payload: { status: 'lost' },
-                        })
-                      }
-                    >
-                      Mark Lost
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </section>
-      )}
     </AdminShell>
   );
 }

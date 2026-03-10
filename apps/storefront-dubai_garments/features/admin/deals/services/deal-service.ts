@@ -3,7 +3,10 @@ import {
   ConvertLeadToDealInput,
   Deal,
   DealCreateInput,
+  DealDetailResponse,
+  DealSendEmailInput,
   DealsResponse,
+  DealUpdateInput,
   DealStageUpdateInput,
   PipelineResponse,
 } from '@/features/admin/deals/types/deal.types';
@@ -13,10 +16,18 @@ export async function getPipeline(): Promise<PipelineResponse> {
   return response.data;
 }
 
-export async function getDeals(stage?: string): Promise<DealsResponse> {
+export async function getDeals(filters?: { stage?: string; search?: string }): Promise<DealsResponse> {
   const response = await apiClient.get<DealsResponse>('/admin/deals', {
-    params: { stage },
+    params: {
+      stage: filters?.stage || undefined,
+      search: filters?.search || undefined,
+    },
   });
+  return response.data;
+}
+
+export async function getDealById(dealId: string): Promise<DealDetailResponse> {
+  const response = await apiClient.get<DealDetailResponse>(`/admin/deals/${dealId}`);
   return response.data;
 }
 
@@ -30,6 +41,11 @@ export async function updateDealStage(dealId: string, payload: DealStageUpdateIn
   return response.data.item;
 }
 
+export async function updateDeal(dealId: string, payload: DealUpdateInput): Promise<Deal> {
+  const response = await apiClient.patch<{ item: Deal }>(`/admin/deals/${dealId}`, payload);
+  return response.data.item;
+}
+
 export async function convertLeadToDeal(
   leadId: string,
   payload: ConvertLeadToDealInput
@@ -39,4 +55,15 @@ export async function convertLeadToDeal(
     payload
   );
   return response.data.item;
+}
+
+export async function sendDealEmail(
+  dealId: string,
+  payload: DealSendEmailInput
+): Promise<{ ok: boolean; message: string }> {
+  const response = await apiClient.post<{ ok: boolean; message: string }>(
+    `/admin/deals/${dealId}/send-email`,
+    payload
+  );
+  return response.data;
 }

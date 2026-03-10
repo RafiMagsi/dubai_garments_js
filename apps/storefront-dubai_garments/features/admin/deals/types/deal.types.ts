@@ -16,8 +16,21 @@ export interface Deal {
   created_at?: string;
   updated_at?: string;
   lead_contact_name?: string | null;
+  lead_company_name?: string | null;
   lead_email?: string | null;
+  lead_product_name?: string | null;
+  lead_quantity?: number | null;
   customer_company_name?: string | null;
+}
+
+export interface DealCommunication {
+  id: string;
+  channel: string;
+  direction: 'outbound' | 'inbound';
+  subject?: string | null;
+  message_text?: string | null;
+  sent_at?: string | null;
+  created_at: string;
 }
 
 export interface PipelineStage {
@@ -33,6 +46,18 @@ export interface PipelineResponse {
 
 export interface DealsResponse {
   items: Deal[];
+}
+
+export interface DealDetailResponse {
+  item: Deal;
+  quotes: Array<{
+    id: string;
+    quote_number: string;
+    status: string;
+    currency: string;
+    total_amount: number;
+  }>;
+  communications: DealCommunication[];
 }
 
 export interface DealCreateInput {
@@ -53,6 +78,15 @@ export interface DealStageUpdateInput {
   notes?: string;
 }
 
+export interface DealUpdateInput {
+  stage?: DealStage;
+  owner_user_id?: string;
+  expected_value?: number;
+  probability_pct?: number;
+  expected_close_date?: string;
+  notes?: string;
+}
+
 export interface ConvertLeadToDealInput {
   title?: string;
   owner_user_id?: string;
@@ -60,4 +94,10 @@ export interface ConvertLeadToDealInput {
   probability_pct?: number;
   expected_close_date?: string;
   notes?: string;
+}
+
+export interface DealSendEmailInput {
+  recipient_email: string;
+  subject: string;
+  message: string;
 }
