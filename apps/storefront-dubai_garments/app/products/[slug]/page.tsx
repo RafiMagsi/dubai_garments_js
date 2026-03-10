@@ -1,149 +1,309 @@
 'use client';
 
 import Link from 'next/link';
+import { FormEvent, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
+import ProductCard from '@/components/store/product-card';
 import StorefrontShell from '@/components/layout/storefront-shell';
-import {
-  Button,
-  Card,
-  CardText,
-  CardTitle,
-  DataTable,
-  TableCell,
-  TableHeadCell,
-  TableHeadRow,
-  TableRow,
-} from '@/components/ui';
-import { useProductBySlug } from '@/features/products';
+import { SectionHeader } from '@/components/ui';
+import { useProductBySlug, useProducts } from '@/features/products';
 import { useQuoteStore } from '@/features/quote';
+
+type ProductConfig = {
+  color: string;
+  printMethod: string;
+  quantity: number;
+  deliveryOption: string;
+  sizes: string[];
+  notes: string;
+};
+
+const printMethods = ['Screen Print', 'Embroidery', 'Heat Transfer', 'Sublimation'];
+const deliveryOptions = [
+  { value: 'standard', label: 'Standard Production' },
+  { value: 'priority', label: 'Priority Production' },
+  { value: 'rush', label: 'Rush Production' },
+];
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
   const slug = typeof params.slug === 'string' ? params.slug : '';
-  const setSelectedProduct = useQuoteStore((state) => state.setSelectedProduct);
   const { data: product, isLoading } = useProductBySlug(slug);
+  const { data: relatedByCategory = [] } = useProducts(
+    product ? { category: product.category } : undefined
+  );
+  const { data: allProducts = [] } = useProducts();
+  const setSelectedProduct = useQuoteStore((state) => state.setSelectedProduct);
+
+  const [savedConfig, setSavedConfig] = useState<ProductConfig | null>(null);
+  const [formStatus, setFormStatus] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const defaultQuantity = product?.minOrderQty ?? 1;
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+
+  const related = useMemo(() => {
+    if (!product) return [];
+
+    const categoryMatches = relatedByCategory.filter((item) => item.id !== product.id);
+    const fallbackProducts = allProducts.filter(
+      (item) =>
+        item.id !== product.id &&
+        !categoryMatches.some((categoryItem) => categoryItem.id === item.id)
+    );
+
+    return [...categoryMatches, ...fallbackProducts].slice(0, 4);
+  }, [allProducts, product, relatedByCategory]);
+
+  function toggleSize(size: string) {
+    setSelectedSizes((prev) =>
+      prev.includes(size) ? prev.filter((item) => item !== size) : [...prev, size]
+    );
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!product) return;
+
+    const formData = new FormData(event.currentTarget);
+    const color = String(formData.get('color') || '');
+    const printMethod = String(formData.get('print_method') || '');
+    const quantity = Number(formData.get('quantity') || 0);
+    const deliveryOption = String(formData.get('delivery_option') || '');
+    const notes = String(formData.get('notes') || '');
+
+    if (!color || !printMethod || !deliveryOption || quantity < product.minOrderQty) {
+      setFormError(`Please complete all required fields. Minimum quantity is ${product.minOrderQty}.`);
+      setFormStatus(null);
+      return;
+    }
+
+    setSavedConfig({
+      color,
+      printMethod,
+      quantity,
+      deliveryOption,
+      sizes: selectedSizes,
+      notes,
+    });
+    setFormError(null);
+    setFormStatus('Configuration saved successfully.');
+  }
 
   return (
     <StorefrontShell>
-      <section className="dg-section">
-        <div className="dg-container">
-          {isLoading ? (
-            <Card>
-              <p className="text-sm text-[var(--color-text-muted)]">Loading product details...</p>
-            </Card>
-          ) : !product ? (
-            <Card className="text-center">
-              <h1 className="text-2xl font-semibold text-[var(--color-text)]">Product not found</h1>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-                The requested product may have been removed or its URL changed.
-              </p>
-              <div className="mt-5">
-                <Link href="/products">
-                  <Button variant="secondary">Back to catalog</Button>
-                </Link>
-              </div>
-            </Card>
-          ) : (
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-text-muted)]">
-                <Link href="/products" className="dg-nav-link">Products</Link>
-                <span>/</span>
-                <span className="text-[var(--color-text)]">{product.name}</span>
-              </div>
+      <main className="dg-main">
+        <section className="dg-section">
+          <div className="dg-container dg-detail-grid">
+            <div className="dg-card dg-detail-media">
+              <div className="dg-product-image" />
+            </div>
 
-              <div className="grid gap-5 lg:grid-cols-12 lg:items-start">
-                <div className="space-y-5 lg:col-span-7">
-                  <Card>
-                    <div className="h-64 rounded-xl border border-[var(--color-border)] bg-gradient-to-br from-blue-100 via-slate-50 to-indigo-100" />
-                    <div className="mt-5 space-y-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="dg-chip">{product.category}</span>
-                        <span className="dg-chip">MOQ {product.minOrderQty}</span>
-                        <span className="dg-chip">{product.leadTimeDays} Day Lead Time</span>
-                      </div>
-                      <h1 className="dg-section-title">{product.name}</h1>
-                      <p className="dg-section-copy">{product.description}</p>
-                    </div>
-                  </Card>
+            <div className="dg-card dg-info-card">
+              {isLoading && <p className="dg-muted-sm">Loading product...</p>}
+              {!isLoading && !product && <p className="dg-muted-sm">Product not found.</p>}
+              {product && (
+                <>
+                  <span className="dg-badge">{product.category}</span>
+                  <h1 className="dg-title-lg">{product.name}</h1>
+                  <p className="dg-muted-sm">MOQ: {product.minOrderQty} pcs</p>
+                  <p className="dg-muted-sm">Lead Time: {product.leadTimeDays} days</p>
+                  <p className="dg-muted-sm">Fabric: {product.material || '-'}</p>
+                  <p className="dg-muted-sm">
+                    Customization: {product.brandingOptions.length > 0 ? product.brandingOptions.join(', ') : '-'}
+                  </p>
+                  <div className="dg-hero-actions">
+                    <Link
+                      href="/quote"
+                      className="dg-btn-primary"
+                      onClick={() => setSelectedProduct(product.id, product.name)}
+                    >
+                      Request Quote
+                    </Link>
+                    <Link
+                      href={`/products?category=${encodeURIComponent(product.category)}`}
+                      className="dg-btn-secondary"
+                    >
+                      More {product.category}
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
 
-                  <Card>
-                    <CardTitle>Specifications</CardTitle>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-brand-50)] px-3 py-3 text-sm text-[var(--color-text-muted)]">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">Material</p>
-                        <p className="mt-1 font-semibold text-[var(--color-text)]">{product.material}</p>
-                      </div>
-                      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-brand-50)] px-3 py-3 text-sm text-[var(--color-text-muted)]">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">Branding</p>
-                        <p className="mt-1 font-semibold text-[var(--color-text)]">{product.brandingOptions.join(', ')}</p>
-                      </div>
-                      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-brand-50)] px-3 py-3 text-sm text-[var(--color-text-muted)]">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">Sizes</p>
-                        <p className="mt-1 font-semibold text-[var(--color-text)]">{product.sizes.join(', ')}</p>
-                      </div>
-                      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-brand-50)] px-3 py-3 text-sm text-[var(--color-text-muted)]">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">Colors</p>
-                        <p className="mt-1 font-semibold text-[var(--color-text)]">{product.colors.join(', ')}</p>
-                      </div>
-                    </div>
-                  </Card>
+        {product && (
+          <section className="dg-section">
+            <div className="dg-container">
+              <div className="dg-card dg-config-card">
+                <h2 className="dg-section-title">Product Configuration</h2>
+                <p className="dg-section-copy">
+                  Select product preferences to prepare an accurate quote.
+                </p>
 
-                  <Card>
-                    <CardTitle>Price Tiers (AED / unit)</CardTitle>
-                    <div className="mt-4">
-                      <DataTable>
-                        <thead>
-                          <TableHeadRow>
-                            <TableHeadCell>Quantity Range</TableHeadCell>
-                            <TableHeadCell>Unit Price</TableHeadCell>
-                          </TableHeadRow>
-                        </thead>
-                        <tbody>
-                          {product.priceTiers.map((tier) => (
-                            <TableRow key={`${tier.minQty}-${tier.maxQty ?? 'plus'}`}>
-                              <TableCell>{tier.minQty}{tier.maxQty ? ` - ${tier.maxQty}` : '+'}</TableCell>
-                              <TableCell>AED {tier.unitPriceAED}</TableCell>
-                            </TableRow>
-                          ))}
-                        </tbody>
-                      </DataTable>
-                    </div>
-                  </Card>
-                </div>
+                {formStatus ? <div className="dg-alert-success">{formStatus}</div> : null}
+                {formError ? <div className="dg-alert-error">{formError}</div> : null}
 
-                <div className="lg:col-span-5 lg:sticky lg:top-24">
-                  <Card className="space-y-4">
-                    <p className="dg-eyebrow">Quote Workflow</p>
-                    <CardTitle>Ready to request pricing?</CardTitle>
-                    <CardText>
-                      Save this product into your quote request and include quantities,
-                      branding preferences, and delivery date.
-                    </CardText>
-
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      <Link href="/quote" onClick={() => setSelectedProduct(product.id, product.name)}>
-                        <Button size="lg">Request Quote</Button>
-                      </Link>
-                      <Link href="/products">
-                        <Button variant="secondary" size="lg">Back to Catalog</Button>
-                      </Link>
+                <form onSubmit={handleSubmit} className="dg-config-form">
+                  <div className="dg-config-grid">
+                    <div className="dg-field">
+                      <label className="dg-label" htmlFor="color">
+                        Color
+                      </label>
+                      <select id="color" name="color" className="dg-select" required>
+                        <option value="">Select color</option>
+                        {product.colors.map((color) => (
+                          <option key={color} value={color}>
+                            {color}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-brand-50)] px-3 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-ink-500)]">
-                        Suggested Next Step
+                    <div className="dg-field">
+                      <label className="dg-label" htmlFor="print_method">
+                        Print Method
+                      </label>
+                      <select id="print_method" name="print_method" className="dg-select" required>
+                        <option value="">Select method</option>
+                        {printMethods.map((method) => (
+                          <option key={method} value={method}>
+                            {method}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="dg-field">
+                      <label className="dg-label" htmlFor="quantity">
+                        Quantity
+                      </label>
+                      <input
+                        id="quantity"
+                        name="quantity"
+                        type="number"
+                        className="dg-input"
+                        defaultValue={defaultQuantity}
+                        min={product.minOrderQty}
+                        required
+                      />
+                    </div>
+
+                    <div className="dg-field">
+                      <label className="dg-label" htmlFor="delivery_option">
+                        Production Priority
+                      </label>
+                      <select
+                        id="delivery_option"
+                        name="delivery_option"
+                        className="dg-select"
+                        required
+                      >
+                        <option value="">Select option</option>
+                        {deliveryOptions.map((delivery) => (
+                          <option key={delivery.value} value={delivery.value}>
+                            {delivery.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <p className="dg-help">Minimum quantity for this item: {product.minOrderQty} pcs</p>
+
+                  <div className="dg-field">
+                    <label className="dg-label">Sizes</label>
+                    <div className="dg-checkbox-group">
+                      {product.sizes.map((size) => (
+                        <label key={size} className="dg-checkbox-item">
+                          <input
+                            type="checkbox"
+                            checked={selectedSizes.includes(size)}
+                            onChange={() => toggleSize(size)}
+                          />
+                          <span>{size}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="dg-field">
+                    <label className="dg-label" htmlFor="notes">
+                      Additional Notes
+                    </label>
+                    <textarea
+                      id="notes"
+                      name="notes"
+                      className="dg-textarea"
+                      rows={4}
+                      placeholder="Share logo placement, packaging, or special production notes..."
+                    />
+                  </div>
+
+                  <div className="dg-hero-actions">
+                    <button type="submit" className="dg-btn-primary">
+                      Save Configuration
+                    </button>
+                    <Link href="/products" className="dg-btn-secondary">
+                      Back to Catalog
+                    </Link>
+                  </div>
+                </form>
+
+                {savedConfig ? (
+                  <div className="dg-card dg-summary-card">
+                    <h3 className="dg-title-sm">Saved Configuration</h3>
+                    <div className="dg-summary-list">
+                      <p>
+                        <strong>Color:</strong> {savedConfig.color || '-'}
                       </p>
-                      <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                        Submit the quote with your target quantity for the best tier pricing.
+                      <p>
+                        <strong>Sizes:</strong> {savedConfig.sizes.length ? savedConfig.sizes.join(', ') : '-'}
+                      </p>
+                      <p>
+                        <strong>Print Method:</strong> {savedConfig.printMethod || '-'}
+                      </p>
+                      <p>
+                        <strong>Quantity:</strong> {savedConfig.quantity} pcs
+                      </p>
+                      <p>
+                        <strong>Production Priority:</strong> {savedConfig.deliveryOption || '-'}
+                      </p>
+                      <p>
+                        <strong>Notes:</strong> {savedConfig.notes || '-'}
                       </p>
                     </div>
-                  </Card>
-                </div>
+                  </div>
+                ) : null}
               </div>
             </div>
-          )}
-        </div>
-      </section>
+          </section>
+        )}
+
+        {product && (
+          <section className="dg-section">
+            <div className="dg-container">
+              <SectionHeader
+                title="Related Products"
+                subtitle="Similar options available for your bulk order requirements."
+              />
+              <div className="dg-product-grid">
+                {related.map((item) => (
+                  <ProductCard key={item.id} product={item} />
+                ))}
+              </div>
+              {related.length === 0 ? (
+                <div className="dg-card dg-info-card">
+                  <p className="dg-muted-sm">
+                    No related products available right now. Browse the full catalog for more options.
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </section>
+        )}
+      </main>
     </StorefrontShell>
   );
 }

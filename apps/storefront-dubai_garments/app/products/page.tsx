@@ -1,20 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import StorefrontShell from '@/components/layout/storefront-shell';
-import {
-  Button,
-  Card,
-  CardText,
-  CardTitle,
-  SelectField,
-  TextField,
-} from '@/components/ui';
+import ProductCard from '@/components/store/product-card';
+import { SectionHeader } from '@/components/ui';
 import { ProductCategory, useProducts } from '@/features/products';
 
 const categoryOptions: Array<{ label: string; value: ProductCategory | 'all' }> = [
-  { label: 'All Categories', value: 'all' },
+  { label: 'All', value: 'all' },
   { label: 'T-Shirts', value: 'tshirts' },
   { label: 'Hoodies', value: 'hoodies' },
   { label: 'Uniforms', value: 'uniforms' },
@@ -41,111 +34,62 @@ export default function ProductsPage() {
     <StorefrontShell>
       <main className="dg-main">
         <section className="dg-section">
-          <div className="dg-container space-y-6">
-          <div className="space-y-3">
-            <span className="dg-badge">Catalog</span>
-            <h1 className="dg-section-title">Products Catalog</h1>
-            <p className="dg-section-copy max-w-3xl">
-              Browse production-ready garments, filter by category, and shortlist items for quote
-              requests and procurement planning.
-            </p>
-          </div>
+          <div className="dg-container">
+            <SectionHeader
+              title="Product Catalog"
+              subtitle="Browse garments by category and request bulk quotations with customization details."
+              action={<span className="dg-badge">{products.length} Products</span>}
+            />
 
-          <Card className="space-y-4">
-            <div className="grid gap-3 md:grid-cols-[2fr_1fr_auto] md:items-end">
-              <div>
-                <label className="ui-field-label" htmlFor="productSearch">Search</label>
-                <TextField
-                  id="productSearch"
+            <div className="dg-card dg-filter-card">
+              <div className="dg-filter-row">
+                {categoryOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`dg-chip ${category === option.value ? 'dg-chip-active' : ''}`}
+                    onClick={() => setCategory(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+                <input
+                  className="dg-input dg-col-fill"
+                  placeholder="Search products..."
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search by product, tag, material, branding..."
                 />
               </div>
-
-              <div>
-                <label className="ui-field-label" htmlFor="categoryFilter">Category</label>
-                <SelectField
-                  id="categoryFilter"
-                  value={category}
-                  onChange={(event) => setCategory(event.target.value as ProductCategory | 'all')}
-                >
-                  {categoryOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </SelectField>
-              </div>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  setSearchTerm('');
-                  setCategory('all');
-                }}
-              >
-                Reset Filters
-              </Button>
             </div>
-          </Card>
 
-          {isLoading ? (
-            <Card>
-              <p className="text-sm text-[var(--color-text-muted)]">Loading catalog...</p>
-            </Card>
-          ) : products.length === 0 ? (
-            <Card>
-              <CardTitle>No matching products</CardTitle>
-              <CardText>Try different filters or clear the search to view the full catalog.</CardText>
-              <div className="mt-4">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setCategory('all');
-                  }}
-                >
-                  Show All Products
-                </Button>
+            {isLoading ? (
+              <div className="dg-card dg-info-card">
+                <p className="dg-muted-sm">Loading catalog...</p>
               </div>
-            </Card>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {products.map((product) => (
-                <Card key={product.id} className="flex h-full flex-col">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="dg-chip">{product.category}</span>
-                    {product.featured && <span className="dg-chip">Featured</span>}
-                  </div>
+            ) : (
+              <div className="dg-product-grid">
+                {products.map((product) => <ProductCard key={product.id} product={product} />)}
 
-                  <CardTitle className="mt-3">{product.name}</CardTitle>
-                  <CardText className="mt-2">{product.shortDescription}</CardText>
-
-                  <div className="mt-4 space-y-1 text-sm text-[var(--color-text-muted)]">
-                    <p>MOQ: {product.minOrderQty}</p>
-                    <p>Lead Time: {product.leadTimeDays} days</p>
-                    <p>
-                      {product.priceTiers.length > 0
-                        ? `From AED ${product.priceTiers[0].unitPriceAED}/unit`
-                        : 'Price on request'}
-                    </p>
+                {products.length === 0 && (
+                  <div className="dg-card dg-info-card">
+                    <h3 className="dg-title-sm">No products found</h3>
+                    <p className="dg-muted-sm">Try another search term or clear the category filter.</p>
+                    <div className="dg-hero-actions">
+                      <button
+                        type="button"
+                        className="dg-btn-primary"
+                        onClick={() => {
+                          setSearchTerm('');
+                          setCategory('all');
+                        }}
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="mt-auto flex flex-wrap gap-2 pt-5">
-                    <Link href={`/products/${product.slug}`}>
-                      <Button variant="secondary" size="sm">View Details</Button>
-                    </Link>
-                    <Link href="/quote">
-                      <Button size="sm">Request Quote</Button>
-                    </Link>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
+                )}
+              </div>
+            )}
           </div>
         </section>
       </main>

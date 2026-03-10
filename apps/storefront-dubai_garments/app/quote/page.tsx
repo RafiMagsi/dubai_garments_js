@@ -1,15 +1,9 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import Link from 'next/link';
 import StorefrontShell from '@/components/layout/storefront-shell';
-import {
-  Button,
-  Card,
-  FieldLabel,
-  SelectField,
-  TextAreaField,
-  TextField,
-} from '@/components/ui';
+import { FieldLabel, SelectField, TextAreaField, TextField } from '@/components/ui';
 import { useProducts } from '@/features/products';
 import { useQuoteStore } from '@/features/quote';
 
@@ -27,7 +21,6 @@ type SubmittedSummary = {
 export default function QuotePage() {
   const { data: products = [] } = useProducts();
   const selectedProductId = useQuoteStore((state) => state.selectedProductId);
-  const selectedProductName = useQuoteStore((state) => state.selectedProductName);
   const clearSelectedProduct = useQuoteStore((state) => state.clearSelectedProduct);
 
   const [submitted, setSubmitted] = useState(false);
@@ -39,8 +32,8 @@ export default function QuotePage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
-
     const formData = new FormData(formElement);
+
     const name = String(formData.get('name') || '').trim();
     const company = String(formData.get('company') || '').trim();
     const email = String(formData.get('email') || '').trim();
@@ -51,7 +44,6 @@ export default function QuotePage() {
     const fileUpload = formData.get('file_upload');
 
     const nextErrors: string[] = [];
-
     if (!name) nextErrors.push('Name is required.');
     if (!company) nextErrors.push('Company is required.');
     if (!email || !email.includes('@')) nextErrors.push('A valid email is required.');
@@ -59,34 +51,21 @@ export default function QuotePage() {
     if (!Number.isFinite(quantity) || quantity <= 0) nextErrors.push('Quantity must be greater than 0.');
 
     setErrors(nextErrors);
-
-    if (nextErrors.length > 0) {
-      setSubmitted(false);
-      setSubmittedLeadCode(null);
-      setSubmittedSummary(null);
-      return;
-    }
+    if (nextErrors.length > 0) return;
 
     setIsSubmitting(true);
-
     try {
-      const response = await fetch('/api/quote-requests', {
-        method: 'POST',
-        body: formData,
-      });
-
+      const response = await fetch('/api/quote-requests', { method: 'POST', body: formData });
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
         const message = payload?.detail || payload?.message || 'Failed to submit quote request.';
         setErrors([String(message)]);
-        setSubmitted(false);
-        setSubmittedLeadCode(null);
-        setSubmittedSummary(null);
         return;
       }
 
       const payload = await response.json();
       const productLabel = products.find((item) => item.id === product)?.name || product;
+
       setSubmitted(true);
       setSubmittedLeadCode(payload?.leadCode ?? null);
       setSubmittedSummary({
@@ -103,14 +82,8 @@ export default function QuotePage() {
       formElement.reset();
       clearSelectedProduct();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Unable to connect to quote API backend. Check FastAPI server status.';
+      const message = error instanceof Error ? error.message : 'Unable to connect to quote API backend. Check FastAPI server status.';
       setErrors([message]);
-      setSubmitted(false);
-      setSubmittedLeadCode(null);
-      setSubmittedSummary(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -121,164 +94,141 @@ export default function QuotePage() {
       <main className="dg-main">
         <section className="dg-section">
           <div className="dg-container">
-          <div className="mb-6 space-y-2">
-            <h1 className="dg-section-title">Request a Quote</h1>
-            <p className="dg-section-copy max-w-3xl">
-              Submit product requirements and delivery details to receive pricing and timeline
-              estimates for your bulk order.
-            </p>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[1fr_0.42fr] lg:items-start">
-            <Card>
+            <div className="dg-card dg-config-card">
               {submitted ? (
-                <div className="space-y-5">
-                  <div className="rounded-xl border border-emerald-200 bg-[var(--color-success-bg)] p-4 text-sm text-[var(--color-success-text)]">
-                    <p className="text-base font-semibold text-[var(--color-text)]">Quote Request Submitted</p>
-                    <p className="mt-1">
-                      Your request has been recorded successfully.
-                      {submittedLeadCode ? ` Lead ID: ${submittedLeadCode}` : ''}
-                    </p>
-                  </div>
+                <>
+                  <span className="dg-badge">Request Submitted</span>
+                  <h1 className="dg-title-lg">Your quote request has been submitted successfully.</h1>
+                  <p className="dg-section-copy">Our team will contact you soon.</p>
 
-                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4">
-                    <p className="text-sm text-[var(--color-text-muted)]">
-                      Our sales team will review your requirements and share pricing tiers, timeline, and next steps.
-                    </p>
-                  </div>
+                  {submittedLeadCode && (
+                    <div className="dg-card dg-summary-card">
+                      <h2 className="dg-title-sm">Tracking Code</h2>
+                      <p className="dg-muted-sm">{submittedLeadCode}</p>
+                      <p className="dg-help">Use this with your email in Customer Portal to track progress.</p>
+                    </div>
+                  )}
 
                   {submittedSummary && (
-                    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-card)] p-4">
-                      <p className="text-sm font-semibold text-[var(--color-text)]">Request Summary</p>
-                      <div className="mt-3 grid gap-2 text-sm text-[var(--color-text-muted)]">
-                        <p><span className="font-medium text-[var(--color-text)]">Name:</span> {submittedSummary.name}</p>
-                        <p><span className="font-medium text-[var(--color-text)]">Email:</span> {submittedSummary.email}</p>
-                        <p><span className="font-medium text-[var(--color-text)]">Company:</span> {submittedSummary.company}</p>
-                        <p><span className="font-medium text-[var(--color-text)]">Product:</span> {submittedSummary.productLabel}</p>
-                        <p><span className="font-medium text-[var(--color-text)]">Quantity:</span> {submittedSummary.quantity}</p>
-                        <p><span className="font-medium text-[var(--color-text)]">Delivery Date:</span> {submittedSummary.deliveryDate || 'Not provided'}</p>
-                        <p><span className="font-medium text-[var(--color-text)]">Message:</span> {submittedSummary.message || 'Not provided'}</p>
-                        <p><span className="font-medium text-[var(--color-text)]">File:</span> {submittedSummary.hasFile ? 'Attached' : 'Not attached'}</p>
+                    <div className="dg-card dg-summary-card">
+                      <h3 className="dg-title-sm">Request Summary</h3>
+                      <div className="dg-summary-list">
+                        <p><strong>Name:</strong> {submittedSummary.name}</p>
+                        <p><strong>Email:</strong> {submittedSummary.email}</p>
+                        <p><strong>Company:</strong> {submittedSummary.company}</p>
+                        <p><strong>Product:</strong> {submittedSummary.productLabel}</p>
+                        <p><strong>Quantity:</strong> {submittedSummary.quantity}</p>
+                        <p><strong>Delivery Date:</strong> {submittedSummary.deliveryDate || '-'}</p>
+                        <p><strong>Message:</strong> {submittedSummary.message || '-'}</p>
+                        <p><strong>File:</strong> {submittedSummary.hasFile ? 'Attached' : 'Not attached'}</p>
                       </div>
                     </div>
                   )}
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="lg"
-                      onClick={() => {
-                        setSubmitted(false);
-                        setSubmittedLeadCode(null);
-                        setSubmittedSummary(null);
-                        setErrors([]);
-                      }}
-                    >
-                      Submit Another Request
-                    </Button>
-                    <Button type="button" variant="secondary" size="lg" onClick={clearSelectedProduct}>
-                      Clear Selection
-                    </Button>
+                  <div className="dg-card dg-summary-card">
+                    <h2 className="dg-title-sm">Want to review other products?</h2>
+                    <p className="dg-muted-sm">You can continue browsing the catalog while our sales team prepares your quotation.</p>
+                    <div className="dg-hero-actions">
+                      <Link href="/products" className="dg-btn-primary">Review Products</Link>
+                      <Link href="/customer/dashboard" className="dg-btn-secondary">Open Customer Portal</Link>
+                      <button
+                        type="button"
+                        className="dg-btn-secondary"
+                        onClick={() => {
+                          setSubmitted(false);
+                          setSubmittedSummary(null);
+                          setSubmittedLeadCode(null);
+                        }}
+                      >
+                        Submit Another
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </>
               ) : (
                 <>
+                  <h1 className="dg-section-title">Request Bulk Quote</h1>
+                  <p className="dg-section-copy">Share your product and delivery requirements. Our sales team will prepare a tailored quotation.</p>
+
                   {errors.length > 0 && (
-                    <div className="mb-4 rounded-xl border border-red-200 bg-[var(--color-danger-bg)] p-4 text-sm text-[var(--color-danger-text)]">
-                      {errors.map((error) => (
-                        <p key={error}>{error}</p>
-                      ))}
+                    <div className="dg-alert-error">
+                      <ul className="dg-error-list">
+                        {errors.map((error) => (
+                          <li key={error}>{error}</li>
+                        ))}
+                      </ul>
                     </div>
                   )}
 
-                  <form onSubmit={handleSubmit} className="grid gap-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="sm:col-span-2">
+                  <form onSubmit={handleSubmit} className="dg-config-form" encType="multipart/form-data">
+                    <div className="dg-config-grid">
+                      <div className="dg-field">
+                        <FieldLabel htmlFor="name">Full Name</FieldLabel>
+                        <TextField id="name" name="name" required />
+                      </div>
+
+                      <div className="dg-field">
+                        <FieldLabel htmlFor="company">Company Name</FieldLabel>
+                        <TextField id="company" name="company" required />
+                      </div>
+
+                      <div className="dg-field">
+                        <FieldLabel htmlFor="email">Email</FieldLabel>
+                        <TextField id="email" name="email" type="email" required />
+                      </div>
+
+                      <div className="dg-field">
+                        <FieldLabel htmlFor="quantity">Quantity</FieldLabel>
+                        <TextField id="quantity" type="number" name="quantity" min={1} required />
+                      </div>
+
+                      <div className="dg-field">
                         <FieldLabel htmlFor="product">Product</FieldLabel>
-                        <SelectField id="product" name="product" defaultValue={selectedProductId ?? ''}>
-                          <option value="">Select a product</option>
+                        <SelectField id="product" name="product" defaultValue={selectedProductId ?? ''} required>
+                          <option value="">Select product</option>
                           {products.map((product) => (
                             <option key={product.id} value={product.id}>
-                              {product.name}
+                              {product.name} ({product.category})
                             </option>
                           ))}
                         </SelectField>
                       </div>
 
-                      <div>
-                        <FieldLabel htmlFor="name">Name</FieldLabel>
-                        <TextField id="name" name="name" placeholder="Name" />
+                      <div className="dg-field">
+                        <FieldLabel htmlFor="delivery_date">Required Delivery Date</FieldLabel>
+                        <TextField id="delivery_date" type="date" name="delivery_date" />
                       </div>
 
-                      <div>
-                        <FieldLabel htmlFor="company">Company</FieldLabel>
-                        <TextField id="company" name="company" placeholder="Company" />
-                      </div>
-
-                      <div>
-                        <FieldLabel htmlFor="email">Email Address</FieldLabel>
-                        <TextField id="email" name="email" type="email" placeholder="Email Address" />
-                      </div>
-
-                      <div>
-                        <FieldLabel htmlFor="quantity">Required Quantity</FieldLabel>
-                        <TextField id="quantity" name="quantity" type="number" min={1} placeholder="Required Quantity" />
-                      </div>
-
-                      <div>
-                        <FieldLabel htmlFor="delivery_date">Preferred Delivery Date</FieldLabel>
-                        <TextField id="delivery_date" name="delivery_date" type="date" />
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <FieldLabel htmlFor="message">Requirements</FieldLabel>
-                        <TextAreaField
-                          id="message"
-                          name="message"
-                          placeholder="Special requirements, branding details, colors, sizes..."
-                        />
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <FieldLabel htmlFor="file_upload">Design / Logo File</FieldLabel>
-                        <TextField id="file_upload" name="file_upload" type="file" />
+                      <div className="dg-field">
+                        <FieldLabel htmlFor="file_upload">Logo / Design File</FieldLabel>
+                        <TextField id="file_upload" type="file" name="file_upload" />
+                        <p className="dg-help">Accepted: PDF, PNG, JPG, JPEG, SVG, AI, EPS (max 10MB)</p>
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <Button type="submit" size="lg" disabled={isSubmitting}>
+                    <div className="dg-field">
+                      <FieldLabel htmlFor="message">Project Details</FieldLabel>
+                      <TextAreaField
+                        id="message"
+                        name="message"
+                        rows={5}
+                        placeholder="Example: We need 500 event hoodies in black/navy with embroidered chest logo and front print..."
+                        required
+                      />
+                    </div>
+
+                    <div className="dg-hero-actions">
+                      <button type="submit" className="dg-btn-primary" disabled={isSubmitting}>
                         {isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
-                      </Button>
-                      <Button type="button" variant="secondary" size="lg" onClick={clearSelectedProduct}>
+                      </button>
+                      <button type="button" className="dg-btn-secondary" onClick={clearSelectedProduct}>
                         Clear Selection
-                      </Button>
+                      </button>
                     </div>
                   </form>
                 </>
               )}
-            </Card>
-
-            <div className="grid gap-4">
-              <Card>
-                <p className="dg-eyebrow">Selected Product</p>
-                <p className="mt-2 text-lg font-semibold text-[var(--color-text)]">
-                  {selectedProductName || 'No product selected yet'}
-                </p>
-                {selectedProductId && (
-                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">Product ID: {selectedProductId}</p>
-                )}
-              </Card>
-
-              <Card>
-                <p className="dg-eyebrow">What Happens Next</p>
-                <ul className="mt-3 space-y-2 text-sm text-[var(--color-text-muted)]">
-                  <li>1. We verify product and branding requirements.</li>
-                  <li>2. We share pricing tiers and timeline.</li>
-                  <li>3. You approve and we start production.</li>
-                </ul>
-              </Card>
             </div>
-          </div>
           </div>
         </section>
       </main>

@@ -2,7 +2,11 @@
 
 import Link from 'next/link';
 import StorefrontShell from '@/components/layout/storefront-shell';
-import { Button, Card } from '@/components/ui';
+import CategoryCard from '@/components/store/category-card';
+import ProductCard from '@/components/store/product-card';
+import TestimonialCard from '@/components/store/testimonial-card';
+import TrustItem from '@/components/store/trust-item';
+import { SectionHeader } from '@/components/ui';
 import { useFeaturedProducts } from '@/features/products';
 
 const categories = [
@@ -41,10 +45,6 @@ const process = [
     title: 'Approve & Produce',
     description: 'Finalize design approvals and move directly into quality-controlled bulk production.',
   },
-  {
-    title: 'Dispatch & Support',
-    description: 'Track delivery progress and coordinate post-order support for repeat procurement cycles.',
-  },
 ];
 
 const industries = [
@@ -76,21 +76,6 @@ const testimonials = [
   },
 ];
 
-function SectionHeader({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <h2 className="dg-section-title">{title}</h2>
-      <p className="dg-section-copy max-w-3xl">{subtitle}</p>
-    </div>
-  );
-}
-
 export default function HomePage() {
   const { data: featuredProducts = [] } = useFeaturedProducts();
 
@@ -98,27 +83,21 @@ export default function HomePage() {
     <StorefrontShell>
       <main className="dg-main">
         <section className="dg-section">
-          <div className="dg-container grid gap-6 lg:grid-cols-12">
-            <Card className="lg:col-span-8">
+          <div className="dg-container dg-hero-grid">
+            <div className="dg-card dg-hero-card">
               <span className="dg-badge">B2B Custom Garments</span>
-              <h1 className="dg-hero-title max-w-3xl">
-                Order Branded Apparel in Bulk with Faster Quotations
-              </h1>
-              <p className="dg-section-copy mt-4 max-w-3xl">
-                Browse production-ready garments, submit your quantity and branding requirements,
-                and get a clear quote with timeline, pricing, and follow-up support.
+              <h1 className="dg-hero-title">Order Branded Apparel in Bulk with Faster Quotations</h1>
+              <p className="dg-section-copy">
+                Browse production-ready garments, submit your quantity and branding requirements, and get a clear quote with timeline,
+                pricing, and follow-up support.
               </p>
               <div className="dg-hero-actions">
-                <Link href="/quote">
-                  <Button size="lg">Start Quote Request</Button>
-                </Link>
-                <Link href="/products">
-                  <Button variant="secondary" size="lg">Browse Catalog</Button>
-                </Link>
+                <Link href="/quote" className="dg-btn-primary">Start Quote Request</Link>
+                <Link href="/products" className="dg-btn-secondary">Browse Catalog</Link>
               </div>
-            </Card>
+            </div>
 
-            <Card className="flex h-full flex-col lg:col-span-4">
+            <div className="dg-card dg-quick-card">
               <p className="dg-eyebrow">Quick Request</p>
               <h2 className="dg-title-md">Get Quote in Minutes</h2>
               <div className="dg-quick-list">
@@ -126,147 +105,98 @@ export default function HomePage() {
                 <p className="dg-quick-item">2. Upload logo or design file</p>
                 <p className="dg-quick-item">3. Share quantity and deadline</p>
               </div>
-              <div className="mt-5">
-                <Link href="/quote">
-                  <Button className="w-full" size="lg">Submit Bulk Quote</Button>
-                </Link>
-              </div>
-            </Card>
-          </div>
-        </section>
-
-        <section className="dg-section">
-          <div className="dg-container space-y-5">
-            <SectionHeader
-              title="Shop by category"
-              subtitle="Choose a category and request a tailored quote for your bulk order."
-            />
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {categories.map((category) => (
-                <Card key={category.slug} className="flex h-full flex-col">
-                  <h3 className="dg-title-sm">{category.name}</h3>
-                  <p className="dg-muted-sm">{category.description}</p>
-                  <div className="mt-auto pt-4">
-                    <Link href="/products">
-                      <Button variant="ghost" size="sm">Explore</Button>
-                    </Link>
-                  </div>
-                </Card>
-              ))}
+              <Link href="/quote" className="dg-btn-primary dg-btn-block">Submit Bulk Quote</Link>
             </div>
-          </div>
-        </section>
-
-        <section className="dg-section">
-          <div className="dg-container space-y-5">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <SectionHeader
-                title="Featured products"
-                subtitle="Production-ready garments with clear MOQs, lead times, and customization options."
-              />
-              <Link href="/products" className="shrink-0">
-                <Button variant="secondary" size="sm">View All Products</Button>
-              </Link>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {featuredProducts.map((product) => (
-                <Card key={product.id} className="flex h-full flex-col">
-                  <p className="dg-eyebrow">{product.category}</p>
-                  <h3 className="dg-title-sm mt-2">{product.name}</h3>
-                  <p className="dg-muted-sm">{product.shortDescription}</p>
-                  <p className="dg-muted-sm">
-                    MOQ: {product.minOrderQty} | Lead Time: {product.leadTimeDays} days
-                  </p>
-                  <div className="mt-auto flex flex-wrap gap-2 pt-4">
-                    <Link href={`/products/${product.slug}`}>
-                      <Button variant="secondary" size="sm">Details</Button>
-                    </Link>
-                    <Link href="/quote">
-                      <Button size="sm">Quote</Button>
-                    </Link>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="dg-section">
-          <div className="dg-container space-y-5">
-            <SectionHeader
-              title="How bulk ordering works"
-              subtitle="A simple process designed for procurement teams and sales automation workflows."
-            />
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {process.map((step, index) => (
-                <Card key={step.title} className="h-full">
-                  <h3 className="dg-title-sm">{index + 1}. {step.title}</h3>
-                  <p className="dg-muted-sm">{step.description}</p>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="dg-section">
-          <div className="dg-container grid gap-4 lg:grid-cols-2">
-            <Card className="h-full space-y-4">
-              <SectionHeader
-                title="Industries served"
-                subtitle="Built for organizations ordering custom garments at scale."
-              />
-              <div className="flex flex-wrap gap-2">
-                {industries.map((industry) => (
-                  <span key={industry} className="dg-chip">{industry}</span>
-                ))}
-              </div>
-            </Card>
-
-            <Card className="h-full space-y-4">
-              <SectionHeader
-                title="Trusted by teams"
-                subtitle="Feedback from repeat bulk-order customers."
-              />
-              <div className="space-y-3">
-                {testimonials.map((testimonial) => (
-                  <div
-                    key={testimonial.name}
-                    className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[#fcfcfd] px-3 py-3"
-                  >
-                    <p className="dg-muted-sm">&ldquo;{testimonial.quote}&rdquo;</p>
-                    <p className="mt-2 text-sm font-semibold text-[var(--color-text)]">{testimonial.name}</p>
-                    <p className="text-xs text-[var(--color-text-muted)]">{testimonial.role}</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
           </div>
         </section>
 
         <section className="dg-section">
           <div className="dg-container">
-            <Card>
-              <div className="grid gap-5 lg:grid-cols-[1.35fr_0.65fr] lg:items-center">
+            <SectionHeader
+              title="Shop by category"
+              subtitle="Choose a category and request a tailored quote for your bulk order."
+            />
+
+            <div className="dg-category-grid">
+              {categories.map((category) => (
+                <CategoryCard key={category.slug} {...category} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="dg-section">
+          <div className="dg-container">
+            <SectionHeader
+              title="Featured products"
+              subtitle="Production-ready garments with clear MOQs, lead times, and customization options."
+              action={
+                <Link href="/products" className="dg-btn-secondary">View All Products</Link>
+              }
+            />
+
+            <div className="dg-product-grid">
+              {featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+            </div>
+          </div>
+        </section>
+
+        <section className="dg-section">
+          <div className="dg-container">
+            <h2 className="dg-section-title">How bulk ordering works</h2>
+            <div className="dg-process-grid">
+              {process.map((step, index) => (
+                <div key={step.title} className="dg-card dg-category-card">
+                  <h3 className="dg-title-sm">{index + 1}. {step.title}</h3>
+                  <p className="dg-muted-sm">{step.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="dg-section">
+          <div className="dg-container dg-two-col-grid">
+            <div className="dg-card dg-info-card">
+              <h2 className="dg-section-title">Industries served</h2>
+              <p className="dg-section-copy">Built for organizations ordering custom garments at scale.</p>
+              <div className="dg-chip-cloud">
+                {industries.map((industry) => (
+                  <span key={industry} className="dg-chip">{industry}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="dg-card dg-info-card">
+              <h2 className="dg-section-title">Trusted by teams</h2>
+              <div className="dg-testimonials">
+                {testimonials.map((testimonial) => (
+                  <TestimonialCard key={testimonial.name} {...testimonial} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="dg-section">
+          <div className="dg-container">
+            <div className="dg-card dg-cta-card">
+              <div className="dg-cta-grid">
                 <div>
                   <h2 className="dg-title-lg">Ready to place your bulk garment order?</h2>
-                  <p className="dg-muted-sm mt-3">
-                    Send your requirements and get a quotation with timeline and production plan.
-                  </p>
+                  <p className="dg-muted-sm">Send your requirements and get a quotation with timeline and production plan.</p>
                 </div>
-                <div className="flex flex-wrap gap-2 lg:justify-end">
-                  <Link href="/quote">
-                    <Button size="lg">Request Bulk Quote</Button>
-                  </Link>
-                  <Button variant="secondary" size="lg">Talk to Sales</Button>
+                <div className="dg-actions-wrap">
+                  <Link href="/quote" className="dg-btn-primary">Request Bulk Quote</Link>
+                  <a href="#" className="dg-btn-secondary">Talk to Sales</a>
                 </div>
               </div>
-              <div className="mt-5 flex flex-wrap gap-2 border-t border-[var(--color-border)] pt-5">
-                <span className="dg-chip">Secure Payments</span>
-                <span className="dg-chip">Quality Checked Production</span>
-                <span className="dg-chip">On-Time Bulk Delivery</span>
+              <div className="dg-trust-grid">
+                <TrustItem text="Secure Payments" />
+                <TrustItem text="Quality Checked Production" />
+                <TrustItem text="On-Time Bulk Delivery" />
               </div>
-            </Card>
+            </div>
           </div>
         </section>
       </main>

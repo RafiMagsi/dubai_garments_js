@@ -1,9 +1,34 @@
+import Link from 'next/link';
+
 export default function Footer() {
   return (
-    <footer className="border-t border-[var(--color-border)] bg-white/90">
-      <div className="mx-auto grid max-w-7xl gap-2 px-4 py-8 text-sm text-[var(--color-ink-500)] sm:px-6 md:grid-cols-2 lg:px-8">
-        <p>© 2026 Dubai Garments. All rights reserved.</p>
-        <p className="md:text-right">Customer Storefront Module v1</p>
+    <footer className="dg-footer">
+      <div className="dg-container dg-footer-grid">
+        <div>
+          <h3 className="dg-title-sm">Dubai Garments</h3>
+          <p className="dg-muted-sm">Bulk custom apparel for businesses, events, and institutions.</p>
+        </div>
+        <div>
+          <h4 className="dg-footer-heading">Store</h4>
+          <ul className="dg-footer-list">
+            <li><Link href="/products">Products</Link></li>
+            <li><Link href="/quote">Request Quote</Link></li>
+            <li><Link href="/customer/dashboard">Customer Portal</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="dg-footer-heading">Company</h4>
+          <ul className="dg-footer-list">
+            <li><a href="#">About</a></li>
+            <li><a href="#">Industries</a></li>
+            <li><a href="#">Contact</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="dg-footer-heading">Contact</h4>
+          <p className="dg-muted-sm">sales@dubaigarments.ai</p>
+          <p className="dg-muted-sm">+92 300 0000000</p>
+        </div>
       </div>
     </footer>
   );
