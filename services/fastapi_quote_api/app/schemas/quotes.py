@@ -70,5 +70,15 @@ class QuoteResponse(BaseModel):
 
 
 class QuoteCreateResponse(BaseModel):
-    item: QuoteResponse
-    items: List[QuoteLineItemResponse]
+  item: QuoteResponse
+  items: List[QuoteLineItemResponse]
+
+
+class QuoteDetailResponse(BaseModel):
+  item: QuoteResponse
+  items: List[QuoteLineItemResponse]
+
+
+class QuoteStatusUpdateRequest(BaseModel):
+  status: str
+  notes: Optional[str] = None

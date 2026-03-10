@@ -22,3 +22,29 @@ export interface AdminQuote {
 export interface AdminQuotesResponse {
   items: AdminQuote[];
 }
+
+export interface AdminQuoteItem {
+  id: string;
+  quote_id: string;
+  product_id?: string | null;
+  product_variant_id?: string | null;
+  item_name: string;
+  description?: string | null;
+  quantity: number;
+  unit_price: number;
+  discount_amount: number;
+  line_total: number;
+  pricing_breakdown: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminQuoteDetailResponse {
+  item: AdminQuote;
+  items: AdminQuoteItem[];
+}
+
+export interface AdminQuoteStatusUpdateInput {
+  status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
+  notes?: string;
+}

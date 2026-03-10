@@ -12,6 +12,7 @@ ALLOWED_ACTIVITY_TYPES = {
     "lead_status_changed",
     "ai_processed_lead",
     "quote_generated",
+    "quote_status_changed",
     "email_sent",
     "followup_triggered",
     "customer_replied",
@@ -28,7 +29,7 @@ def normalize_activity_type(activity_type: str) -> str:
             detail=(
                 "Invalid activity_type. Allowed: lead_created, lead_updated, "
                 "lead_status_changed, ai_processed_lead, quote_generated, "
-                "email_sent, followup_triggered, customer_replied, deal_created, "
+                "quote_status_changed, email_sent, followup_triggered, customer_replied, deal_created, "
                 "deal_stage_changed."
             ),
         )
