@@ -8,6 +8,7 @@ import psycopg
 from fastapi import HTTPException
 
 from app.core.config import DEAL_STAGES
+from app.services.activities import create_activity
 
 
 def normalize_stage(stage: str) -> str:
@@ -61,15 +62,15 @@ def maybe_schedule_followup(
         cursor.execute(
             """
             INSERT INTO automation_runs (
-              workflow_name,
-              trigger_source,
-              trigger_entity_type,
-              trigger_entity_id,
-              status,
-              request_payload,
-              response_payload,
-              started_at,
-              finished_at
+                workflow_name,
+                trigger_source,
+                trigger_entity_type,
+                trigger_entity_id,
+                status,
+                request_payload,
+                response_payload,
+                started_at,
+                finished_at
             )
             VALUES (%s, %s, %s, %s::uuid, %s, %s::jsonb, %s::jsonb, %s, %s)
             """,
@@ -85,6 +86,16 @@ def maybe_schedule_followup(
                 now,
             ),
         )
+
+    create_activity(
+        connection=connection,
+        activity_type="followup_triggered",
+        title="Follow-up triggered",
+        lead_id=lead_id,
+        deal_id=deal_id,
+        details=f"Follow-up scheduled automatically for {stage_label(stage)} stage.",
+        metadata={"stage": stage},
+    )
 
 
 def update_lead_status_from_deal(
@@ -160,3 +171,23 @@ def ensure_customer_from_lead(
             (customer["id"], lead_id),
         )
         return customer["id"]
+
+
+def track_deal_activity(
+    connection: psycopg.Connection,
+    deal_id: str,
+    activity_type: str,
+    title: str,
+    lead_id: Optional[str] = None,
+    details: Optional[str] = None,
+    metadata: Optional[dict] = None,
+) -> None:
+    create_activity(
+        connection=connection,
+        activity_type=activity_type,
+        title=title,
+        lead_id=lead_id,
+        deal_id=deal_id,
+        details=details,
+        metadata=metadata,
+    )

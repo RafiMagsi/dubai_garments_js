@@ -13,6 +13,7 @@ from app.services.deals import (
     maybe_schedule_followup,
     normalize_stage,
     stage_label,
+    track_deal_activity,
     update_lead_status_from_deal,
 )
 
@@ -167,6 +168,15 @@ def create_deal(payload: DealCreateRequest) -> Dict[str, object]:
                     raise HTTPException(status_code=500, detail="Failed to create deal.")
 
                 update_lead_status_from_deal(connection, payload.lead_id, stage)
+                track_deal_activity(
+                    connection,
+                    deal["id"],
+                    "deal_created",
+                    "Deal created",
+                    lead_id=payload.lead_id,
+                    details="Deal created from Deal Module API.",
+                    metadata={"stage": stage},
+                )
                 maybe_schedule_followup(connection, deal["id"], payload.lead_id, stage)
             connection.commit()
     except HTTPException:
@@ -228,6 +238,15 @@ def convert_lead_to_deal(lead_id: str, payload: ConvertLeadRequest) -> Dict[str,
                     raise HTTPException(status_code=500, detail="Failed to convert lead to deal.")
 
                 update_lead_status_from_deal(connection, lead_id, "qualified")
+                track_deal_activity(
+                    connection,
+                    deal["id"],
+                    "deal_created",
+                    "Lead converted to deal",
+                    lead_id=lead_id,
+                    details="Lead converted into a sales opportunity.",
+                    metadata={"stage": "new"},
+                )
             connection.commit()
     except HTTPException:
         raise
@@ -287,6 +306,15 @@ def update_deal_stage(deal_id: str, payload: DealStageUpdateRequest) -> Dict[str
                 lead_id = updated.get("lead_id")
                 update_lead_status_from_deal(connection, lead_id, stage)
                 if current["stage"] != stage:
+                    track_deal_activity(
+                        connection,
+                        deal_id,
+                        "deal_stage_changed",
+                        f"Deal moved to {stage_label(stage)}",
+                        lead_id=lead_id,
+                        details=payload.notes,
+                        metadata={"from": current["stage"], "to": stage},
+                    )
                     maybe_schedule_followup(connection, deal_id, lead_id, stage)
 
             connection.commit()

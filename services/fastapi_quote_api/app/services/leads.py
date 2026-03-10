@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
 from typing import Dict, Optional
 
 import psycopg
 from fastapi import HTTPException
 
 from app.core.config import LEAD_STATUSES
+from app.services.activities import create_activity
 
 
 def normalize_lead_status(status: str) -> str:
@@ -27,14 +27,14 @@ def track_lead_activity(
     details: Optional[str] = None,
     metadata: Optional[Dict[str, object]] = None,
 ) -> None:
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            INSERT INTO activities (lead_id, activity_type, title, details, metadata)
-            VALUES (%s::uuid, %s, %s, %s, %s::jsonb)
-            """,
-            (lead_id, activity_type, title, details, json.dumps(metadata or {})),
-        )
+    create_activity(
+        connection=connection,
+        activity_type=activity_type,
+        title=title,
+        lead_id=lead_id,
+        details=details,
+        metadata=metadata,
+    )
 
 
 def get_lead_by_id(connection: psycopg.Connection, lead_id: str) -> Optional[Dict]:

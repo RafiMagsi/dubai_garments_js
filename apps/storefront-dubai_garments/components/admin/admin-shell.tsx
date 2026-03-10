@@ -9,6 +9,7 @@ const adminNavItems = [
   { href: '/admin/pipeline', label: 'Pipeline' },
   { href: '/admin/deals', label: 'Deals' },
   { href: '/admin/leads', label: 'Leads' },
+  { href: '/admin/activities', label: 'Activities' },
 ];
 
 export default function AdminShell({ children }: { children: ReactNode }) {

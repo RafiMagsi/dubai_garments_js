@@ -35,6 +35,7 @@ export function useCreateDeal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });
 }
@@ -53,6 +54,7 @@ export function useUpdateDealStage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });
 }
@@ -71,6 +73,7 @@ export function useConvertLeadToDeal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });
 }

@@ -41,6 +41,19 @@ export default function AdminLeadsPage() {
   } = useLeadById(selectedLeadId);
   const createLeadMutation = useCreateLead();
   const updateStatusMutation = useUpdateLeadStatus();
+  const leads = useMemo(() => data?.items ?? [], [data?.items]);
+  const selectedLead = leadDetail?.item;
+
+  const leadCounts = useMemo(() => {
+    return leads.reduce(
+      (accumulator, lead) => {
+        accumulator.total += 1;
+        accumulator[lead.status] += 1;
+        return accumulator;
+      },
+      { total: 0, new: 0, qualified: 0, quoted: 0, won: 0, lost: 0 }
+    );
+  }, [leads]);
 
   async function handleCreateLead(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,150 +88,272 @@ export default function AdminLeadsPage() {
         </p>
       </Card>
 
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_1.6fr_1.2fr]">
-        <Card className="space-y-4">
-          <h2 className="text-lg font-semibold text-[var(--color-text)]">Create Lead</h2>
-          <form className="grid gap-3" onSubmit={handleCreateLead}>
-            <div>
-              <FieldLabel htmlFor="contact_name">Contact Name</FieldLabel>
-              <TextField id="contact_name" name="contact_name" required />
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <Card className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">
+            Total Leads
+          </p>
+          <p className="text-3xl font-semibold text-[var(--color-text)]">{leadCounts.total}</p>
+          <p className="text-sm text-[var(--color-text-muted)]">All incoming opportunities in the system.</p>
+        </Card>
+        <Card className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">New</p>
+          <p className="text-3xl font-semibold text-[var(--color-text)]">{leadCounts.new}</p>
+          <p className="text-sm text-[var(--color-text-muted)]">Fresh inquiries waiting for qualification.</p>
+        </Card>
+        <Card className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Qualified</p>
+          <p className="text-3xl font-semibold text-[var(--color-text)]">{leadCounts.qualified}</p>
+          <p className="text-sm text-[var(--color-text-muted)]">Leads ready for active sales follow-up.</p>
+        </Card>
+        <Card className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Quoted</p>
+          <p className="text-3xl font-semibold text-[var(--color-text)]">{leadCounts.quoted}</p>
+          <p className="text-sm text-[var(--color-text-muted)]">Quotes sent and awaiting customer response.</p>
+        </Card>
+        <Card className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Closed</p>
+          <p className="text-3xl font-semibold text-[var(--color-text)]">
+            {leadCounts.won + leadCounts.lost}
+          </p>
+          <p className="text-sm text-[var(--color-text-muted)]">Won and lost outcomes combined.</p>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(360px,0.95fr)]">
+        <div className="grid gap-4">
+          <Card className="space-y-4">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--color-text)]">Lead Workspace</h2>
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  Search, filter, and open a lead to review status and history.
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+                <div>
+                  <FieldLabel htmlFor="leadSearch">Search Leads</FieldLabel>
+                  <TextField
+                    id="leadSearch"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search name, company, email..."
+                  />
+                </div>
+                <div>
+                  <FieldLabel htmlFor="leadStatus">Status</FieldLabel>
+                  <select
+                    id="leadStatus"
+                    className="ui-field"
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value as LeadStatus | 'all')}
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div>
-              <FieldLabel htmlFor="company_name">Company</FieldLabel>
-              <TextField id="company_name" name="company_name" />
-            </div>
-            <div>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
-              <TextField id="email" name="email" type="email" />
-            </div>
-            <div>
-              <FieldLabel htmlFor="phone">Phone</FieldLabel>
-              <TextField id="phone" name="phone" />
-            </div>
-            <div>
-              <FieldLabel htmlFor="requested_qty">Requested Qty</FieldLabel>
-              <TextField id="requested_qty" name="requested_qty" type="number" min={1} />
-            </div>
-            <div>
-              <FieldLabel htmlFor="notes">Notes</FieldLabel>
-              <TextAreaField id="notes" name="notes" />
-            </div>
-            <Button type="submit" size="sm" disabled={createLeadMutation.isPending}>
-              {createLeadMutation.isPending ? 'Creating...' : 'Create Lead'}
-            </Button>
-            {createLeadMutation.isError && (
+
+            {isLoading && <p className="text-sm text-[var(--color-text-muted)]">Loading leads...</p>}
+            {isError && (
               <p className="text-sm text-[var(--color-danger-text)]">
-                {createLeadMutation.error instanceof Error
-                  ? createLeadMutation.error.message
-                  : 'Failed to create lead.'}
+                {error instanceof Error ? error.message : 'Failed to load leads.'}
               </p>
             )}
-          </form>
-        </Card>
 
-        <Card className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+            {!isLoading && !isError && (
+              <div className="grid gap-3">
+                {leads.map((lead) => (
+                  <button
+                    key={lead.id}
+                    type="button"
+                    className={`rounded-[var(--radius-md)] border p-4 text-left transition ${
+                      selectedLeadId === lead.id
+                        ? 'border-[var(--color-brand)] bg-[var(--color-brand-50)] shadow-[0_12px_32px_-22px_rgba(154,52,18,0.45)]'
+                        : 'border-[var(--color-border)] bg-white hover:border-[var(--color-brand)]/40 hover:bg-[var(--color-surface-soft)]'
+                    }`}
+                    onClick={() => setSelectedLeadId(lead.id)}
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-base font-semibold text-[var(--color-text)]">{lead.contact_name}</p>
+                        <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                          {lead.company_name || 'No company provided'}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--color-ink-500)]">
+                          <span>{lead.email || 'No email'}</span>
+                          <span>{lead.phone || 'No phone'}</span>
+                          <span>Qty: {lead.requested_qty || 'N/A'}</span>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-700)] border border-[var(--color-border)]">
+                          {lead.status}
+                        </span>
+                        <span className="text-xs text-[var(--color-text-muted)]">
+                          {new Date(lead.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+                {leads.length === 0 && (
+                  <p className="text-sm text-[var(--color-text-muted)]">No leads found.</p>
+                )}
+              </div>
+            )}
+          </Card>
+
+          <Card className="space-y-4">
             <div>
-              <FieldLabel htmlFor="leadSearch">Search Leads</FieldLabel>
-              <TextField
-                id="leadSearch"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search name, company, email..."
-              />
+              <h2 className="text-lg font-semibold text-[var(--color-text)]">Create Lead</h2>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                Manually add a lead from a phone call, meeting, or offline inquiry.
+              </p>
             </div>
-            <select
-              className="ui-field"
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as LeadStatus | 'all')}
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreateLead}>
+              <div>
+                <FieldLabel htmlFor="contact_name">Contact Name</FieldLabel>
+                <TextField id="contact_name" name="contact_name" required />
+              </div>
+              <div>
+                <FieldLabel htmlFor="company_name">Company</FieldLabel>
+                <TextField id="company_name" name="company_name" />
+              </div>
+              <div>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <TextField id="email" name="email" type="email" />
+              </div>
+              <div>
+                <FieldLabel htmlFor="phone">Phone</FieldLabel>
+                <TextField id="phone" name="phone" />
+              </div>
+              <div>
+                <FieldLabel htmlFor="requested_qty">Requested Qty</FieldLabel>
+                <TextField id="requested_qty" name="requested_qty" type="number" min={1} />
+              </div>
+              <div className="md:col-span-2">
+                <FieldLabel htmlFor="notes">Notes</FieldLabel>
+                <TextAreaField id="notes" name="notes" />
+              </div>
+              <div className="flex flex-wrap items-center gap-3 md:col-span-2">
+                <Button type="submit" size="sm" disabled={createLeadMutation.isPending}>
+                  {createLeadMutation.isPending ? 'Creating...' : 'Create Lead'}
+                </Button>
+                {createLeadMutation.isError && (
+                  <p className="text-sm text-[var(--color-danger-text)]">
+                    {createLeadMutation.error instanceof Error
+                      ? createLeadMutation.error.message
+                      : 'Failed to create lead.'}
+                  </p>
+                )}
+              </div>
+            </form>
+          </Card>
+        </div>
+
+        <Card className="space-y-5 xl:sticky xl:top-4 xl:h-fit">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Lead Details</h2>
+            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+              Review the selected lead, then progress it through the sales process.
+            </p>
           </div>
 
-          {isLoading && <p className="text-sm text-[var(--color-text-muted)]">Loading leads...</p>}
-          {isError && (
-            <p className="text-sm text-[var(--color-danger-text)]">
-              {error instanceof Error ? error.message : 'Failed to load leads.'}
-            </p>
-          )}
-
-          {!isLoading && !isError && (
-            <div className="grid gap-2">
-              {data?.items.map((lead) => (
-                <button
-                  key={lead.id}
-                  type="button"
-                  className={`rounded-[var(--radius-sm)] border p-3 text-left transition ${
-                    selectedLeadId === lead.id
-                      ? 'border-[var(--color-brand)] bg-[var(--color-brand-50)]'
-                      : 'border-[var(--color-border)] bg-white'
-                  }`}
-                  onClick={() => setSelectedLeadId(lead.id)}
-                >
-                  <p className="text-sm font-semibold text-[var(--color-text)]">{lead.contact_name}</p>
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    {lead.company_name || 'No company'} | {lead.email || 'No email'}
-                  </p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.06em] text-[var(--color-ink-500)]">
-                    {lead.status}
-                  </p>
-                </button>
-              ))}
-              {data?.items.length === 0 && (
-                <p className="text-sm text-[var(--color-text-muted)]">No leads found.</p>
-              )}
+          {!selectedLeadId && (
+            <div className="rounded-[var(--radius-md)] border border-dashed border-[var(--color-border)] bg-[var(--color-surface-soft)] p-5 text-sm text-[var(--color-text-muted)]">
+              Select a lead from the workspace to view full contact details and status history.
             </div>
           )}
-        </Card>
 
-        <Card className="space-y-4">
-          <h2 className="text-lg font-semibold text-[var(--color-text)]">Lead Details</h2>
-          {!selectedLeadId && (
-            <p className="text-sm text-[var(--color-text-muted)]">Select a lead to view details.</p>
-          )}
           {selectedLeadId && isLoadingDetail && (
             <p className="text-sm text-[var(--color-text-muted)]">Loading details...</p>
           )}
-          {leadDetail?.item && (
+
+          {selectedLead && (
             <>
-              <div className="space-y-1 text-sm text-[var(--color-text-muted)]">
-                <p><strong className="text-[var(--color-text)]">Contact:</strong> {leadDetail.item.contact_name}</p>
-                <p><strong className="text-[var(--color-text)]">Company:</strong> {leadDetail.item.company_name || 'N/A'}</p>
-                <p><strong className="text-[var(--color-text)]">Email:</strong> {leadDetail.item.email || 'N/A'}</p>
-                <p><strong className="text-[var(--color-text)]">Phone:</strong> {leadDetail.item.phone || 'N/A'}</p>
-                <p><strong className="text-[var(--color-text)]">Status:</strong> {leadDetail.item.status}</p>
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-soft)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-lg font-semibold text-[var(--color-text)]">{selectedLead.contact_name}</p>
+                    <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                      {selectedLead.company_name || 'No company provided'}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-700)] border border-[var(--color-border)]">
+                    {selectedLead.status}
+                  </span>
+                </div>
               </div>
 
-              {leadDetail.item.status !== 'won' && leadDetail.item.status !== 'lost' && (
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={updateStatusMutation.isPending}
-                  onClick={() =>
-                    updateStatusMutation.mutate({
-                      leadId: leadDetail.item.id,
-                      payload: { status: nextStatus(leadDetail.item.status) },
-                    })
-                  }
-                >
-                  {updateStatusMutation.isPending ? 'Updating...' : `Move To ${nextStatus(leadDetail.item.status)}`}
-                </Button>
+              <div className="grid gap-3 text-sm text-[var(--color-text-muted)]">
+                <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Email</p>
+                  <p className="mt-1 text-sm text-[var(--color-text)]">{selectedLead.email || 'N/A'}</p>
+                </div>
+                <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Phone</p>
+                  <p className="mt-1 text-sm text-[var(--color-text)]">{selectedLead.phone || 'N/A'}</p>
+                </div>
+                <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Requested Quantity</p>
+                  <p className="mt-1 text-sm text-[var(--color-text)]">{selectedLead.requested_qty || 'N/A'}</p>
+                </div>
+                <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Notes</p>
+                  <p className="mt-1 text-sm text-[var(--color-text)]">{selectedLead.notes || 'No notes added.'}</p>
+                </div>
+              </div>
+
+              {selectedLead.status !== 'won' && selectedLead.status !== 'lost' && (
+                <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-brand-50)] p-4">
+                  <p className="text-sm font-semibold text-[var(--color-text)]">Next Recommended Action</p>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Move this lead to <span className="font-semibold text-[var(--color-text)]">{nextStatus(selectedLead.status)}</span> once qualification is complete.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-3"
+                    disabled={updateStatusMutation.isPending}
+                    onClick={() =>
+                      updateStatusMutation.mutate({
+                        leadId: selectedLead.id,
+                        payload: { status: nextStatus(selectedLead.status) },
+                      })
+                    }
+                  >
+                    {updateStatusMutation.isPending ? 'Updating...' : `Move To ${nextStatus(selectedLead.status)}`}
+                  </Button>
+                </div>
               )}
 
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-[var(--color-text)]">Status Tracking</p>
-                <div className="grid gap-2">
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--color-text)]">Status Tracking</p>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Timeline of events recorded for this lead.
+                  </p>
+                </div>
+                <div className="grid gap-3">
                   {leadDetail.activities.map((activity) => (
-                    <div key={activity.id} className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-2">
-                      <p className="text-sm font-medium text-[var(--color-text)]">{activity.title}</p>
-                      <p className="text-xs text-[var(--color-text-muted)]">
-                        {new Date(activity.created_at).toLocaleString()}
-                      </p>
+                    <div
+                      key={activity.id}
+                      className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm font-medium text-[var(--color-text)]">{activity.title}</p>
+                        <span className="text-xs text-[var(--color-text-muted)]">
+                          {new Date(activity.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      {activity.details && (
+                        <p className="mt-2 text-sm text-[var(--color-text-muted)]">{activity.details}</p>
+                      )}
                     </div>
                   ))}
                   {leadDetail.activities.length === 0 && (

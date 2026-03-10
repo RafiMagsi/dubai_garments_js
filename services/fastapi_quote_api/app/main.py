@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routers.activities import router as activities_router
 from app.api.routers.deals import router as deals_router
 from app.api.routers.health import router as health_router
 from app.api.routers.leads import router as leads_router
@@ -24,3 +25,4 @@ app.include_router(health_router)
 app.include_router(quote_requests_router)
 app.include_router(leads_router)
 app.include_router(deals_router)
+app.include_router(activities_router)

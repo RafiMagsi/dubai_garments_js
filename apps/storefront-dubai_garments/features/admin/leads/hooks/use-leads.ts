@@ -35,6 +35,7 @@ export function useCreateLead() {
     mutationFn: (payload: LeadCreateInput) => createLead(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });
 }
@@ -48,6 +49,7 @@ export function useUpdateLead() {
     onSuccess: (_, { leadId }) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });
 }
@@ -66,6 +68,7 @@ export function useUpdateLeadStatus() {
     onSuccess: (_, { leadId }) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });
 }
