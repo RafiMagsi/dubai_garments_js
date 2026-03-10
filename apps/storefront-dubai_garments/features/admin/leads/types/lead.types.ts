@@ -12,6 +12,13 @@ export interface Lead {
   email?: string | null;
   phone?: string | null;
   requested_qty?: number | null;
+  ai_product?: string | null;
+  ai_quantity?: number | null;
+  ai_urgency?: 'low' | 'medium' | 'high' | null;
+  ai_complexity?: 'low' | 'medium' | 'high' | null;
+  ai_provider?: 'system' | 'openai' | null;
+  ai_fallback_used?: boolean | null;
+  ai_processed_at?: string | null;
   budget?: number | null;
   timeline_date?: string | null;
   notes?: string | null;

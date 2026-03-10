@@ -46,6 +46,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 - Records are inserted into the `leads` table.
 - Uploaded files are stored in `uploads/` by default.
+- LeadAIService runs automatically when a lead is created and extracts `product`, `quantity`, `urgency`, and `complexity` using the OpenAI API.
+- Lead AI failures do not block lead creation; they are recorded in `automation_runs`.
 - Deal stages: `new`, `qualified`, `quoted`, `negotiation`, `won`, `lost`.
 - Automation: stage changes to `quoted` or `negotiation` auto-create follow-ups and `automation_runs` records.
 - Activity log is append-only and system-generated. It is not manually created from the admin UI.

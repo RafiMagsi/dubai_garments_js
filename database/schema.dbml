@@ -71,6 +71,13 @@ Table leads {
   email text
   phone text
   requested_qty integer
+  ai_product text
+  ai_quantity integer
+  ai_urgency text
+  ai_complexity text
+  ai_provider text
+  ai_fallback_used boolean
+  ai_processed_at timestamptz
   budget numeric(12,2)
   timeline_date date
   notes text

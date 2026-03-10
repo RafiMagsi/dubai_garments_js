@@ -309,6 +309,60 @@ export default function AdminLeadsPage() {
                 </div>
               </div>
 
+              <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-soft)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--color-text)]">AI Lead Processing</p>
+                    <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                      Structured fields extracted automatically from the incoming message.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-[var(--color-border)] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-700)]">
+                    {selectedLead.ai_processed_at ? 'Processed' : 'Pending'}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full border border-[var(--color-border)] bg-white px-3 py-1 font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-700)]">
+                    Source: {selectedLead.ai_provider || 'pending'}
+                  </span>
+                  {selectedLead.ai_processed_at && (
+                    <span className="rounded-full border border-[var(--color-border)] bg-white px-3 py-1 font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-700)]">
+                      {selectedLead.ai_fallback_used ? 'Fallback Used' : 'No Fallback'}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Product</p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">{selectedLead.ai_product || 'Not extracted yet'}</p>
+                  </div>
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Quantity</p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">{selectedLead.ai_quantity || 'Not extracted yet'}</p>
+                  </div>
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Urgency</p>
+                    <p className="mt-1 text-sm capitalize text-[var(--color-text)]">
+                      {selectedLead.ai_urgency || 'Not extracted yet'}
+                    </p>
+                  </div>
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Complexity</p>
+                    <p className="mt-1 text-sm capitalize text-[var(--color-text)]">
+                      {selectedLead.ai_complexity || 'Not extracted yet'}
+                    </p>
+                  </div>
+                </div>
+
+                {selectedLead.ai_processed_at && (
+                  <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+                    Processed at {new Date(selectedLead.ai_processed_at).toLocaleString()}
+                  </p>
+                )}
+              </div>
+
               {selectedLead.status !== 'won' && selectedLead.status !== 'lost' && (
                 <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-brand-50)] p-4">
                   <p className="text-sm font-semibold text-[var(--color-text)]">Next Recommended Action</p>

@@ -10,6 +10,14 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "uploads"))
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+LEAD_AI_ENABLED = os.getenv("LEAD_AI_ENABLED", "true").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 CORS_ORIGINS: List[str] = [
     origin.strip()
     for origin in os.getenv(
