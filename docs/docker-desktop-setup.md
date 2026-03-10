@@ -152,6 +152,19 @@ Import a specific dump file:
 ./scripts/db-import-dump.sh /path/to/your_dump.sql
 ```
 
+After importing an older dump, apply latest migrations so API queries match current schema:
+
+```bash
+cd apps/storefront-dubai_garments
+npm run db:migrate
+```
+
+Copy only one table from local Postgres to Docker Postgres (example: `leads`):
+
+```bash
+SOURCE_DATABASE_URL='postgresql://<local_user>:<local_password>@localhost:5432/dubai_garments' ./scripts/db-copy-table-local-to-docker.sh leads
+```
+
 ## 8. What each service does
 
 1. `storefront`: Next.js customer/admin app
