@@ -71,6 +71,9 @@ Table leads {
   email text
   phone text
   requested_qty integer
+  ai_score integer
+  ai_classification text
+  ai_reasoning json
   ai_product text
   ai_quantity integer
   ai_urgency text

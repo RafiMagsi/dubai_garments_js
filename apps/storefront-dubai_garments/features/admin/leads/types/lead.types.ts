@@ -12,6 +12,9 @@ export interface Lead {
   email?: string | null;
   phone?: string | null;
   requested_qty?: number | null;
+  ai_score?: number | null;
+  ai_classification?: 'HOT' | 'WARM' | 'COLD' | null;
+  ai_reasoning?: { summary?: string; signals?: string[] } | null;
   ai_product?: string | null;
   ai_quantity?: number | null;
   ai_urgency?: 'low' | 'medium' | 'high' | null;

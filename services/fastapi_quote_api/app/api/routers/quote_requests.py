@@ -9,7 +9,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.core.config import UPLOAD_DIR
 from app.core.db import get_db_connection
-from app.services.lead_ai import process_lead_with_ai
+from app.core.queue import enqueue_lead_ai_job
 from app.services.leads import track_lead_activity
 from app.services.utils import to_lead_code
 
@@ -93,7 +93,7 @@ async def create_quote_request(
                 )
             connection.commit()
 
-        process_lead_with_ai(lead_id)
+        enqueue_lead_ai_job(lead_id)
     except HTTPException:
         raise
     except Exception as error:

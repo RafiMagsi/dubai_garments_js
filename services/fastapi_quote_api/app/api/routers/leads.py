@@ -5,9 +5,9 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from app.core.db import get_db_connection
+from app.core.queue import enqueue_lead_ai_job
 from app.schemas.leads import LeadCreateRequest, LeadStatusUpdateRequest, LeadUpdateRequest
 from app.services.deals import stage_label
-from app.services.lead_ai import process_lead_with_ai
 from app.services.leads import get_lead_by_id, normalize_lead_status, track_lead_activity
 
 router = APIRouter(prefix="/api/v1", tags=["leads"])
@@ -35,6 +35,9 @@ def list_leads(
           l.email,
           l.phone,
           l.requested_qty,
+          l.ai_score,
+          l.ai_classification,
+          l.ai_reasoning,
           l.ai_product,
           l.ai_quantity,
           l.ai_urgency,
@@ -185,16 +188,13 @@ def create_lead(payload: LeadCreateRequest) -> Dict[str, object]:
             lead = get_lead_by_id(connection, lead_id)
             connection.commit()
 
-        process_lead_with_ai(lead_id)
-
-        with get_db_connection() as connection:
-            lead = get_lead_by_id(connection, lead_id)
+        job_id = enqueue_lead_ai_job(lead_id)
     except HTTPException:
         raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Lead creation failed: {error}") from error
 
-    return {"item": lead}
+    return {"item": lead, "aiJobId": job_id}
 
 
 @router.patch("/leads/{lead_id}")

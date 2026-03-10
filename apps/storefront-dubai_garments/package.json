@@ -13,9 +13,6 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:users": "./scripts/db-seed-users.sh"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@prisma/client": "^6.19.2",
     "@tanstack/react-query": "^5.90.21",

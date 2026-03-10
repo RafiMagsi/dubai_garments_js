@@ -109,7 +109,16 @@ class LeadAIService:
                 "urgency": _normalize_level(response_payload.get("urgency")) or heuristic["urgency"],
                 "complexity": _normalize_level(response_payload.get("complexity")) or heuristic["complexity"],
             }
-            result = {**extracted, "provider": "openai", "fallback_used": False}
+            result = {
+                **extracted,
+                "ai_score": self._normalize_score(response_payload.get("ai_score")) or heuristic["ai_score"],
+                "classification": self._normalize_classification(response_payload.get("classification"))
+                or heuristic["classification"],
+                "reasoning": self._normalize_reasoning(response_payload.get("reasoning"))
+                or heuristic["reasoning"],
+                "provider": "openai",
+                "fallback_used": False,
+            }
 
             self._persist_lead_result(lead_id, result)
             self._persist_automation_run(
@@ -126,6 +135,8 @@ class LeadAIService:
                 provider="openai",
                 fallback_used=False,
                 extracted=extracted,
+                ai_score=result["ai_score"],
+                classification=result["classification"],
             )
             return {"processed": True, "data": result}
         except Exception as error:
@@ -163,6 +174,7 @@ class LeadAIService:
         notes = (lead.get("notes") or "").lower()
         requested_qty = _normalize_quantity(lead.get("requested_qty"))
         inferred_quantity = requested_qty
+        reasoning: list[str] = []
 
         if inferred_quantity is None:
             match = re.search(r"\b(\d{1,6})\b", notes)
@@ -173,10 +185,13 @@ class LeadAIService:
         urgency = "medium"
         if any(keyword in notes for keyword in ("urgent", "asap", "immediately", "next week")):
             urgency = "high"
+            reasoning.append("Urgent language or near-term delivery mentioned")
         elif any(keyword in notes for keyword in ("whenever", "flexible", "later")):
             urgency = "low"
+            reasoning.append("Flexible timing language detected")
         elif timeline_raw:
             urgency = "high"
+            reasoning.append("Delivery date specified")
 
         quantity_for_complexity = inferred_quantity or 0
         complexity = "low"
@@ -184,10 +199,12 @@ class LeadAIService:
             keyword in notes for keyword in ("embroidery", "multiple sizes", "custom", "branding", "logo")
         ):
             complexity = "high"
+            reasoning.append("High customization or very large quantity")
         elif quantity_for_complexity >= 150 or any(
             keyword in notes for keyword in ("print", "polo", "uniform", "staff")
         ):
             complexity = "medium"
+            reasoning.append("Moderate production requirements detected")
 
         product = None
         product_patterns = [
@@ -206,7 +223,51 @@ class LeadAIService:
         if not product:
             product = "garment"
 
+        score = 35
+        if quantity_for_complexity >= 1000:
+            score += 30
+            reasoning.append("Very high quantity")
+        elif quantity_for_complexity >= 500:
+            score += 22
+            reasoning.append("High quantity")
+        elif quantity_for_complexity >= 200:
+            score += 14
+            reasoning.append("Good quantity")
+        elif quantity_for_complexity >= 100:
+            score += 8
+            reasoning.append("Meaningful order size")
+
+        if lead.get("company_name"):
+            score += 10
+            reasoning.append("Company provided")
+
+        if lead.get("timeline_date"):
+            score += 8
+            if "Delivery date specified" not in reasoning:
+                reasoning.append("Delivery date specified")
+
+        if any(keyword in notes for keyword in ("event", "conference", "campaign", "uniform", "staff")):
+            score += 6
+            reasoning.append("Business intent keywords detected")
+
+        if lead.get("email") and lead.get("phone"):
+            score += 4
+            reasoning.append("Multiple contact methods provided")
+
+        score = max(0, min(100, score))
+        classification = "COLD"
+        if score >= 75:
+            classification = "HOT"
+        elif score >= 55:
+            classification = "WARM"
+
         return {
+            "ai_score": score,
+            "classification": classification,
+            "reasoning": {
+                "summary": ", ".join(reasoning) if reasoning else "Basic heuristic analysis applied",
+                "signals": reasoning or ["Basic heuristic analysis applied"],
+            },
             "product": product,
             "quantity": inferred_quantity,
             "urgency": urgency,
@@ -233,9 +294,13 @@ class LeadAIService:
                     "role": "system",
                     "content": (
                         "You extract structured sales lead data from garment order inquiries. "
-                        "Return strict JSON with keys: product, quantity, urgency, complexity. "
+                        "Determine lead seriousness and extract data from garment order inquiries. "
+                        "Return strict JSON with keys: ai_score, classification, reasoning, product, quantity, urgency, complexity. "
+                        "classification must be one of: HOT, WARM, COLD. "
                         "Urgency must be one of: low, medium, high. "
                         "Complexity must be one of: low, medium, high. "
+                        "reasoning must be an object with keys: summary, signals. "
+                        "signals must be an array of short strings that explain the score. "
                         "If a value is missing or unclear, return null."
                     ),
                 },
@@ -277,6 +342,40 @@ class LeadAIService:
         )
         return parsed
 
+    def _normalize_score(self, value: Any) -> Optional[int]:
+        if value is None or value == "":
+            return None
+        try:
+            score = int(value)
+        except (TypeError, ValueError):
+            return None
+        return max(0, min(100, score))
+
+    def _normalize_classification(self, value: Any) -> Optional[str]:
+        normalized = _normalize_text(value)
+        if not normalized:
+            return None
+        upper = normalized.upper()
+        return upper if upper in {"HOT", "WARM", "COLD"} else None
+
+    def _normalize_reasoning(self, value: Any) -> Optional[Dict[str, Any]]:
+        if not isinstance(value, dict):
+            return None
+        summary = _normalize_text(value.get("summary"))
+        signals_raw = value.get("signals")
+        signals: list[str] = []
+        if isinstance(signals_raw, list):
+            for item in signals_raw:
+                normalized = _normalize_text(item)
+                if normalized:
+                    signals.append(normalized)
+        if not summary and not signals:
+            return None
+        return {
+            "summary": summary or ", ".join(signals),
+            "signals": signals,
+        }
+
     def _persist_lead_result(self, lead_id: str, result: Dict[str, Any]) -> None:
         with get_db_connection() as connection:
             with connection.cursor() as cursor:
@@ -284,6 +383,10 @@ class LeadAIService:
                     """
                     UPDATE leads
                     SET
+                      lead_score = %s,
+                      ai_score = %s,
+                      ai_classification = %s,
+                      ai_reasoning = %s::jsonb,
                       ai_product = %s,
                       ai_quantity = %s,
                       ai_urgency = %s,
@@ -295,6 +398,10 @@ class LeadAIService:
                     WHERE id = %s::uuid
                     """,
                     (
+                        result.get("ai_score"),
+                        result.get("ai_score"),
+                        result.get("classification"),
+                        json.dumps(result.get("reasoning") or {}),
                         result.get("product"),
                         result.get("quantity"),
                         result.get("urgency"),

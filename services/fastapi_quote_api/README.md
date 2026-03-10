@@ -42,12 +42,25 @@ set -a && source .env && set +a
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+## Redis worker
+
+Lead AI processing is queued through Redis/RQ.
+
+Start Redis, then run:
+
+```bash
+cd services/fastapi_quote_api
+source .venv/bin/activate
+python worker.py
+```
+
 ## Notes
 
 - Records are inserted into the `leads` table.
 - Uploaded files are stored in `uploads/` by default.
-- LeadAIService runs automatically when a lead is created and extracts `product`, `quantity`, `urgency`, and `complexity` using the OpenAI API.
+- LeadAIService runs automatically via Redis worker when a lead is created and extracts `product`, `quantity`, `urgency`, and `complexity`, plus `ai_score`, `classification`, and reasoning.
 - Lead AI failures do not block lead creation; they are recorded in `automation_runs`.
+- LeadAIService uses heuristic system fallback when OpenAI is disabled, missing, or fails.
 - Deal stages: `new`, `qualified`, `quoted`, `negotiation`, `won`, `lost`.
 - Automation: stage changes to `quoted` or `negotiation` auto-create follow-ups and `automation_runs` records.
 - Activity log is append-only and system-generated. It is not manually created from the admin UI.

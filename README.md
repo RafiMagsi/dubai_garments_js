@@ -36,3 +36,9 @@ Open:
 - Admin routes and admin APIs are role-protected by middleware.
 - Login credentials are fetched from the `users` table (not env credentials).
 - `db:seed:users` creates/updates one admin and one customer user from `BOOTSTRAP_*` vars in `.env.local`.
+
+## Docker
+
+Docker Compose and Docker Desktop setup is documented here:
+
+- [Docker Desktop Setup](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/docker-desktop-setup.md)

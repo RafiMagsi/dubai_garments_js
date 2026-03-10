@@ -314,7 +314,7 @@ export default function AdminLeadsPage() {
                   <div>
                     <p className="text-sm font-semibold text-[var(--color-text)]">AI Lead Processing</p>
                     <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                      Structured fields extracted automatically from the incoming message.
+                      Seriousness scoring and structured fields extracted automatically from the incoming message.
                     </p>
                   </div>
                   <span className="rounded-full border border-[var(--color-border)] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-700)]">
@@ -335,6 +335,18 @@ export default function AdminLeadsPage() {
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">AI Score</p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
+                      {selectedLead.ai_score ?? 'Pending'}
+                    </p>
+                  </div>
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Classification</p>
+                    <p className="mt-1 text-sm text-[var(--color-text)]">
+                      {selectedLead.ai_classification || 'Pending'}
+                    </p>
+                  </div>
+                  <div className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Product</p>
                     <p className="mt-1 text-sm text-[var(--color-text)]">{selectedLead.ai_product || 'Not extracted yet'}</p>
                   </div>
@@ -354,6 +366,25 @@ export default function AdminLeadsPage() {
                       {selectedLead.ai_complexity || 'Not extracted yet'}
                     </p>
                   </div>
+                </div>
+
+                <div className="mt-3 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-ink-500)]">Reasoning</p>
+                  <p className="mt-1 text-sm text-[var(--color-text)]">
+                    {selectedLead.ai_reasoning?.summary || 'Pending'}
+                  </p>
+                  {selectedLead.ai_reasoning?.signals && selectedLead.ai_reasoning.signals.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedLead.ai_reasoning.signals.map((signal) => (
+                        <span
+                          key={signal}
+                          className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface-soft)] px-3 py-1 text-[11px] text-[var(--color-ink-700)]"
+                        >
+                          {signal}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {selectedLead.ai_processed_at && (
