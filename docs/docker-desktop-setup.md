@@ -140,6 +140,18 @@ docker compose logs -f worker
 docker compose logs -f storefront
 ```
 
+Import SQL dump into Docker Postgres:
+
+```bash
+./scripts/db-import-dump.sh
+```
+
+Import a specific dump file:
+
+```bash
+./scripts/db-import-dump.sh /path/to/your_dump.sql
+```
+
 ## 8. What each service does
 
 1. `storefront`: Next.js customer/admin app

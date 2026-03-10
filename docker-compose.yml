@@ -7,8 +7,8 @@ services:
       - .env.docker.local
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dubai_garments}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_password}
+      POSTGRES_USER: ${POSTGRES_USER:-rafi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -42,7 +42,7 @@ services:
     env_file:
       - ./services/fastapi_quote_api/.env.docker.local
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:
@@ -64,7 +64,7 @@ services:
     env_file:
       - ./services/fastapi_quote_api/.env.docker.local
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:
@@ -84,7 +84,7 @@ services:
     env_file:
       - ./apps/storefront-dubai_garments/.env.docker.local
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       FASTAPI_BASE_URL: http://fastapi:8000
       NEXT_PUBLIC_API_BASE_URL: /api
       NEXT_PUBLIC_FASTAPI_BASE_URL: /api
@@ -99,7 +99,7 @@ services:
       - ./apps/storefront-dubai_garments:/app
       - storefront_node_modules:/app/node_modules
       - storefront_next_cache:/app/.next
-    command: npm run dev -- --hostname 0.0.0.0 --port 3000
+    command: sh -c "npm run prisma:generate && npm run dev -- --hostname 0.0.0.0 --port 3000"
 
 volumes:
   postgres_data:
