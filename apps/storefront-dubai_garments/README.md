@@ -1,0 +1,38 @@
+# Dubai Garments Storefront + Admin
+
+Next.js storefront and private admin panel for AI sales automation workflows.
+
+## Environment Setup
+
+```bash
+cp .env.example .env.local
+```
+
+Fill `.env.local` with your real values.  
+`.env.local` is ignored by git.
+
+## Database Setup
+
+```bash
+npm run db:migrate
+npm run db:seed
+npm run db:seed:users
+```
+
+## Run App
+
+```bash
+npm run dev
+```
+
+Open:
+
+- Storefront: `http://localhost:3000`
+- Customer login: `http://localhost:3000/customer/login`
+- Admin login: `http://localhost:3000/admin/login`
+
+## Notes
+
+- Admin routes and admin APIs are role-protected by middleware.
+- Login credentials are fetched from the `users` table (not env credentials).
+- `db:seed:users` creates/updates one admin and one customer user from `BOOTSTRAP_*` vars in `.env.local`.

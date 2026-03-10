@@ -1,0 +1,9 @@
+ALTER TABLE products
+  DROP COLUMN IF EXISTS featured,
+  DROP COLUMN IF EXISTS gallery,
+  DROP COLUMN IF EXISTS image,
+  DROP COLUMN IF EXISTS price_tiers,
+  DROP COLUMN IF EXISTS tags,
+  DROP COLUMN IF EXISTS branding_options,
+  DROP COLUMN IF EXISTS colors,
+  DROP COLUMN IF EXISTS sizes;
