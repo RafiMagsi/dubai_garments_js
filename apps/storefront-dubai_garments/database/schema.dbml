@@ -130,6 +130,7 @@ Table quote_items {
   unit_price numeric(12,2) [not null]
   discount_amount numeric(12,2) [not null, default: 0]
   line_total numeric(12,2) [not null]
+  pricing_breakdown jsonb [not null, default: "{}"]
   created_at timestamptz [not null]
   updated_at timestamptz [not null]
 }

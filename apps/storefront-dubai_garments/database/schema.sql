@@ -166,6 +166,7 @@ CREATE TABLE quote_items (
   unit_price NUMERIC(12,2) NOT NULL,
   discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
   line_total NUMERIC(12,2) NOT NULL,
+  pricing_breakdown JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (quantity > 0),

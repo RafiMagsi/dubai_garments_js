@@ -8,6 +8,7 @@ const adminNavItems = [
   { href: '/admin/dashboard', label: 'Dashboard' },
   { href: '/admin/pipeline', label: 'Pipeline' },
   { href: '/admin/deals', label: 'Deals' },
+  { href: '/admin/quotes', label: 'Quotes' },
   { href: '/admin/leads', label: 'Leads' },
   { href: '/admin/activities', label: 'Activities' },
 ];
