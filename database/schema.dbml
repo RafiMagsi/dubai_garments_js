@@ -1,0 +1,243 @@
+// Dubai Garments AI Sales Automation Platform
+// Step 1: Database Schema Design (DBML for dbdiagram.io)
+
+Table users {
+  id uuid [pk]
+  full_name text [not null]
+  email text [not null, unique]
+  password_hash text [not null]
+  role text [not null, default: 'sales_rep']
+  is_active boolean [not null, default: true]
+  last_login_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table customers {
+  id uuid [pk]
+  company_name text [not null]
+  contact_name text
+  email text
+  phone text
+  whatsapp text
+  billing_address text
+  shipping_address text
+  industry text
+  notes text
+  owner_user_id uuid
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table products {
+  id uuid [pk]
+  slug text [not null, unique]
+  name text [not null]
+  category text [not null]
+  short_description text
+  description text
+  material text
+  min_order_qty integer [not null, default: 1]
+  lead_time_days integer [not null, default: 7]
+  is_active boolean [not null, default: true]
+  created_by_user_id uuid
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table product_variants {
+  id uuid [pk]
+  product_id uuid [not null]
+  sku text [not null, unique]
+  variant_name text [not null]
+  size text
+  color text
+  unit_price numeric(12,2) [not null]
+  moq integer [not null, default: 1]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table leads {
+  id uuid [pk]
+  customer_id uuid
+  assigned_to_user_id uuid
+  source text [not null, default: 'website']
+  status text [not null, default: 'new']
+  lead_score integer
+  company_name text
+  contact_name text [not null]
+  email text
+  phone text
+  requested_qty integer
+  budget numeric(12,2)
+  timeline_date date
+  notes text
+  last_contacted_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table deals {
+  id uuid [pk]
+  lead_id uuid
+  customer_id uuid [not null]
+  owner_user_id uuid
+  title text [not null]
+  stage text [not null, default: 'new']
+  expected_value numeric(12,2) [not null, default: 0]
+  probability_pct integer [not null, default: 0]
+  expected_close_date date
+  won_at timestamptz
+  lost_reason text
+  notes text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table quotes {
+  id uuid [pk]
+  quote_number text [not null, unique]
+  customer_id uuid [not null]
+  lead_id uuid
+  deal_id uuid
+  created_by_user_id uuid
+  status text [not null, default: 'draft']
+  currency text [not null, default: 'AED']
+  subtotal numeric(12,2) [not null, default: 0]
+  tax_amount numeric(12,2) [not null, default: 0]
+  discount_amount numeric(12,2) [not null, default: 0]
+  total_amount numeric(12,2) [not null, default: 0]
+  valid_until date
+  terms text
+  notes text
+  sent_at timestamptz
+  approved_at timestamptz
+  rejected_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table quote_items {
+  id uuid [pk]
+  quote_id uuid [not null]
+  product_id uuid
+  product_variant_id uuid
+  item_name text [not null]
+  description text
+  quantity integer [not null]
+  unit_price numeric(12,2) [not null]
+  discount_amount numeric(12,2) [not null, default: 0]
+  line_total numeric(12,2) [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table communications {
+  id uuid [pk]
+  customer_id uuid
+  lead_id uuid
+  deal_id uuid
+  quote_id uuid
+  user_id uuid
+  channel text [not null]
+  direction text [not null]
+  subject text
+  message_text text
+  external_message_id text
+  sent_at timestamptz
+  delivered_at timestamptz
+  read_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table activities {
+  id uuid [pk]
+  user_id uuid
+  customer_id uuid
+  lead_id uuid
+  deal_id uuid
+  quote_id uuid
+  activity_type text [not null]
+  title text [not null]
+  details text
+  metadata jsonb [not null]
+  occurred_at timestamptz [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table automation_runs {
+  id uuid [pk]
+  workflow_name text [not null]
+  trigger_source text [not null]
+  trigger_entity_type text
+  trigger_entity_id uuid
+  status text [not null, default: 'queued']
+  request_payload jsonb [not null]
+  response_payload jsonb [not null]
+  error_message text
+  started_at timestamptz
+  finished_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table followups {
+  id uuid [pk]
+  customer_id uuid
+  lead_id uuid
+  deal_id uuid
+  quote_id uuid
+  assigned_to_user_id uuid
+  status text [not null, default: 'pending']
+  priority text [not null, default: 'medium']
+  channel text
+  subject text [not null]
+  notes text
+  due_at timestamptz [not null]
+  completed_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Ref: customers.owner_user_id > users.id
+Ref: products.created_by_user_id > users.id
+
+Ref: product_variants.product_id > products.id
+
+Ref: leads.customer_id > customers.id
+Ref: leads.assigned_to_user_id > users.id
+
+Ref: deals.lead_id > leads.id
+Ref: deals.customer_id > customers.id
+Ref: deals.owner_user_id > users.id
+
+Ref: quotes.customer_id > customers.id
+Ref: quotes.lead_id > leads.id
+Ref: quotes.deal_id > deals.id
+Ref: quotes.created_by_user_id > users.id
+
+Ref: quote_items.quote_id > quotes.id
+Ref: quote_items.product_id > products.id
+Ref: quote_items.product_variant_id > product_variants.id
+
+Ref: communications.customer_id > customers.id
+Ref: communications.lead_id > leads.id
+Ref: communications.deal_id > deals.id
+Ref: communications.quote_id > quotes.id
+Ref: communications.user_id > users.id
+
+Ref: activities.user_id > users.id
+Ref: activities.customer_id > customers.id
+Ref: activities.lead_id > leads.id
+Ref: activities.deal_id > deals.id
+Ref: activities.quote_id > quotes.id
+
+Ref: followups.customer_id > customers.id
+Ref: followups.lead_id > leads.id
+Ref: followups.deal_id > deals.id
+Ref: followups.quote_id > quotes.id
+Ref: followups.assigned_to_user_id > users.id

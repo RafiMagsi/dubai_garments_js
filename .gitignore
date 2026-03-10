@@ -1,0 +1,12 @@
+# Monorepo ignores
+.DS_Store
+.venv/
+**/node_modules/
+**/.next/
+**/dist/
+**/build/
+**/.env.local
+**/.env.*.local
+**/.python-version
+**/__pycache__/
+**/*.pyc
