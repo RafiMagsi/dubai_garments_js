@@ -12,6 +12,7 @@ const adminNavItems = [
   { href: '/admin/quotes', label: 'Quotes', hint: 'Pricing' },
   { href: '/admin/automations', label: 'Automations', hint: 'Monitoring' },
   { href: '/admin/observability', label: 'Observability', hint: 'Health & Metrics' },
+  { href: '/admin/design-system', label: 'Design System', hint: 'Tokens & UI Kit' },
   { href: '/admin/configuration', label: 'Configuration', hint: 'Scripts & Ops' },
   { href: '/admin/pipeline', label: 'Pipeline', hint: 'Stage View' },
   { href: '/admin/activities', label: 'Activities', hint: 'System Log' },
@@ -61,8 +62,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <aside className="dg-admin-sidebar">
         <div className="dg-admin-brand">
           <p className="dg-brand-subtitle">Dubai Garments</p>
-          <p className="dg-brand-title">Sales Console</p>
-          <p className="dg-admin-brand-copy">Lead, deal, and quote operations in one workspace.</p>
+          <p className="dg-brand-title">Revenue OS</p>
+          <p className="dg-admin-brand-copy">Plug-and-play AI sales operations for leads, deals, quotes, and automations.</p>
         </div>
 
         <nav className="dg-admin-nav" aria-label="Admin Navigation">
@@ -100,7 +101,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         <header className="dg-admin-topbar">
           <div>
             <p className="dg-admin-topbar-label">Admin Workspace</p>
-            <p className="dg-admin-topbar-title">Dubai Garments CRM</p>
+            <p className="dg-admin-topbar-title">Dubai Garments AI Sales Platform</p>
           </div>
           <div className="dg-admin-user-pill">
             <span className="dg-admin-user-avatar">{(adminName || 'A').slice(0, 1).toUpperCase()}</span>

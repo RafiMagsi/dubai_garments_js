@@ -6,6 +6,7 @@ import CategoryCard from '@/components/store/category-card';
 import ProductCard from '@/components/store/product-card';
 import TestimonialCard from '@/components/store/testimonial-card';
 import TrustItem from '@/components/store/trust-item';
+import { HeroSection, WorkflowTimeline } from '@/components/shared/sections';
 import { StoreSection } from '@/components/storefront/common';
 import { useFeaturedProducts } from '@/features/products';
 import {
@@ -21,21 +22,17 @@ export default function HomePage() {
   return (
     <StorefrontShell>
       <main className="dg-main">
-        <section className="dg-section">
-          <div className="dg-container dg-hero-grid">
-            <div className="dg-card dg-hero-card">
-              <span className="dg-badge">B2B Custom Garments</span>
-              <h1 className="dg-hero-title">Order Branded Apparel in Bulk with Faster Quotations</h1>
-              <p className="dg-section-copy">
-                Browse production-ready garments, submit your quantity and branding requirements, and get a clear quote with timeline,
-                pricing, and follow-up support.
-              </p>
-              <div className="dg-hero-actions">
-                <Link href="/quote" className="dg-btn-primary">Start Quote Request</Link>
-                <Link href="/products" className="dg-btn-secondary">Browse Catalog</Link>
-              </div>
-            </div>
-
+        <HeroSection
+          badge="B2B Custom Garments"
+          title="Order Branded Apparel in Bulk with Faster Quotations"
+          subtitle="Browse production-ready garments, submit your quantity and branding requirements, and get a clear quote with timeline, pricing, and follow-up support."
+          actions={
+            <>
+              <Link href="/quote" className="dg-btn-primary">Start Quote Request</Link>
+              <Link href="/products" className="dg-btn-secondary">Browse Catalog</Link>
+            </>
+          }
+          aside={
             <div className="dg-card dg-quick-card">
               <p className="dg-eyebrow">Quick Request</p>
               <h2 className="dg-title-md">Get Quote in Minutes</h2>
@@ -46,8 +43,8 @@ export default function HomePage() {
               </div>
               <Link href="/quote" className="dg-btn-primary dg-btn-block">Submit Bulk Quote</Link>
             </div>
-          </div>
-        </section>
+          }
+        />
 
         <StoreSection
           title="Shop by category"
@@ -72,14 +69,10 @@ export default function HomePage() {
 
         <StoreSection>
             <h2 className="dg-section-title">How bulk ordering works</h2>
-            <div className="dg-process-grid">
-              {homeProcess.map((step, index) => (
-                <div key={step.title} className="dg-card dg-category-card">
-                  <h3 className="dg-title-sm">{index + 1}. {step.title}</h3>
-                  <p className="dg-muted-sm">{step.description}</p>
-                </div>
-              ))}
-            </div>
+            <WorkflowTimeline
+              className="dg-process-grid"
+              steps={homeProcess.map((step) => ({ title: step.title, description: step.description }))}
+            />
         </StoreSection>
 
         <StoreSection containerClassName="dg-container dg-two-col-grid">

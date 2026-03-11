@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
+import { FeatureGrid, MetricStrip } from '@/components/shared/sections';
 import { useDeals, usePipeline } from '@/features/admin/deals';
 import { useLeads } from '@/features/admin/leads';
 import { useQuotes } from '@/features/admin/quotes';
@@ -85,67 +86,56 @@ export default function AdminDashboardPage() {
           }
         />
 
-        <div className="dg-kpi-grid">
-          <article className="dg-card dg-kpi-card">
-            <p className="dg-kpi-label">Total Leads</p>
-            <p className="dg-kpi-value">{isLoading ? '...' : totalLeads}</p>
-            <p className="dg-kpi-meta">
-              {isLoading ? '...' : `${hotLeads} hot leads (${hotLeadRate}%)`}
-            </p>
-          </article>
-          <article className="dg-card dg-kpi-card">
-            <p className="dg-kpi-label">Total Deals</p>
-            <p className="dg-kpi-value">{isLoading ? '...' : totalDeals}</p>
-            <p className="dg-kpi-meta">{isLoading ? '...' : `Win rate ${winRate}%`}</p>
-          </article>
-          <article className="dg-card dg-kpi-card">
-            <p className="dg-kpi-label">Total Quotes</p>
-            <p className="dg-kpi-value">{isLoading ? '...' : totalQuotes}</p>
-            <p className="dg-kpi-meta">
-              {isLoading ? '...' : `${sentQuotes} sent (${quoteSendRate}%)`}
-            </p>
-          </article>
-          <article className="dg-card dg-kpi-card">
-            <p className="dg-kpi-label">Team Users</p>
-            <p className="dg-kpi-value">{isLoading ? '...' : teamUsers}</p>
-            <p className="dg-kpi-meta">Admin and sales accounts</p>
-          </article>
-        </div>
+        <MetricStrip
+          items={[
+            {
+              label: 'Total Leads',
+              value: isLoading ? '...' : totalLeads,
+              meta: isLoading ? '...' : `${hotLeads} hot leads (${hotLeadRate}%)`,
+            },
+            {
+              label: 'Total Deals',
+              value: isLoading ? '...' : totalDeals,
+              meta: isLoading ? '...' : `Win rate ${winRate}%`,
+            },
+            {
+              label: 'Total Quotes',
+              value: isLoading ? '...' : totalQuotes,
+              meta: isLoading ? '...' : `${sentQuotes} sent (${quoteSendRate}%)`,
+            },
+            {
+              label: 'Team Users',
+              value: isLoading ? '...' : teamUsers,
+              meta: 'Admin and sales accounts',
+            },
+          ]}
+        />
       </section>
 
       <section className="dg-admin-page">
-        <div className="dg-three-col-grid">
-          <article className="dg-card dg-chart-card">
-            <p className="dg-kpi-label">Sales Module</p>
-            <h2 className="dg-title-sm mt-2">Lead List</h2>
-            <p className="dg-muted-sm">Track new and qualified opportunities with quick drill-down.</p>
-            <div className="mt-3">
-              <Link href="/admin/leads" className="dg-btn-secondary">
-                Open Lead List
-              </Link>
-            </div>
-          </article>
-          <article className="dg-card dg-chart-card">
-            <p className="dg-kpi-label">Sales Module</p>
-            <h2 className="dg-title-sm mt-2">Deal Pipeline</h2>
-            <p className="dg-muted-sm">Monitor stage movement from New to Won/Lost.</p>
-            <div className="mt-3">
-              <Link href="/admin/deals" className="dg-btn-secondary">
-                Open Deal Pipeline
-              </Link>
-            </div>
-          </article>
-          <article className="dg-card dg-chart-card">
-            <p className="dg-kpi-label">Sales Module</p>
-            <h2 className="dg-title-sm mt-2">Quote Management</h2>
-            <p className="dg-muted-sm">Manage draft/sent/approved quotes with full lifecycle actions.</p>
-            <div className="mt-3">
-              <Link href="/admin/quotes" className="dg-btn-secondary">
-                Open Quote Management
-              </Link>
-            </div>
-          </article>
-        </div>
+        <FeatureGrid
+          columns={3}
+          items={[
+            {
+              eyebrow: 'Sales Module',
+              title: 'Lead List',
+              description: 'Track new and qualified opportunities with quick drill-down.',
+              action: <Link href="/admin/leads" className="dg-btn-secondary">Open Lead List</Link>,
+            },
+            {
+              eyebrow: 'Sales Module',
+              title: 'Deal Pipeline',
+              description: 'Monitor stage movement from New to Won/Lost.',
+              action: <Link href="/admin/deals" className="dg-btn-secondary">Open Deal Pipeline</Link>,
+            },
+            {
+              eyebrow: 'Sales Module',
+              title: 'Quote Management',
+              description: 'Manage draft/sent/approved quotes with full lifecycle actions.',
+              action: <Link href="/admin/quotes" className="dg-btn-secondary">Open Quote Management</Link>,
+            },
+          ]}
+        />
       </section>
 
       <section className="dg-admin-page">

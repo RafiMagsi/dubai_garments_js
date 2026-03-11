@@ -29,9 +29,9 @@ export default function Header() {
         <div className="dg-container">
           <div className="dg-card dg-header-inner">
             <div>
-              <p className="dg-brand-subtitle">Dubai Garments</p>
+              <p className="dg-brand-subtitle">Dubai Garments Platform</p>
               <Link href="/" className="dg-brand-title">
-                Bulk Garment Store
+                AI Sales Storefront
               </Link>
             </div>
 
@@ -46,7 +46,7 @@ export default function Header() {
             </form>
 
             <div className="dg-header-actions">
-              <Link href="/customer/dashboard" className="dg-btn-secondary">Customer Portal</Link>
+              <Link href="/customer/dashboard" className="dg-btn-secondary">Client Portal</Link>
               <Link href="/quote" className="dg-btn-primary">Request Bulk Quote</Link>
             </div>
           </div>
