@@ -13,6 +13,8 @@
     --color-brand-100: #dbe7ff;
     --color-brand-500: #1f6fff;
     --color-brand-600: #1554d6;
+    --color-brand-550: #2456f5;
+    --color-brand-700: #1d4ed8;
     --color-accent-500: #06b6d4;
     --color-ink-900: #0b1220;
     --color-ink-700: #27364a;
@@ -26,7 +28,8 @@
 
 @layer base {
     body {
-        color: var(--color-ink-900);
+        color: var(--dg-text-main);
+        font-family: var(--dg-font-family);
         background:
             radial-gradient(circle at 0% 0%, #e0ecff 0%, rgba(224, 236, 255, 0) 34%),
             radial-gradient(circle at 100% 0%, #dff7ff 0%, rgba(223, 247, 255, 0) 30%),
@@ -44,11 +47,13 @@
     .dg-card {
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.92)),
-            radial-gradient(circle at 100% 0%, rgba(31, 111, 255, 0.06), transparent 56%);
+            radial-gradient(circle at 100% 0%, rgba(var(--brand-rgb), 0.06), transparent 56%);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-card);
         box-shadow: var(--shadow-card);
         backdrop-filter: blur(6px);
+        font-family: var(--dg-font-card);
+        color: var(--dg-card-text);
         transition:
             transform 180ms var(--ease-standard, cubic-bezier(0.2, 0.8, 0.2, 1)),
             box-shadow 180ms var(--ease-standard, cubic-bezier(0.2, 0.8, 0.2, 1)),
@@ -69,16 +74,17 @@
         padding: 0.72rem 1.2rem;
         font-size: 0.9rem;
         font-weight: 700;
-        color: #fff;
-        background: linear-gradient(135deg, var(--color-brand-500), #2456f5 58%, #1d4ed8);
+        color: var(--dg-button-primary-text);
+        background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-mid) 58%, var(--color-brand-deep));
         border: 1px solid rgba(20, 66, 186, 0.25);
-        box-shadow: 0 10px 22px -14px rgba(31, 111, 255, 0.75);
+        box-shadow: 0 10px 22px -14px rgba(var(--brand-rgb), 0.75);
         transition: transform 140ms ease, box-shadow 140ms ease;
+        font-family: var(--dg-font-button);
     }
 
     .dg-btn-primary:hover {
         transform: translateY(-1px);
-        box-shadow: 0 14px 26px -14px rgba(31, 111, 255, 0.88);
+        box-shadow: 0 14px 26px -14px rgba(var(--brand-rgb), 0.88);
     }
 
     .dg-btn-secondary {
@@ -89,15 +95,16 @@
         padding: 0.7rem 1.15rem;
         font-size: 0.9rem;
         font-weight: 700;
-        color: var(--color-ink-900);
-        background: rgba(255, 255, 255, 0.92);
+        color: var(--dg-button-secondary-text);
+        background: color-mix(in srgb, var(--dg-button-secondary-bg) 92%, white);
         border: 1px solid var(--color-border);
         transition: border-color 120ms ease, background-color 120ms ease;
+        font-family: var(--dg-font-button);
     }
 
     .dg-btn-secondary:hover {
         border-color: #b8c8dd;
-        background-color: #fff;
+        background-color: color-mix(in srgb, var(--dg-button-secondary-bg) 96%, white);
     }
 
     .dg-input {
@@ -113,18 +120,18 @@
     .dg-input:focus {
         outline: none;
         border-color: var(--color-brand-500);
-        box-shadow: 0 0 0 3px rgba(31, 111, 255, 0.14);
+        box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.14);
     }
 
     .dg-nav-link {
         font-size: 0.9rem;
-        color: #334155;
+        color: var(--dg-header-subtext);
         font-weight: 500;
         transition: color 120ms ease;
     }
 
     .dg-nav-link:hover {
-        color: #0f172a;
+        color: var(--dg-header-text);
     }
 
     .dg-nav-link.is-active {
@@ -152,8 +159,9 @@
 
     .dg-section-copy {
         font-size: 1rem;
-        color: var(--color-ink-700);
+        color: var(--dg-text-muted);
         line-height: 1.6;
+        font-family: var(--dg-font-text);
     }
 
     .dg-product-card {
@@ -166,12 +174,12 @@
 
     .dg-product-image {
         height: 160px;
-        background: linear-gradient(135deg, #dbeafe 0%, #e2e8f0 100%);
+        background: linear-gradient(135deg, var(--color-brand-100) 0%, #e2e8f0 100%);
         border-bottom: 1px solid #e2e8f0;
     }
 
     .dg-topbar {
-        background: linear-gradient(90deg, #0d1a32, #102847);
+        background: linear-gradient(90deg, var(--topbar-from), var(--topbar-to));
         color: #d6e4f8;
         font-size: 0.75rem;
         padding: 0.5rem 0;
@@ -202,15 +210,17 @@
     .dg-brand-subtitle {
         font-size: 0.875rem;
         font-weight: 600;
-        color: #64748b;
+        color: var(--dg-header-subtext);
+        font-family: var(--dg-font-header);
     }
 
     .dg-brand-title {
         font-size: 1.25rem;
         line-height: 1.3;
         font-weight: 700;
-        color: #0f172a;
+        color: var(--dg-header-text);
         letter-spacing: -0.02em;
+        font-family: var(--dg-font-header);
     }
 
     .dg-search-wrap {
@@ -348,7 +358,7 @@
     .dg-link-primary {
         font-size: 0.875rem;
         font-weight: 600;
-        color: #1d4ed8;
+        color: var(--color-brand-600);
     }
 
     .dg-link-muted {
@@ -436,8 +446,8 @@
     }
 
     .dg-chip-active {
-        background-color: #dbeafe;
-        color: #1e40af;
+        background-color: var(--color-brand-100);
+        color: var(--color-brand-600);
     }
 
     .dg-filter-card {
@@ -531,7 +541,7 @@
     .dg-select:focus {
         outline: none;
         border-color: var(--color-brand-500);
-        box-shadow: 0 0 0 3px rgba(43, 92, 255, 0.12);
+        box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.12);
     }
 
     .dg-textarea {
@@ -548,7 +558,7 @@
     .dg-textarea:focus {
         outline: none;
         border-color: var(--color-brand-500);
-        box-shadow: 0 0 0 3px rgba(43, 92, 255, 0.12);
+        box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.12);
     }
 
     .dg-workflow-timeline {
@@ -570,7 +580,7 @@
         width: 180px;
         height: 180px;
         border-radius: 9999px;
-        background: radial-gradient(circle, rgba(31, 111, 255, 0.08), transparent 65%);
+        background: radial-gradient(circle, rgba(var(--brand-rgb), 0.08), transparent 65%);
         pointer-events: none;
     }
 
@@ -732,13 +742,13 @@
     }
 
     .dg-status-current {
-        background-color: #eff6ff;
-        color: #1d4ed8;
-        border-color: #bfdbfe;
+        background-color: var(--color-brand-50);
+        color: var(--color-brand-600);
+        border-color: var(--color-brand-100);
     }
 
     .dg-status-current .dg-status-dot {
-        background-color: #3b82f6;
+        background-color: var(--color-brand-500);
     }
 
     .dg-status-upcoming {
@@ -781,8 +791,9 @@
     .dg-footer {
         margin-top: 3rem;
         border-top: 1px solid #e2e8f0;
-        background-color: #fff;
+        background-color: var(--dg-footer-bg);
         padding: 2rem 0;
+        font-family: var(--dg-font-footer);
     }
 
     .dg-footer-grid {
@@ -801,7 +812,7 @@
         display: grid;
         gap: 0.25rem;
         font-size: 0.875rem;
-        color: #475569;
+        color: var(--dg-footer-text);
     }
 
     .dg-admin-head {
@@ -855,7 +866,7 @@
         padding: 1rem;
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9)),
-            radial-gradient(circle at 20% 0%, rgba(31, 111, 255, 0.14), transparent 60%);
+            radial-gradient(circle at 20% 0%, rgba(var(--brand-rgb), 0.14), transparent 60%);
         border: 1px solid var(--color-border);
     }
 
@@ -925,12 +936,12 @@
     }
 
     .dg-progress::-webkit-progress-value {
-        background: linear-gradient(90deg, #3b82f6, #2563eb);
+        background: linear-gradient(90deg, var(--color-brand-500), var(--color-brand-600));
         border-radius: 9999px;
     }
 
     .dg-progress::-moz-progress-bar {
-        background: linear-gradient(90deg, #3b82f6, #2563eb);
+        background: linear-gradient(90deg, var(--color-brand-500), var(--color-brand-600));
         border-radius: 9999px;
     }
 
@@ -1017,8 +1028,8 @@
     }
 
     .dg-status-pill-NEW {
-        background-color: #eff6ff;
-        color: #1d4ed8;
+        background-color: var(--color-brand-50);
+        color: var(--color-brand-600);
     }
 
     .dg-status-pill-QUALIFIED,
@@ -1082,7 +1093,7 @@
     .dg-admin-sidebar {
         border-right: 1px solid #d5e1f1;
         background:
-            radial-gradient(circle at 20% 0%, rgba(31, 111, 255, 0.14), transparent 46%),
+            radial-gradient(circle at 20% 0%, rgba(var(--brand-rgb), 0.14), transparent 46%),
             linear-gradient(180deg, #f9fbff, #ffffff);
         padding: 1.25rem;
         display: flex;
@@ -1099,7 +1110,7 @@
         padding: 0.9rem;
         background:
             linear-gradient(180deg, #eff5ff, #ffffff),
-            radial-gradient(circle at 100% 0%, rgba(31, 111, 255, 0.13), transparent 58%);
+            radial-gradient(circle at 100% 0%, rgba(var(--brand-rgb), 0.13), transparent 58%);
     }
 
     .dg-admin-brand-copy {
@@ -1149,11 +1160,11 @@
     }
 
     .dg-admin-link.is-active span {
-        color: #1d4ed8;
+        color: var(--color-brand-600);
     }
 
     .dg-admin-link.is-active small {
-        color: #1e40af;
+        color: var(--color-brand-600);
     }
 
     .dg-admin-footer {
@@ -1174,7 +1185,7 @@
         border-radius: 1rem;
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9)),
-            radial-gradient(circle at 100% 0%, rgba(31, 111, 255, 0.12), transparent 55%);
+            radial-gradient(circle at 100% 0%, rgba(var(--brand-rgb), 0.12), transparent 55%);
         padding: 0.85rem 1rem;
         display: flex;
         justify-content: space-between;
@@ -1226,7 +1237,7 @@
         width: 1.7rem;
         height: 1.7rem;
         border-radius: 9999px;
-        background: linear-gradient(140deg, #1f6fff, #1554d6);
+        background: linear-gradient(140deg, var(--color-brand-500), var(--color-brand-600));
         color: #fff;
         display: inline-flex;
         align-items: center;
@@ -1283,7 +1294,7 @@
         padding: 1.25rem;
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(255, 255, 255, 0.9)),
-            radial-gradient(circle at 100% 0%, rgba(59, 130, 246, 0.12), transparent 58%);
+            radial-gradient(circle at 100% 0%, rgba(var(--brand-rgb), 0.12), transparent 58%);
     }
 
     @media (min-width: 640px) {
@@ -1400,6 +1411,28 @@
   --color-brand: var(--color-brand-500);
   --color-brand-strong: var(--color-brand-600);
   --color-brand-soft: var(--color-brand-50);
+  --color-brand-mid: var(--color-brand-550);
+  --color-brand-deep: var(--color-brand-700);
+  --brand-rgb: 31, 111, 255;
+  --topbar-from: #0d1a32;
+  --topbar-to: #102847;
+  --dg-header-text: var(--color-ink-900);
+  --dg-header-subtext: var(--color-ink-500);
+  --dg-footer-bg: #ffffff;
+  --dg-footer-text: #475569;
+  --dg-card-bg: #ffffff;
+  --dg-card-text: var(--color-ink-700);
+  --dg-button-primary-text: #ffffff;
+  --dg-button-secondary-bg: #ffffff;
+  --dg-button-secondary-text: var(--color-ink-900);
+  --dg-text-main: var(--color-ink-900);
+  --dg-text-muted: var(--color-ink-500);
+  --dg-font-family: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --dg-font-header: var(--dg-font-family);
+  --dg-font-footer: var(--dg-font-family);
+  --dg-font-card: var(--dg-font-family);
+  --dg-font-button: var(--dg-font-family);
+  --dg-font-text: var(--dg-font-family);
   --radius-sm: 0.65rem;
   --radius-pill: 9999px;
   --shadow-soft: 0 6px 20px -18px rgba(15, 23, 42, 0.35);
@@ -1407,13 +1440,52 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+html[data-dg-theme='sunset'] {
+  --color-brand-50: #fff4ea;
+  --color-brand-100: #ffe4cf;
+  --color-brand-500: #c2410c;
+  --color-brand-600: #9a3412;
+  --color-brand-550: #b45309;
+  --color-brand-700: #7c2d12;
+  --color-accent-500: #ea580c;
+  --color-ink-900: #1b140d;
+  --color-ink-700: #3b2c1d;
+  --color-ink-500: #735842;
+  --color-surface-soft: #fff7ef;
+  --color-border: #efd7c2;
+  --shadow-card: 0 18px 38px -22px rgba(80, 36, 8, 0.38);
+  --brand-rgb: 194, 65, 12;
+  --topbar-from: #2f180a;
+  --topbar-to: #4a1f0f;
+}
+
+html[data-dg-theme='graphite'] {
+  --color-brand-50: #ecf9f8;
+  --color-brand-100: #d7f1ef;
+  --color-brand-500: #0f766e;
+  --color-brand-600: #0f5a55;
+  --color-brand-550: #0f645f;
+  --color-brand-700: #134e4a;
+  --color-accent-500: #14b8a6;
+  --color-ink-900: #0e1718;
+  --color-ink-700: #244042;
+  --color-ink-500: #4c7074;
+  --color-surface-soft: #eff7f6;
+  --color-border: #c8e1df;
+  --shadow-card: 0 18px 38px -22px rgba(11, 44, 43, 0.34);
+  --brand-rgb: 15, 118, 110;
+  --topbar-from: #102222;
+  --topbar-to: #133132;
+}
+
 /* UI primitives */
 .ui-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  background: var(--color-bg-elevated);
+  background: var(--dg-card-bg);
   box-shadow: var(--shadow-card);
   padding: 1.25rem;
+  color: var(--dg-card-text);
 }
 
 .ui-card-title {
@@ -1428,7 +1500,7 @@
   margin: 0.5rem 0 0;
   font-size: 0.94rem;
   line-height: 1.55;
-  color: var(--color-text-muted);
+  color: var(--dg-text-muted);
 }
 
 .ui-btn {
@@ -1439,6 +1511,7 @@
   border: 1px solid transparent;
   font-weight: 600;
   transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+  font-family: var(--dg-font-button);
 }
 
 .ui-btn:hover {
@@ -1447,7 +1520,7 @@
 
 .ui-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(43, 92, 255, 0.2);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.2);
 }
 
 .ui-btn:disabled {
@@ -1481,9 +1554,9 @@
 }
 
 .ui-btn-secondary {
-  background: #fff;
+  background: var(--dg-button-secondary-bg);
   border-color: #cbd5e1;
-  color: var(--color-text);
+  color: var(--dg-button-secondary-text);
 }
 
 .ui-btn-secondary:hover {
@@ -1517,11 +1590,12 @@
   font-size: 0.9rem;
   outline: none;
   transition: border-color 120ms ease, box-shadow 120ms ease;
+  font-family: var(--dg-font-text);
 }
 
 .ui-field:focus {
   border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px rgba(43, 92, 255, 0.12);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.12);
 }
 
 .ui-textarea {
@@ -1576,6 +1650,7 @@
   border-top: 1px solid var(--color-border);
   font-size: 0.9rem;
   color: var(--color-text);
+  font-family: var(--dg-font-text);
 }
 
 @keyframes dg-fade-up {

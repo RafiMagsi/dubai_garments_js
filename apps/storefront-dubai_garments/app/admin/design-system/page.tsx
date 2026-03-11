@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
+import ThemeSelector from '@/components/design/theme-selector';
 import { Button, Card, CardText, CardTitle, DataTable, FieldLabel, TableCell, TableHeadCell, TableHeadRow, TableRow, TextAreaField, TextField } from '@/components/ui';
 import { FeatureGrid, HeroSection, MetricStrip, WorkflowTimeline } from '@/components/shared/sections';
 import { tokenGroups } from '@/lib/design/design-tokens';
@@ -77,6 +78,10 @@ export default function AdminDesignSystemPage() {
             </div>
           }
         />
+      </section>
+
+      <section className="dg-admin-page">
+        <ThemeSelector />
       </section>
 
       <section className="dg-admin-page">
