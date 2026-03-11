@@ -2,6 +2,10 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  completeAdminConfigCommandRun,
+  createAdminConfigCommandRun,
+} from '@/lib/admin/config-audit';
 import { requireAdminSession } from '@/lib/auth/require-admin';
 import { getRuntimeSetting } from '@/lib/config/runtime-settings';
 
@@ -133,6 +137,7 @@ export async function POST(
   if (sessionOrResponse instanceof NextResponse) {
     return sessionOrResponse;
   }
+  const session = sessionOrResponse;
 
   const { scriptKey } = await context.params;
   const body = (await request.json().catch(() => ({}))) as { input?: Record<string, unknown> };
@@ -140,8 +145,22 @@ export async function POST(
 
   try {
     if (scriptKey === 'scheduler_followup_sweep') {
+      const runId = await createAdminConfigCommandRun({
+        userId: session.sub,
+        userEmail: session.email,
+        executionType: 'script',
+        commandKey: scriptKey,
+        commandLabel: '/api/v1/automation/scheduler/followups/run',
+        inputPayload: input,
+      });
       const limit = Number(input.limit || 100);
       const result = await runFastApiPost('/api/v1/automation/scheduler/followups/run', { limit });
+      await completeAdminConfigCommandRun({
+        runId,
+        ok: result.ok,
+        output: JSON.stringify(result.payload),
+        errorMessage: result.ok ? undefined : JSON.stringify(result.payload),
+      });
       return NextResponse.json(
         {
           ok: result.ok,
@@ -155,8 +174,22 @@ export async function POST(
     }
 
     if (scriptKey === 'scheduler_digest_report') {
+      const runId = await createAdminConfigCommandRun({
+        userId: session.sub,
+        userEmail: session.email,
+        executionType: 'script',
+        commandKey: scriptKey,
+        commandLabel: '/api/v1/automation/scheduler/digest/run',
+        inputPayload: input,
+      });
       const recipient_email = String(input.recipient_email || '').trim() || null;
       const result = await runFastApiPost('/api/v1/automation/scheduler/digest/run', { recipient_email });
+      await completeAdminConfigCommandRun({
+        runId,
+        ok: result.ok,
+        output: JSON.stringify(result.payload),
+        errorMessage: result.ok ? undefined : JSON.stringify(result.payload),
+      });
       return NextResponse.json(
         {
           ok: result.ok,
@@ -170,11 +203,25 @@ export async function POST(
     }
 
     if (scriptKey === 'scheduler_cold_lead_detection') {
+      const runId = await createAdminConfigCommandRun({
+        userId: session.sub,
+        userEmail: session.email,
+        executionType: 'script',
+        commandKey: scriptKey,
+        commandLabel: '/api/v1/automation/scheduler/cold-leads/run',
+        inputPayload: input,
+      });
       const threshold_days = Number(input.threshold_days || 10);
       const limit = Number(input.limit || 200);
       const result = await runFastApiPost('/api/v1/automation/scheduler/cold-leads/run', {
         threshold_days,
         limit,
+      });
+      await completeAdminConfigCommandRun({
+        runId,
+        ok: result.ok,
+        output: JSON.stringify(result.payload),
+        errorMessage: result.ok ? undefined : JSON.stringify(result.payload),
       });
       return NextResponse.json(
         {
@@ -189,10 +236,24 @@ export async function POST(
     }
 
     if (scriptKey === 'demo_data_seed') {
+      const runId = await createAdminConfigCommandRun({
+        userId: session.sub,
+        userEmail: session.email,
+        executionType: 'script',
+        commandKey: scriptKey,
+        commandLabel: '/api/v1/admin/config/demo-data/seed',
+        inputPayload: input,
+      });
       const leads = Number(input.leads || 40);
       const deals = Number(input.deals || 28);
       const quotes = Number(input.quotes || 22);
       const result = await runFastApiPost('/api/v1/admin/config/demo-data/seed', { leads, deals, quotes });
+      await completeAdminConfigCommandRun({
+        runId,
+        ok: result.ok,
+        output: JSON.stringify(result.payload),
+        errorMessage: result.ok ? undefined : JSON.stringify(result.payload),
+      });
       return NextResponse.json(
         {
           ok: result.ok,
@@ -206,7 +267,21 @@ export async function POST(
     }
 
     if (scriptKey === 'retry_failed_automations') {
+      const runId = await createAdminConfigCommandRun({
+        userId: session.sub,
+        userEmail: session.email,
+        executionType: 'script',
+        commandKey: scriptKey,
+        commandLabel: 'retry_failed_automations',
+        inputPayload: input,
+      });
       const result = await runRetryFailedAutomations();
+      await completeAdminConfigCommandRun({
+        runId,
+        ok: result.ok,
+        output: JSON.stringify(result.result || {}),
+        errorMessage: result.ok ? undefined : result.message,
+      });
       return NextResponse.json(
         {
           ok: result.ok,
@@ -234,8 +309,23 @@ export async function POST(
           : scriptKey === 'db_seed_products'
             ? ['run', 'db:seed']
             : ['run', 'db:seed:users'];
+      const commandLabel = `npm ${args.join(' ')}`;
+      const runId = await createAdminConfigCommandRun({
+        userId: session.sub,
+        userEmail: session.email,
+        executionType: 'script',
+        commandKey: scriptKey,
+        commandLabel,
+        inputPayload: input,
+      });
       const result = await runCommand('npm', args, appDir);
       const ok = result.code === 0;
+      await completeAdminConfigCommandRun({
+        runId,
+        ok,
+        output: result.output,
+        errorMessage: ok ? undefined : result.output,
+      });
       return NextResponse.json(
         {
           ok,

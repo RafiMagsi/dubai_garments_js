@@ -83,3 +83,24 @@ export interface SaveConfigEnvResponse {
   requiresRestart: boolean;
   savedAt: string;
 }
+
+export interface ConfigExecutionAuditItem {
+  id: string;
+  user_id?: string | null;
+  user_email?: string | null;
+  execution_type: 'script' | 'terminal' | string;
+  command_key: string;
+  command_label: string;
+  input_payload: Record<string, unknown>;
+  status: 'running' | 'success' | 'failed' | string;
+  output_log?: string | null;
+  error_message?: string | null;
+  started_at: string;
+  finished_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConfigurationAuditResponse {
+  items: ConfigExecutionAuditItem[];
+}

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  getConfigurationAudit,
   getConfigurationEnv,
   getConfigurationScripts,
   saveConfigurationEnv,
@@ -50,5 +51,14 @@ export function useSaveConfigurationEnv() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-configuration-env'] });
     },
+  });
+}
+
+export function useConfigurationAudit(limit = 50) {
+  return useQuery({
+    queryKey: ['admin-configuration-audit', limit],
+    queryFn: () => getConfigurationAudit(limit),
+    refetchInterval: 5000,
+    staleTime: 0,
   });
 }

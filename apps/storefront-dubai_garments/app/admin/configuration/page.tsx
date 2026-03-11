@@ -1,10 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import AdminShell from '@/components/admin/admin-shell';
 import {
   useConfigurationEnv,
+  useConfigurationAudit,
   useConfigurationScripts,
   useRunConfigurationScript,
   useSaveConfigurationEnv,
@@ -46,10 +48,12 @@ export default function AdminConfigurationPage() {
   const envQuery = useConfigurationEnv();
   const saveEnvMutation = useSaveConfigurationEnv();
   const scriptsQuery = useConfigurationScripts();
+  const auditQuery = useConfigurationAudit(10);
   const runMutation = useRunConfigurationScript();
 
   const scripts = scriptsQuery.data?.items ?? [];
   const envItems = envQuery.data?.items ?? [];
+  const auditItems = auditQuery.data?.items ?? [];
   const [inputsByScript, setInputsByScript] = useState<Record<string, Record<string, string>>>({});
   const [lastResultByScript, setLastResultByScript] = useState<Record<string, string>>({});
   const [envDraft, setEnvDraft] = useState<Record<string, string>>({});
@@ -59,6 +63,21 @@ export default function AdminConfigurationPage() {
   const [allowedCommands, setAllowedCommands] = useState<string[]>([]);
   const [terminalCommand, setTerminalCommand] = useState('npm run db:tables');
   const [terminalMessage, setTerminalMessage] = useState('');
+  const [auditOutputModal, setAuditOutputModal] = useState<{
+    open: boolean;
+    command: string;
+    status: string;
+    output: string;
+    input: string;
+    executedAt: string;
+  }>({
+    open: false,
+    command: '',
+    status: '',
+    output: '',
+    input: '',
+    executedAt: '',
+  });
   const [runLogModal, setRunLogModal] = useState<{
     open: boolean;
     scriptName: string;
@@ -577,6 +596,150 @@ export default function AdminConfigurationPage() {
           </div>
         )}
       </section>
+      <section className="dg-admin-page">
+        <article className="dg-card dg-panel">
+          <div className="dg-admin-head">
+            <h2 className="dg-title-sm">Execution Audit</h2>
+            <div className="flex items-center gap-2">
+              <span className="dg-badge">{auditItems.length} recent runs</span>
+              <Link href="/admin/configuration/audit" className="dg-btn-secondary">
+                View All
+              </Link>
+            </div>
+          </div>
+          <p className="dg-muted-sm mb-3">
+            Recent script and terminal executions from admin configuration.
+          </p>
+          {auditQuery.isLoading && <p className="dg-muted-sm">Loading execution audit...</p>}
+          {auditQuery.isError && (
+            <p className="dg-alert-error">
+              {auditQuery.error instanceof Error
+                ? auditQuery.error.message
+                : 'Failed to load execution audit records.'}
+            </p>
+          )}
+          {!auditQuery.isLoading && !auditQuery.isError && (
+            <div className="dg-table-wrap">
+              <table className="dg-table">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Command</th>
+                    <th>Status</th>
+                    <th>Input</th>
+                    <th>Output</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center">
+                        No audit records yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditItems.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <p className="dg-list-title">{formatDate(item.started_at)}</p>
+                          <p className="dg-list-meta">Finished: {formatDate(item.finished_at)}</p>
+                        </td>
+                        <td>
+                          <p className="dg-list-title">{item.user_email || 'Unknown user'}</p>
+                          <p className="dg-list-meta">{item.user_id || '-'}</p>
+                        </td>
+                        <td>{titleCase(item.execution_type || 'unknown')}</td>
+                        <td>
+                          <p className="dg-list-title">{item.command_label || item.command_key}</p>
+                          <p className="dg-list-meta">{item.command_key}</p>
+                        </td>
+                        <td>
+                          <span className={statusBadgeClass(item.status)}>{titleCase(item.status)}</span>
+                        </td>
+                        <td className="max-w-72">
+                          <pre className="whitespace-pre-wrap break-words text-xs text-slate-600">
+                            {Object.keys(item.input_payload || {}).length > 0
+                              ? JSON.stringify(item.input_payload, null, 2)
+                              : '-'}
+                          </pre>
+                        </td>
+                        <td>
+                          {item.error_message || item.output_log ? (
+                            <button
+                              type="button"
+                              className="dg-btn-secondary"
+                              onClick={() =>
+                                setAuditOutputModal({
+                                  open: true,
+                                  command: item.command_label || item.command_key,
+                                  status: item.status,
+                                  output: item.error_message || item.output_log || '-',
+                                  input:
+                                    Object.keys(item.input_payload || {}).length > 0
+                                      ? JSON.stringify(item.input_payload, null, 2)
+                                      : '-',
+                                  executedAt: item.started_at,
+                                })
+                              }
+                            >
+                              View Output
+                            </button>
+                          ) : (
+                            <span className="dg-list-meta">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </article>
+      </section>
+      {auditOutputModal.open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
+          <div className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-600">Execution Output</p>
+                <h3 className="text-lg font-bold text-slate-900">{auditOutputModal.command}</h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  Executed: {formatDate(auditOutputModal.executedAt)}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={statusBadgeClass(auditOutputModal.status)}>
+                  {titleCase(auditOutputModal.status || 'unknown')}
+                </span>
+                <button
+                  type="button"
+                  className="dg-btn-secondary"
+                  onClick={() => setAuditOutputModal((prev) => ({ ...prev, open: false }))}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Input</p>
+                <pre className="max-h-[50vh] overflow-auto rounded-xl bg-slate-100 p-3 text-xs text-slate-700">
+                  {auditOutputModal.input}
+                </pre>
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Output</p>
+                <pre className="max-h-[50vh] overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
+                  {auditOutputModal.output}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {runLogModal.open ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
           <div className="w-full max-w-4xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">

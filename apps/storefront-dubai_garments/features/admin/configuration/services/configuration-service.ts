@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api/axios';
 import {
+  ConfigurationAuditResponse,
   ConfigurationEnvResponse,
   ConfigurationScriptsResponse,
   SaveConfigEnvPayload,
@@ -10,6 +11,13 @@ import {
 
 export async function getConfigurationScripts(): Promise<ConfigurationScriptsResponse> {
   const response = await apiClient.get<ConfigurationScriptsResponse>('/admin/config/scripts');
+  return response.data;
+}
+
+export async function getConfigurationAudit(limit = 50): Promise<ConfigurationAuditResponse> {
+  const response = await apiClient.get<ConfigurationAuditResponse>('/admin/config/audit', {
+    params: { limit },
+  });
   return response.data;
 }
 

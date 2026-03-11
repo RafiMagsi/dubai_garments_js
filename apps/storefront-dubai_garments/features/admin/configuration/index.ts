@@ -1,5 +1,6 @@
 export {
   useConfigurationEnv,
+  useConfigurationAudit,
   useConfigurationScripts,
   useRunConfigurationScript,
   useSaveConfigurationEnv,
@@ -7,10 +8,12 @@ export {
 export type {
   ConfigEnvItem,
   ConfigEnvTarget,
+  ConfigExecutionAuditItem,
   ConfigScriptItem,
   ConfigScriptLastRun,
   ConfigScriptStatus,
   ConfigurationEnvResponse,
+  ConfigurationAuditResponse,
   ConfigurationScriptsResponse,
   RunConfigurationScriptPayload,
   RunConfigurationScriptResponse,

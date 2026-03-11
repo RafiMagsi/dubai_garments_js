@@ -2,6 +2,10 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  completeAdminConfigCommandRun,
+  createAdminConfigCommandRun,
+} from '@/lib/admin/config-audit';
 import { requireAdminSession } from '@/lib/auth/require-admin';
 
 export const runtime = 'nodejs';
@@ -97,6 +101,7 @@ export async function POST(request: NextRequest) {
   if (sessionOrResponse instanceof NextResponse) {
     return sessionOrResponse;
   }
+  const session = sessionOrResponse;
 
   const body = (await request.json().catch(() => ({}))) as { command?: string };
   const command = String(body.command || '').trim();
@@ -104,7 +109,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Command is required.' }, { status: 422 });
   }
 
+  const runId = await createAdminConfigCommandRun({
+    userId: session.sub,
+    userEmail: session.email,
+    executionType: 'terminal',
+    commandKey: command,
+    commandLabel: command,
+    inputPayload: { command },
+  });
+
   const result = await runCommand(command);
+  await completeAdminConfigCommandRun({
+    runId,
+    ok: result.ok,
+    output: result.output,
+    errorMessage: result.ok ? undefined : result.output,
+  });
   return NextResponse.json(
     {
       ok: result.ok,

@@ -268,6 +268,26 @@ CREATE TABLE system_settings (
   CONSTRAINT uq_system_settings_scope_key UNIQUE (scope, key)
 );
 
+-- admin_config_command_runs
+CREATE TABLE admin_config_command_runs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  user_email TEXT,
+  execution_type TEXT NOT NULL,
+  command_key TEXT NOT NULL,
+  command_label TEXT NOT NULL,
+  input_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  status TEXT NOT NULL DEFAULT 'running',
+  output_log TEXT,
+  error_message TEXT,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  finished_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (execution_type IN ('script', 'terminal')),
+  CHECK (status IN ('running', 'success', 'failed'))
+);
+
 -- Indexes
 CREATE INDEX idx_customers_owner_user_id ON customers(owner_user_id);
 
@@ -329,6 +349,10 @@ CREATE INDEX idx_followups_due_at ON followups(due_at);
 CREATE INDEX idx_system_settings_scope ON system_settings(scope);
 CREATE INDEX idx_system_settings_key ON system_settings(key);
 CREATE INDEX idx_system_settings_is_active ON system_settings(is_active);
+CREATE INDEX idx_admin_cfg_runs_user_id ON admin_config_command_runs(user_id);
+CREATE INDEX idx_admin_cfg_runs_status ON admin_config_command_runs(status);
+CREATE INDEX idx_admin_cfg_runs_command_key ON admin_config_command_runs(command_key);
+CREATE INDEX idx_admin_cfg_runs_started_at ON admin_config_command_runs(started_at DESC);
 
 -- updated_at triggers
 CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at();
@@ -344,3 +368,4 @@ CREATE TRIGGER trg_activities_updated_at BEFORE UPDATE ON activities FOR EACH RO
 CREATE TRIGGER trg_automation_runs_updated_at BEFORE UPDATE ON automation_runs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_followups_updated_at BEFORE UPDATE ON followups FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_system_settings_updated_at BEFORE UPDATE ON system_settings FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_admin_cfg_runs_updated_at BEFORE UPDATE ON admin_config_command_runs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
