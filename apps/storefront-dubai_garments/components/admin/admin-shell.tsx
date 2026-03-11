@@ -5,18 +5,20 @@ import { ReactNode, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 const adminNavItems = [
-  { href: '/admin/dashboard', label: 'Dashboard', hint: 'Analytics' },
-  { href: '/admin/analytics', label: 'Analytics', hint: 'BI Metrics' },
-  { href: '/admin/leads', label: 'Leads', hint: 'Qualification' },
-  { href: '/admin/deals', label: 'Deals', hint: 'Pipeline' },
-  { href: '/admin/quotes', label: 'Quotes', hint: 'Pricing' },
-  { href: '/admin/automations', label: 'Automations', hint: 'Monitoring' },
-  { href: '/admin/observability', label: 'Observability', hint: 'Health & Metrics' },
-  { href: '/admin/design-system', label: 'Design System', hint: 'Tokens & UI Kit' },
-  { href: '/admin/configuration', label: 'Configuration', hint: 'Scripts & Ops' },
-  { href: '/admin/pipeline', label: 'Pipeline', hint: 'Stage View' },
-  { href: '/admin/activities', label: 'Activities', hint: 'System Log' },
+  { href: '/admin/dashboard', label: 'Dashboard', hint: 'Revenue Snapshot', section: 'Workspace' },
+  { href: '/admin/analytics', label: 'Analytics', hint: 'Business Metrics', section: 'Workspace' },
+  { href: '/admin/leads', label: 'Leads', hint: 'Qualification Queue', section: 'Sales Operations' },
+  { href: '/admin/deals', label: 'Deals', hint: 'Pipeline Board', section: 'Sales Operations' },
+  { href: '/admin/quotes', label: 'Quotes', hint: 'Pricing & Approvals', section: 'Sales Operations' },
+  { href: '/admin/pipeline', label: 'Pipeline', hint: 'Stage View', section: 'Sales Operations' },
+  { href: '/admin/activities', label: 'Activities', hint: 'System Timeline', section: 'Sales Operations' },
+  { href: '/admin/automations', label: 'Automations', hint: 'Workflow Monitoring', section: 'Platform Control' },
+  { href: '/admin/observability', label: 'Observability', hint: 'Health & Metrics', section: 'Platform Control' },
+  { href: '/admin/configuration', label: 'Configuration', hint: 'Scripts & Runtime', section: 'Platform Control' },
+  { href: '/admin/design-system', label: 'Design System', hint: 'Tokens & UI Kit', section: 'Platform Control' },
 ];
+
+const navSections = Array.from(new Set(adminNavItems.map((item) => item.section)));
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -67,19 +69,26 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="dg-admin-nav" aria-label="Admin Navigation">
-          {adminNavItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`dg-admin-link ${isActive ? 'is-active' : ''}`}
-              >
-                <span>{item.label}</span>
-                <small>{item.hint}</small>
-              </Link>
-            );
-          })}
+          {navSections.map((section) => (
+            <div key={section} className="dg-admin-nav-group">
+              <p className="dg-admin-nav-heading">{section}</p>
+              {adminNavItems
+                .filter((item) => item.section === section)
+                .map((item) => {
+                  const isActive = pathname.startsWith(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`dg-admin-link ${isActive ? 'is-active' : ''}`}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.hint}</small>
+                    </Link>
+                  );
+                })}
+            </div>
+          ))}
         </nav>
 
         <div className="dg-admin-footer">
@@ -100,8 +109,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       <main className="dg-admin-main">
         <header className="dg-admin-topbar">
           <div>
-            <p className="dg-admin-topbar-label">Admin Workspace</p>
-            <p className="dg-admin-topbar-title">Dubai Garments AI Sales Platform</p>
+            <p className="dg-admin-topbar-label">Sales Console</p>
+            <p className="dg-admin-topbar-title">Dubai Garments Revenue Workspace</p>
           </div>
           <div className="dg-admin-user-pill">
             <span className="dg-admin-user-avatar">{(adminName || 'A').slice(0, 1).toUpperCase()}</span>

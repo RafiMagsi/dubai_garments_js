@@ -1148,30 +1148,32 @@
     }
 
     .dg-admin-page {
-        padding: 1.25rem;
+        padding: 1.25rem 1.35rem;
     }
 
     .dg-admin-page-head {
-        margin-bottom: 1rem;
+        margin-bottom: 1.15rem;
         display: flex;
         flex-wrap: wrap;
-        gap: 0.75rem;
+        gap: 0.9rem;
         align-items: center;
         justify-content: space-between;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid #d8e2ee;
     }
 
     .dg-page-title {
-        font-size: clamp(1.35rem, 2vw, 1.9rem);
+        font-size: clamp(1.28rem, 1.9vw, 1.65rem);
         line-height: 1.2;
-        font-weight: 700;
-        color: #0f172a;
-        letter-spacing: -0.02em;
+        font-weight: 600;
+        color: #032d60;
+        letter-spacing: -0.01em;
     }
 
     .dg-page-subtitle {
-        margin-top: 0.2rem;
-        font-size: 0.9rem;
-        color: #475569;
+        margin-top: 0.28rem;
+        font-size: 0.84rem;
+        color: #4f5f75;
     }
 
     .dg-admin-toolbar {
@@ -1182,37 +1184,37 @@
 
     .dg-kpi-grid {
         display: grid;
-        gap: 0.9rem;
+        gap: 0.8rem;
     }
 
     .dg-kpi-card {
-        padding: 1rem;
-        background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9)),
-            radial-gradient(circle at 20% 0%, rgba(var(--brand-rgb), 0.14), transparent 60%);
-        border: 1px solid var(--color-border);
+        padding: 0.95rem;
+        background: linear-gradient(180deg, #ffffff, #fcfdff);
+        border: 1px solid #d8e2ee;
+        border-radius: 0.8rem;
+        box-shadow: 0 4px 12px -10px rgba(23, 57, 94, 0.45);
     }
 
     .dg-kpi-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 700;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.07em;
         text-transform: uppercase;
-        color: #64748b;
+        color: #5f6f84;
     }
 
     .dg-kpi-value {
-        margin-top: 0.35rem;
-        font-size: 1.6rem;
+        margin-top: 0.45rem;
+        font-size: 1.45rem;
         line-height: 1;
-        font-weight: 700;
-        color: #0f172a;
+        font-weight: 600;
+        color: #032d60;
     }
 
     .dg-kpi-meta {
-        margin-top: 0.35rem;
-        font-size: 0.8rem;
-        color: #475569;
+        margin-top: 0.42rem;
+        font-size: 0.76rem;
+        color: #55657a;
     }
 
     .dg-analytics-grid {
@@ -1226,7 +1228,7 @@
     }
 
     .dg-chart-card {
-        padding: 1rem;
+        padding: 0.95rem;
     }
 
     .dg-stat-bars {
@@ -1279,10 +1281,10 @@
         gap: 0.65rem;
         justify-content: space-between;
         align-items: center;
-        border: 1px solid var(--color-border);
-        background-color: #f7fbff;
-        border-radius: 0.65rem;
-        padding: 0.65rem 0.75rem;
+        border: 1px solid #d8e2ee;
+        background-color: #ffffff;
+        border-radius: 0.6rem;
+        padding: 0.62rem 0.72rem;
     }
 
     .dg-list-main {
@@ -1307,69 +1309,76 @@
 
     .dg-table-wrap {
         overflow-x: auto;
-        border: 1px solid var(--color-border);
-        border-radius: 0.9rem;
+        border: 1px solid #d8e2ee;
+        border-radius: 0.75rem;
         background-color: #fff;
+        box-shadow: 0 8px 22px -20px rgba(10, 30, 62, 0.55);
     }
 
     .dg-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
     }
 
     .dg-table th,
     .dg-table td {
-        border-bottom: 1px solid var(--color-border);
-        padding: 0.8rem 0.75rem;
+        border-bottom: 1px solid #dde6f1;
+        padding: 0.74rem 0.75rem;
         text-align: left;
-        color: #334155;
+        color: #23374d;
         white-space: nowrap;
     }
 
     .dg-table th {
-        font-size: 0.72rem;
-        letter-spacing: 0.05em;
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        color: #64748b;
-        background-color: #f8fafc;
+        color: #5d6e84;
+        background-color: #f4f7fb;
+        font-weight: 700;
     }
 
     .dg-table tbody tr:hover {
-        background-color: #f8fbff;
+        background-color: #f6f9fc;
     }
 
     .dg-status-pill {
         display: inline-flex;
         align-items: center;
         border-radius: 9999px;
-        padding: 0.2rem 0.6rem;
-        font-size: 0.75rem;
+        padding: 0.2rem 0.55rem;
+        font-size: 0.7rem;
         font-weight: 600;
-        background-color: #f1f5f9;
-        color: #334155;
+        border: 1px solid #d5e0ee;
+        background-color: #f6f8fb;
+        color: #31465d;
     }
 
     .dg-status-pill-NEW {
-        background-color: var(--color-brand-50);
-        color: var(--color-brand-600);
+        background-color: #eef4ff;
+        border-color: #bfd6ff;
+        color: #1c4da1;
     }
 
     .dg-status-pill-QUALIFIED,
     .dg-status-pill-QUOTED,
     .dg-status-pill-NEGOTIATION {
-        background-color: #fef9c3;
-        color: #854d0e;
+        background-color: #fff6dd;
+        border-color: #f6dd9a;
+        color: #7a4f00;
     }
 
     .dg-status-pill-WON {
-        background-color: #dcfce7;
-        color: #166534;
+        background-color: #e8f7ed;
+        border-color: #b4e4c1;
+        color: #1f6f3a;
     }
 
     .dg-status-pill-LOST {
-        background-color: #fee2e2;
-        color: #991b1b;
+        background-color: #ffebee;
+        border-color: #f8c5ce;
+        color: #9a1d2f;
     }
 
     .dg-form-row {
@@ -1380,7 +1389,11 @@
     }
 
     .dg-panel {
-        padding: 1rem;
+        padding: 0.95rem;
+        border-radius: 0.75rem;
+        border: 1px solid #d8e2ee;
+        background: linear-gradient(180deg, #ffffff, #fbfcfe);
+        box-shadow: 0 6px 20px -18px rgba(12, 40, 76, 0.52);
     }
 
     .dg-select-md {
@@ -1393,10 +1406,10 @@
     }
 
     .dg-pipeline-column {
-        padding: 1rem;
-        background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)),
-            radial-gradient(circle at 100% 0%, rgba(148, 163, 184, 0.14), transparent 70%);
+        padding: 0.9rem;
+        background: linear-gradient(180deg, #ffffff, #fbfdff);
+        border: 1px solid #d8e2ee;
+        border-radius: 0.75rem;
     }
 
     .dg-pipeline-cards {
@@ -1407,87 +1420,95 @@
     .dg-admin-shell {
         display: grid;
         min-height: 100vh;
-        grid-template-columns: 290px 1fr;
-        background:
-            linear-gradient(115deg, rgba(224, 236, 255, 0.5), rgba(223, 247, 255, 0.32)),
-            #f4f8fd;
+        grid-template-columns: 276px 1fr;
+        background: linear-gradient(180deg, #f3f6fb, #eef3f9);
     }
 
     .dg-admin-sidebar {
-        border-right: 1px solid #d5e1f1;
-        background:
-            radial-gradient(circle at 20% 0%, rgba(var(--brand-rgb), 0.14), transparent 46%),
-            linear-gradient(180deg, #f9fbff, #ffffff);
-        padding: 1.25rem;
+        border-right: 1px solid #d8e2ee;
+        background: linear-gradient(180deg, #f8fbff, #f3f7fc);
+        padding: 0.95rem;
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.8rem;
         position: sticky;
         top: 0;
         height: 100vh;
     }
 
     .dg-admin-brand {
-        border: 1px solid #cfe0ff;
-        border-radius: 0.95rem;
-        padding: 0.9rem;
-        background:
-            linear-gradient(180deg, #eff5ff, #ffffff),
-            radial-gradient(circle at 100% 0%, rgba(var(--brand-rgb), 0.13), transparent 58%);
+        border: 1px solid #d3deec;
+        border-radius: 0.75rem;
+        padding: 0.78rem 0.8rem;
+        background: linear-gradient(180deg, #ffffff, #f7faff);
     }
 
     .dg-admin-brand-copy {
         margin-top: 0.45rem;
-        font-size: 0.78rem;
-        color: #64748b;
+        font-size: 0.74rem;
+        color: #586b82;
         line-height: 1.5;
     }
 
     .dg-admin-nav {
         display: grid;
+        gap: 0.65rem;
+    }
+
+    .dg-admin-nav-group {
+        display: grid;
         gap: 0.35rem;
     }
 
+    .dg-admin-nav-heading {
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #61748b;
+        font-weight: 700;
+        padding: 0.1rem 0.25rem;
+    }
+
     .dg-admin-link {
-        border: 1px solid var(--color-border);
-        border-radius: 0.75rem;
-        padding: 0.65rem 0.8rem;
-        color: #334155;
-        background-color: #fbfdff;
+        border: 1px solid #d8e2ee;
+        border-radius: 0.6rem;
+        padding: 0.6rem 0.7rem;
+        color: #2d435b;
+        background-color: #ffffff;
         display: grid;
-        gap: 0.1rem;
-        transition: border-color 120ms ease, background-color 120ms ease, transform 120ms ease;
+        gap: 0.06rem;
+        transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
     }
 
     .dg-admin-link:hover {
-        border-color: #bfd1ea;
-        background-color: #fff;
-        transform: translateY(-1px);
+        border-color: #c0d1e7;
+        background-color: #f8fbff;
+        box-shadow: 0 1px 0 0 #cfe0f4 inset;
     }
 
     .dg-admin-link span {
-        font-size: 0.88rem;
-        font-weight: 700;
+        font-size: 0.82rem;
+        font-weight: 600;
         line-height: 1.1;
     }
 
     .dg-admin-link small {
-        font-size: 0.72rem;
-        color: #64748b;
+        font-size: 0.7rem;
+        color: #62758d;
     }
 
     .dg-admin-link.is-active {
-        border-color: #6ea8ff;
-        background: linear-gradient(180deg, #dcebff, #edf4ff);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+        border-color: #8bb7f0;
+        background: linear-gradient(180deg, #e8f1ff, #f2f7ff);
+        box-shadow: inset 0 0 0 1px rgba(198, 220, 248, 0.65);
     }
 
     .dg-admin-link.is-active span {
-        color: var(--color-brand-600);
+        color: #0d3a79;
     }
 
     .dg-admin-link.is-active small {
-        color: var(--color-brand-600);
+        color: #24579b;
     }
 
     .dg-admin-footer {
@@ -1497,19 +1518,17 @@
     }
 
     .dg-admin-main {
-        padding: 1rem;
+        padding: 0.95rem 1.05rem;
         display: grid;
-        gap: 1rem;
+        gap: 0.85rem;
         align-content: start;
     }
 
     .dg-admin-topbar {
-        border: 1px solid #d5e1f1;
-        border-radius: 1rem;
-        background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.9)),
-            radial-gradient(circle at 100% 0%, rgba(var(--brand-rgb), 0.12), transparent 55%);
-        padding: 0.85rem 1rem;
+        border: 1px solid #d8e2ee;
+        border-radius: 0.75rem;
+        background: linear-gradient(180deg, #ffffff, #f7faff);
+        padding: 0.72rem 0.85rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -1518,55 +1537,55 @@
     }
 
     .dg-admin-topbar-label {
-        font-size: 0.72rem;
+        font-size: 0.66rem;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #64748b;
+        letter-spacing: 0.09em;
+        color: #5f738a;
         font-weight: 700;
     }
 
     .dg-admin-topbar-title {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin-top: 0.2rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #032d60;
+        margin-top: 0.15rem;
     }
 
     .dg-admin-user-pill {
         border-radius: 9999px;
-        background-color: #e9f3ff;
-        border: 1px solid #bfd7ff;
-        padding: 0.25rem 0.7rem 0.25rem 0.3rem;
+        background-color: #edf3fb;
+        border: 1px solid #ccdae9;
+        padding: 0.2rem 0.58rem 0.2rem 0.25rem;
         display: inline-flex;
         align-items: center;
-        gap: 0.45rem;
+        gap: 0.4rem;
     }
 
     .dg-admin-user-pill p {
-        font-size: 0.82rem;
-        color: #0f172a;
+        font-size: 0.76rem;
+        color: #1f334c;
         font-weight: 600;
     }
 
     .dg-admin-user-pill small {
         display: block;
-        font-size: 0.7rem;
-        color: #475569;
+        font-size: 0.64rem;
+        color: #586d86;
         line-height: 1.1;
         text-transform: uppercase;
     }
 
     .dg-admin-user-avatar {
-        width: 1.7rem;
-        height: 1.7rem;
+        width: 1.55rem;
+        height: 1.55rem;
         border-radius: 9999px;
-        background: linear-gradient(140deg, var(--color-brand-500), var(--color-brand-600));
+        background: linear-gradient(140deg, #2e6ddf, #1957c2);
         color: #fff;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.78rem;
-        font-weight: 700;
+        font-size: 0.72rem;
+        font-weight: 600;
     }
 
     .dg-detail-list {
