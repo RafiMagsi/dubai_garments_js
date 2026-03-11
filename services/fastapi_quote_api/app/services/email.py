@@ -25,6 +25,7 @@ from app.core.config import (
     SMTP_STARTTLS,
     SMTP_USERNAME,
 )
+from app.services.slack import notify_automation_error
 
 
 def _format_sender() -> str:
@@ -225,6 +226,9 @@ def finish_automation_run(
 ) -> None:
     if not run_id:
         return
+    workflow_name: Optional[str] = None
+    trigger_entity_type: Optional[str] = None
+    trigger_entity_id: Optional[str] = None
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -235,6 +239,7 @@ def finish_automation_run(
               error_message = %s,
               finished_at = NOW()
             WHERE id = %s::uuid
+            RETURNING workflow_name, trigger_entity_type, trigger_entity_id::text
             """,
             (
                 status,
@@ -242,6 +247,18 @@ def finish_automation_run(
                 error_message,
                 run_id,
             ),
+        )
+        updated = cursor.fetchone() or {}
+        workflow_name = updated.get("workflow_name")
+        trigger_entity_type = updated.get("trigger_entity_type")
+        trigger_entity_id = updated.get("trigger_entity_id")
+
+    if status == "failed" and error_message:
+        notify_automation_error(
+            workflow_name=workflow_name or "unknown_workflow",
+            error_message=error_message,
+            trigger_entity_type=trigger_entity_type,
+            trigger_entity_id=trigger_entity_id,
         )
 
 

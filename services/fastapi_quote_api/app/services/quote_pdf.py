@@ -10,6 +10,7 @@ from psycopg.errors import UndefinedTable
 
 from app.core.db import get_db_connection
 from app.services.activities import create_activity
+from app.services.slack import notify_automation_error
 from app.services.storage import store_binary
 
 
@@ -281,4 +282,10 @@ def generate_quote_pdf_document(quote_id: str) -> Dict[str, Any]:
                         (quote_id, str(error)),
                     )
             connection.commit()
+            notify_automation_error(
+                workflow_name="quote_pdf_generation",
+                error_message=str(error),
+                trigger_entity_type="quote",
+                trigger_entity_id=quote_id,
+            )
             raise

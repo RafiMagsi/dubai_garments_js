@@ -28,6 +28,7 @@ from app.services.email import (
 )
 from app.services.n8n import trigger_quote_followup_workflow
 from app.services.quotes import create_quote
+from app.services.slack import notify_quote_accepted
 from app.services.storage import read_local_binary
 
 router = APIRouter(prefix="/api/v1", tags=["quotes"])
@@ -194,6 +195,7 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
     status = _normalize_quote_status(payload.status)
     now = datetime.now(timezone.utc)
     followup_trigger_payload: Optional[Dict[str, object]] = None
+    quote_accepted_payload: Optional[Dict[str, object]] = None
 
     try:
         with get_db_connection() as connection:
@@ -457,6 +459,15 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
                                 error_message=str(email_error),
                             )
 
+                if current["status"] != status and status == "approved":
+                    quote_accepted_payload = {
+                        "quoteId": updated.get("id") or quote_id,
+                        "quoteNumber": updated.get("quote_number") or "",
+                        "totalAmount": float(updated.get("total_amount") or 0.0),
+                        "currency": updated.get("currency") or "AED",
+                    }
+
+                if current["status"] != status and status == "sent":
                     followup_trigger_payload = {
                         "event": "quote_sent",
                         "quoteId": quote_id,
@@ -502,6 +513,14 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
         except Exception:
             # n8n trigger failure should not block quote status update.
             pass
+
+    if quote_accepted_payload:
+        notify_quote_accepted(
+            quote_id=quote_accepted_payload["quoteId"],
+            quote_number=quote_accepted_payload["quoteNumber"],
+            total_amount=quote_accepted_payload["totalAmount"],
+            currency=quote_accepted_payload["currency"],
+        )
 
     return {"item": updated}
 

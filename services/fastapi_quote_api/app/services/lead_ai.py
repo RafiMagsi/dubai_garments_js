@@ -10,6 +10,7 @@ from app.core.config import LEAD_AI_ENABLED, OPENAI_API_KEY, OPENAI_MODEL
 from app.core.db import get_db_connection
 from app.services.activities import create_activity
 from app.services.leads import get_lead_by_id
+from app.services.slack import notify_automation_error, notify_hot_lead
 
 ALLOWED_LEVELS = {"low", "medium", "high"}
 logger = logging.getLogger("uvicorn.error")
@@ -138,6 +139,13 @@ class LeadAIService:
                 ai_score=result["ai_score"],
                 classification=result["classification"],
             )
+            if (result.get("classification") or "").upper() == "HOT":
+                notify_hot_lead(
+                    lead_id=lead_id,
+                    company_name=str(lead.get("company_name") or ""),
+                    contact_name=str(lead.get("contact_name") or ""),
+                    ai_score=result.get("ai_score"),
+                )
             return {"processed": True, "data": result}
         except Exception as error:
             result = {**heuristic, "provider": "system", "fallback_used": True}
@@ -463,6 +471,13 @@ class LeadAIService:
                     ),
                 )
             connection.commit()
+        if status == "failed" and error_message:
+            notify_automation_error(
+                workflow_name="lead_ai_processing",
+                error_message=error_message,
+                trigger_entity_type="lead",
+                trigger_entity_id=lead_id,
+            )
 
 
 def process_lead_with_ai(lead_id: str) -> Dict[str, Any]:

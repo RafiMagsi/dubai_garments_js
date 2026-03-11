@@ -31,6 +31,20 @@ Minimal backend service for quote requests.
 - `GET /api/v1/quotes/{quote_id}/pdf`
 - `GET /api/v1/quotes/{quote_id}/pdf/download`
 
+## Slack integration
+
+Set these in `services/fastapi_quote_api/.env`:
+
+- `SLACK_ENABLED=true`
+- `SLACK_WEBHOOK_URL=...` (recommended), or `SLACK_BOT_TOKEN=...` + `SLACK_CHANNEL=...`
+
+Events that send Slack notifications:
+
+- New HOT lead detected (LeadAIService result)
+- Quote accepted (`/api/v1/quotes/{quote_id}/status` -> `approved`)
+- Customer replied (`/api/v1/webhooks/sendgrid/inbound`)
+- Automation run failed (`finish_automation_run(..., status='failed')`) and quote PDF generation failures
+
 ## Request fields (`multipart/form-data`)
 
 - `name`
