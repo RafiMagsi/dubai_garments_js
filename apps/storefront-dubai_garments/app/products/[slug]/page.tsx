@@ -7,6 +7,11 @@ import ProductCard from '@/components/store/product-card';
 import StorefrontShell from '@/components/layout/storefront-shell';
 import { SectionHeader } from '@/components/ui';
 import { useProductBySlug, useProducts } from '@/features/products';
+import {
+  formatAed,
+  formatBadgeLabel,
+  getStartingUnitPriceAED,
+} from '@/features/products/utils/product-pricing';
 import { useQuoteStore } from '@/features/quote';
 
 type ProductConfig = {
@@ -54,6 +59,7 @@ export default function ProductDetailPage() {
 
     return [...categoryMatches, ...fallbackProducts].slice(0, 4);
   }, [allProducts, product, relatedByCategory]);
+  const startingPrice = product ? getStartingUnitPriceAED(product) : null;
 
   function toggleSize(size: string) {
     setSelectedSizes((prev) =>
@@ -104,7 +110,11 @@ export default function ProductDetailPage() {
               {!isLoading && !product && <p className="dg-muted-sm">Product not found.</p>}
               {product && (
                 <>
-                  <span className="dg-badge">{product.category}</span>
+                  <span className="dg-badge">{formatBadgeLabel(product.category)}</span>
+                  <p className="dg-muted-sm">
+                    Starting Price:{' '}
+                    {startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}
+                  </p>
                   <h1 className="dg-title-lg">{product.name}</h1>
                   <p className="dg-muted-sm">MOQ: {product.minOrderQty} pcs</p>
                   <p className="dg-muted-sm">Lead Time: {product.leadTimeDays} days</p>
@@ -124,7 +134,7 @@ export default function ProductDetailPage() {
                       href={`/products?category=${encodeURIComponent(product.category)}`}
                       className="dg-btn-secondary"
                     >
-                      More {product.category}
+                      More {formatBadgeLabel(product.category)}
                     </Link>
                   </div>
                 </>

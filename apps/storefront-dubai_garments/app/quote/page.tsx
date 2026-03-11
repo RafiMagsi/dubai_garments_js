@@ -5,6 +5,7 @@ import Link from 'next/link';
 import StorefrontShell from '@/components/layout/storefront-shell';
 import { FieldLabel, SelectField, TextAreaField, TextField } from '@/components/ui';
 import { useProducts } from '@/features/products';
+import { formatAed, getStartingUnitPriceAED } from '@/features/products/utils/product-pricing';
 import { useQuoteStore } from '@/features/quote';
 
 type SubmittedSummary = {
@@ -17,6 +18,11 @@ type SubmittedSummary = {
   message: string;
   hasFile: boolean;
 };
+
+function productPriceLabel(name: string, category: string, startingPrice: number | null) {
+  const priceText = startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request';
+  return `${name} (${category}) - ${priceText}`;
+}
 
 export default function QuotePage() {
   const { data: products = [] } = useProducts();
@@ -188,7 +194,11 @@ export default function QuotePage() {
                           <option value="">Select product</option>
                           {products.map((product) => (
                             <option key={product.id} value={product.id}>
-                              {product.name} ({product.category})
+                              {productPriceLabel(
+                                product.name,
+                                product.category,
+                                getStartingUnitPriceAED(product)
+                              )}
                             </option>
                           ))}
                         </SelectField>

@@ -13,9 +13,11 @@ function parsePriceTiers(value: unknown): Product['priceTiers'] {
       }
 
       const candidate = tier as Record<string, unknown>;
-      const minQty = Number(candidate.minQty);
-      const maxQtyRaw = candidate.maxQty;
-      const unitPriceAED = Number(candidate.unitPriceAED);
+      const minQty = Number(candidate.min_qty ?? candidate.minQty);
+      const maxQtyRaw = candidate.max_qty ?? candidate.maxQty;
+      const unitPriceAED = Number(
+        candidate.unit_price ?? candidate.unitPrice ?? candidate.unitPriceAED
+      );
 
       if (!Number.isFinite(minQty) || !Number.isFinite(unitPriceAED)) {
         return null;

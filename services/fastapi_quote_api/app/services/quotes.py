@@ -208,61 +208,127 @@ def create_quote(
         quote_id = quote_row["id"]
         created_items: List[Dict[str, object]] = []
 
+        cursor.execute(
+            """
+            SELECT EXISTS (
+              SELECT 1
+              FROM information_schema.columns
+              WHERE table_schema = 'public'
+                AND table_name = 'quote_items'
+                AND column_name = 'pricing_breakdown'
+            ) AS has_pricing_breakdown
+            """
+        )
+        has_pricing_breakdown = bool(cursor.fetchone()["has_pricing_breakdown"])
+
         for calculated in calculated_items:
-            cursor.execute(
-                """
-                INSERT INTO quote_items (
-                  quote_id,
-                  product_id,
-                  product_variant_id,
-                  item_name,
-                  description,
-                  quantity,
-                  unit_price,
-                  discount_amount,
-                  line_total,
-                  pricing_breakdown
+            if has_pricing_breakdown:
+                cursor.execute(
+                    """
+                    INSERT INTO quote_items (
+                      quote_id,
+                      product_id,
+                      product_variant_id,
+                      item_name,
+                      description,
+                      quantity,
+                      unit_price,
+                      discount_amount,
+                      line_total,
+                      pricing_breakdown
+                    )
+                    VALUES (
+                      %s::uuid,
+                      %s::uuid,
+                      %s::uuid,
+                      %s,
+                      %s,
+                      %s,
+                      %s,
+                      %s,
+                      %s,
+                      %s::jsonb
+                    )
+                    RETURNING
+                      id::text,
+                      quote_id::text,
+                      product_id::text,
+                      product_variant_id::text,
+                      item_name,
+                      description,
+                      quantity,
+                      unit_price::float8 AS unit_price,
+                      discount_amount::float8 AS discount_amount,
+                      line_total::float8 AS line_total,
+                      pricing_breakdown,
+                      created_at::text,
+                      updated_at::text
+                    """,
+                    (
+                        quote_id,
+                        calculated["product_id"],
+                        calculated["product_variant_id"],
+                        calculated["item_name"],
+                        calculated["description"],
+                        calculated["quantity"],
+                        calculated["unit_price"],
+                        calculated["discount_amount"],
+                        calculated["line_total"],
+                        json.dumps(calculated["pricing_breakdown"]),
+                    ),
                 )
-                VALUES (
-                  %s::uuid,
-                  %s::uuid,
-                  %s::uuid,
-                  %s,
-                  %s,
-                  %s,
-                  %s,
-                  %s,
-                  %s,
-                  %s::jsonb
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO quote_items (
+                      quote_id,
+                      product_id,
+                      product_variant_id,
+                      item_name,
+                      description,
+                      quantity,
+                      unit_price,
+                      discount_amount,
+                      line_total
+                    )
+                    VALUES (
+                      %s::uuid,
+                      %s::uuid,
+                      %s::uuid,
+                      %s,
+                      %s,
+                      %s,
+                      %s,
+                      %s,
+                      %s
+                    )
+                    RETURNING
+                      id::text,
+                      quote_id::text,
+                      product_id::text,
+                      product_variant_id::text,
+                      item_name,
+                      description,
+                      quantity,
+                      unit_price::float8 AS unit_price,
+                      discount_amount::float8 AS discount_amount,
+                      line_total::float8 AS line_total,
+                      '{}'::jsonb AS pricing_breakdown,
+                      created_at::text,
+                      updated_at::text
+                    """,
+                    (
+                        quote_id,
+                        calculated["product_id"],
+                        calculated["product_variant_id"],
+                        calculated["item_name"],
+                        calculated["description"],
+                        calculated["quantity"],
+                        calculated["unit_price"],
+                        calculated["discount_amount"],
+                        calculated["line_total"],
+                    ),
                 )
-                RETURNING
-                  id::text,
-                  quote_id::text,
-                  product_id::text,
-                  product_variant_id::text,
-                  item_name,
-                  description,
-                  quantity,
-                  unit_price::float8 AS unit_price,
-                  discount_amount::float8 AS discount_amount,
-                  line_total::float8 AS line_total,
-                  pricing_breakdown,
-                  created_at::text,
-                  updated_at::text
-                """,
-                (
-                    quote_id,
-                    calculated["product_id"],
-                    calculated["product_variant_id"],
-                    calculated["item_name"],
-                    calculated["description"],
-                    calculated["quantity"],
-                    calculated["unit_price"],
-                    calculated["discount_amount"],
-                    calculated["line_total"],
-                    json.dumps(calculated["pricing_breakdown"]),
-                ),
-            )
             item_row = cursor.fetchone()
             if not item_row:
                 raise HTTPException(status_code=500, detail="Failed to create quote item.")

@@ -126,6 +126,25 @@ def view_quote(quote_id: str) -> Dict[str, object]:
 
                 cursor.execute(
                     """
+                    SELECT EXISTS (
+                      SELECT 1
+                      FROM information_schema.columns
+                      WHERE table_schema = 'public'
+                        AND table_name = 'quote_items'
+                        AND column_name = 'pricing_breakdown'
+                    ) AS has_pricing_breakdown
+                    """
+                )
+                has_pricing_breakdown = bool(cursor.fetchone()["has_pricing_breakdown"])
+
+                pricing_breakdown_select = (
+                    "pricing_breakdown"
+                    if has_pricing_breakdown
+                    else "'{}'::jsonb AS pricing_breakdown"
+                )
+
+                cursor.execute(
+                    f"""
                     SELECT
                       id::text,
                       quote_id::text,
@@ -137,7 +156,7 @@ def view_quote(quote_id: str) -> Dict[str, object]:
                       unit_price::float8 AS unit_price,
                       discount_amount::float8 AS discount_amount,
                       line_total::float8 AS line_total,
-                      pricing_breakdown,
+                      {pricing_breakdown_select},
                       created_at::text,
                       updated_at::text
                     FROM quote_items

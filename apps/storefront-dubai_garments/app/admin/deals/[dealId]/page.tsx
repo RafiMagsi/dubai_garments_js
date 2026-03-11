@@ -7,6 +7,7 @@ import { isAxiosError } from 'axios';
 import AdminShell from '@/components/admin/admin-shell';
 import { DealStage, useDealById, useSendDealEmail, useUpdateDeal } from '@/features/admin/deals';
 import { useProducts } from '@/features/products';
+import { formatAed, getStartingUnitPriceAED } from '@/features/products/utils/product-pricing';
 import { useCreateQuote } from '@/features/admin/quotes';
 
 const stageOptions: DealStage[] = ['new', 'qualified', 'quoted', 'negotiation', 'won', 'lost'];
@@ -17,6 +18,10 @@ function stageBadgeClass(stage: string) {
 
 function stageLabel(stage: string) {
   return stage.charAt(0).toUpperCase() + stage.slice(1);
+}
+
+function productPriceLabel(name: string, startingPrice: number | null) {
+  return `${name} - ${startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}`;
 }
 
 export default function AdminDealDetailsPage() {
@@ -375,7 +380,7 @@ export default function AdminDealDetailsPage() {
                         <option value="">Select product</option>
                         {products.map((product) => (
                           <option key={product.id} value={product.id}>
-                            {product.name}
+                            {productPriceLabel(product.name, getStartingUnitPriceAED(product))}
                           </option>
                         ))}
                       </select>

@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { ProductCategory } from '@/features/products/types/product.types';
 import { serializeProduct } from '@/features/products/utils/serialize-product';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const allowedCategories: ProductCategory[] = [
   'tshirts',
   'hoodies',
@@ -46,7 +49,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(products.map(serializeProduct));
+    return NextResponse.json(products.map(serializeProduct), {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    });
   } catch (error) {
     console.error('Failed to fetch products from database.', error);
     return NextResponse.json({ message: 'Database connection error' }, { status: 503 });

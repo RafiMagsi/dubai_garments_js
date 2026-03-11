@@ -1,5 +1,10 @@
 import Link from 'next/link';
 import { Product } from '@/features/products';
+import {
+  formatAed,
+  formatBadgeLabel,
+  getStartingUnitPriceAED,
+} from '@/features/products/utils/product-pricing';
 
 type ProductCardProps = {
   product: Product;
@@ -12,13 +17,18 @@ export default function ProductCard({
   detailsHref = `/products/${product.slug}`,
   quoteHref = '/quote',
 }: ProductCardProps) {
+  const startingPrice = getStartingUnitPriceAED(product);
+
   return (
     <article className="dg-product-card">
       <div className="dg-product-image dg-quick-card">
-        <span className="dg-product-tag">{product.category}</span>
+        <span className="dg-product-tag">{formatBadgeLabel(product.category)}</span>
       </div>
       <div className="dg-product-body">
         <h3 className="dg-product-name">{product.name}</h3>
+        <p className="dg-product-meta">
+          Price: {startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}
+        </p>
         <p className="dg-product-meta">MOQ: {product.minOrderQty} pcs</p>
         <p className="dg-product-meta">Lead Time: {product.leadTimeDays} days</p>
         <p className="dg-product-meta">Fabric: {product.material || '-'}</p>
