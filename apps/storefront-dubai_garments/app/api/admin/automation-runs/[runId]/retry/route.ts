@@ -1,0 +1,25 @@
+import { NextRequest, NextResponse } from 'next/server';
+
+const FASTAPI_BASE_URL =
+  process.env.FASTAPI_BASE_URL ||
+  process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ||
+  'http://localhost:8000';
+
+export async function POST(
+  _request: NextRequest,
+  context: { params: Promise<{ runId: string }> }
+) {
+  try {
+    const { runId } = await context.params;
+    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/automation-runs/${runId}/retry`, {
+      method: 'POST',
+      cache: 'no-store',
+    });
+    const payload = await response.json();
+    return NextResponse.json(payload, { status: response.status });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to connect to FastAPI backend.';
+    return NextResponse.json({ message }, { status: 502 });
+  }
+}
+

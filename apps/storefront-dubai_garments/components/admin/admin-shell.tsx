@@ -10,6 +10,7 @@ const adminNavItems = [
   { href: '/admin/leads', label: 'Leads', hint: 'Qualification' },
   { href: '/admin/deals', label: 'Deals', hint: 'Pipeline' },
   { href: '/admin/quotes', label: 'Quotes', hint: 'Pricing' },
+  { href: '/admin/automations', label: 'Automations', hint: 'Monitoring' },
   { href: '/admin/pipeline', label: 'Pipeline', hint: 'Stage View' },
   { href: '/admin/activities', label: 'Activities', hint: 'System Log' },
 ];

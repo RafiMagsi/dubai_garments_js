@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routers.activities import router as activities_router
+from app.api.routers.automation_runs import router as automation_runs_router
 from app.api.routers.deals import router as deals_router
 from app.api.routers.emails import router as emails_router
 from app.api.routers.followups import router as followups_router
@@ -34,6 +35,7 @@ app.include_router(pricing_router)
 app.include_router(quotes_router)
 app.include_router(deals_router)
 app.include_router(activities_router)
+app.include_router(automation_runs_router)
 app.include_router(emails_router)
 app.include_router(followups_router)
 app.include_router(scheduler_router)

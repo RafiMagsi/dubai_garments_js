@@ -18,6 +18,9 @@ Minimal backend service for quote requests.
 - `GET /api/v1/pipeline`
 - `GET /api/v1/activities`
 - `GET /api/v1/activities/{activity_id}`
+- `GET /api/v1/automation-runs`
+- `GET /api/v1/automation-runs/{run_id}`
+- `POST /api/v1/automation-runs/{run_id}/retry`
 - `POST /api/v1/emails/send`
 - `POST /api/v1/automation/followups/dispatch`
 - `POST /api/v1/automation/scheduler/followups/run`
