@@ -81,6 +81,8 @@ export async function GET(request: NextRequest) {
 
   const requestedMode = (request.nextUrl.searchParams.get('mode') || '').trim();
   const target = (request.nextUrl.searchParams.get('target') || '').trim() as TargetKey;
+  const limit = Number(request.nextUrl.searchParams.get('limit') || '240');
+  const hours = Number(request.nextUrl.searchParams.get('hours') || '24');
   const mode = requestedMode || (target ? 'scrape' : 'targets');
 
   const { observabilityServiceUrl, observabilityServiceToken, targets } = await getServiceConfig(
@@ -122,6 +124,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(payload, { status: response.ok ? 200 : response.status });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to scrape observability target.';
+      return NextResponse.json({ message }, { status: 502 });
+    }
+  }
+
+  if (mode === 'history') {
+    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 5000) : 240;
+    const safeHours = Number.isFinite(hours) && hours > 0 ? Math.min(hours, 24 * 365) : 24;
+    try {
+      const { response, payload } = await proxyObservabilityGet(
+        `${observabilityServiceUrl}/api/v1/history?limit=${encodeURIComponent(String(safeLimit))}&hours=${encodeURIComponent(String(safeHours))}`,
+        observabilityServiceToken
+      );
+      if (response.status === 404) {
+        return NextResponse.json({
+          generatedAt: Date.now() / 1000,
+          summary: {
+            count: 0,
+            limit: safeLimit,
+            hours: safeHours,
+            fallback: true,
+            message: 'History endpoint not available on observability service instance.',
+          },
+          items: [],
+        });
+      }
+      return NextResponse.json(payload, { status: response.ok ? 200 : response.status });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load observability history.';
       return NextResponse.json({ message }, { status: 502 });
     }
   }

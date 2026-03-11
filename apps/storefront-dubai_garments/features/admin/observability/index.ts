@@ -1,5 +1,7 @@
 export {
   useObservabilityChecks,
+  useObservabilityCoreMetrics,
+  useObservabilityHistory,
   useObservabilityScrape,
   useObservabilityTargets,
 } from '@/features/admin/observability/hooks/use-observability';
@@ -7,6 +9,8 @@ export {
 export type {
   ObservabilityCheckItem,
   ObservabilityChecksResponse,
+  ObservabilityHistoryResponse,
+  ObservabilityHistorySample,
   ObservabilityScrapeResponse,
   ObservabilityTargetItem,
   ObservabilityTargetsResponse,

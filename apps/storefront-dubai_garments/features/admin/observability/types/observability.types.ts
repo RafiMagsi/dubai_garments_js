@@ -39,3 +39,28 @@ export interface ObservabilityScrapeResponse {
   durationMs: number;
   preview: string;
 }
+
+export interface ObservabilityHistorySample {
+  id: number;
+  sampledAt: string;
+  healthyChecks: number;
+  failedChecks: number;
+  totalChecks: number;
+  availabilityPercent: number;
+  saturationPercent: number;
+  requestRateRps: number;
+  errorRatePercent: number;
+  avgLatencyMs: number;
+  fastapiTotalRequests: number;
+  storefrontTotalRequests: number;
+}
+
+export interface ObservabilityHistoryResponse {
+  generatedAt: number;
+  summary: {
+    count: number;
+    limit: number;
+    hours: number;
+  };
+  items: ObservabilityHistorySample[];
+}

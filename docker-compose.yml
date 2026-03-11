@@ -154,6 +154,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
       OBSERVABILITY_SERVICE_TOKEN: ${OBSERVABILITY_SERVICE_TOKEN:-}
+      OBS_SAMPLE_INTERVAL_SECONDS: ${OBS_SAMPLE_INTERVAL_SECONDS:-10}
+      OBS_HISTORY_RETENTION_DAYS: ${OBS_HISTORY_RETENTION_DAYS:-30}
     depends_on:
       fastapi:
         condition: service_started

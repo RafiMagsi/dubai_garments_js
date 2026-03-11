@@ -1,6 +1,6 @@
 # Observability Service
 
-Centralized observability API for health checks, dependency checks, and metrics scraping.
+Centralized observability API for health checks, dependency checks, metrics scraping, and persistent history sampling.
 
 ## Endpoints
 
@@ -8,6 +8,18 @@ Centralized observability API for health checks, dependency checks, and metrics 
 - `GET /metrics`
 - `GET /api/v1/checks`
 - `GET /api/v1/scrape?target=fastapi_metrics|storefront_metrics|ai_health|fastapi_health|storefront_health`
+- `GET /api/v1/history?limit=240&hours=24`
+
+## Background sampler
+
+The service runs a background sampling loop and stores snapshots in PostgreSQL table:
+
+- `observability_history_samples`
+
+Environment controls:
+
+- `OBS_SAMPLE_INTERVAL_SECONDS` (default `10`)
+- `OBS_HISTORY_RETENTION_DAYS` (default `30`)
 
 ## Local run
 

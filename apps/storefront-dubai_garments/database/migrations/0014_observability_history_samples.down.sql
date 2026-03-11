@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS idx_observability_history_samples_sampled_at;
+DROP TABLE IF EXISTS observability_history_samples;
