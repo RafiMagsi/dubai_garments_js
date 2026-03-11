@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 import json
-import logging
 import re
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
+from urllib import request as urllib_request
+from urllib.error import URLError
 
-from app.core.config import LEAD_AI_ENABLED, OPENAI_API_KEY, OPENAI_MODEL
+from app.core.config import (
+    AI_SERVICE_AUTH_TOKEN,
+    AI_SERVICE_ENABLED,
+    AI_SERVICE_TIMEOUT_SECONDS,
+    AI_SERVICE_URL,
+    LEAD_AI_ENABLED,
+    OPENAI_API_KEY,
+    OPENAI_MODEL,
+)
 from app.core.db import get_db_connection
+from app.core.observability import log_event
 from app.services.activities import create_activity
 from app.services.leads import get_lead_by_id
 from app.services.slack import (
@@ -20,12 +30,10 @@ from app.services.telegram import (
 )
 
 ALLOWED_LEVELS = {"low", "medium", "high"}
-logger = logging.getLogger("uvicorn.error")
 
 
 def _log_event(event: str, **fields: Any) -> None:
-    payload = {"event": event, **fields}
-    logger.info(json.dumps(payload, default=str))
+    log_event(event, **fields)
 
 
 def _normalize_text(value: Any) -> Optional[str]:
@@ -89,20 +97,24 @@ class LeadAIService:
             self._persist_lead_result(lead_id, result)
             return {"processed": True, "data": result}
 
-        if not self.api_key:
+        if not self.api_key and not AI_SERVICE_ENABLED:
             _log_event(
                 "lead_ai_skipped",
                 lead_id=lead_id,
                 model=self.model,
-                reason="missing_openai_api_key",
+                reason="missing_openai_api_key_and_ai_service_disabled",
                 provider="system",
             )
             self._persist_automation_run(
                 status="cancelled",
                 lead_id=lead_id,
                 request_payload=request_payload,
-                response_payload={"processed": True, "provider": "system", "reason": "missing_openai_api_key"},
-                error_message="OPENAI_API_KEY is not configured. Heuristic system fallback used.",
+                response_payload={
+                    "processed": True,
+                    "provider": "system",
+                    "reason": "missing_openai_api_key_and_ai_service_disabled",
+                },
+                error_message="OPENAI_API_KEY is not configured and AI service is disabled. Heuristic system fallback used.",
             )
             result = {**heuristic, "provider": "system", "fallback_used": True}
             self._persist_lead_result(lead_id, result)
@@ -296,6 +308,19 @@ class LeadAIService:
         }
 
     def _openai_analysis(self, message: str, lead_id: str) -> Dict[str, Any]:
+        if AI_SERVICE_ENABLED:
+            try:
+                return self._remote_ai_service_analysis(message, lead_id)
+            except Exception as error:
+                _log_event(
+                    "lead_ai_service_failure",
+                    lead_id=lead_id,
+                    endpoint=AI_SERVICE_URL,
+                    error=str(error),
+                )
+                if not self.api_key:
+                    raise
+
         from openai import OpenAI
 
         _log_event(
@@ -358,6 +383,53 @@ class LeadAIService:
             "lead_ai_openai_success",
             lead_id=lead_id,
             model=self.model,
+            parsed=True,
+            keys=sorted(parsed.keys()),
+        )
+        return parsed
+
+    def _remote_ai_service_analysis(self, message: str, lead_id: str) -> Dict[str, Any]:
+        endpoint = f"{AI_SERVICE_URL.rstrip('/')}/api/v1/lead-ai/analyze"
+        payload = {
+            "lead_id": lead_id,
+            "model": self.model,
+            "message": message,
+        }
+        headers = {"Content-Type": "application/json"}
+        if AI_SERVICE_AUTH_TOKEN.strip():
+            headers["X-AI-Service-Token"] = AI_SERVICE_AUTH_TOKEN.strip()
+
+        _log_event(
+            "lead_ai_service_request",
+            lead_id=lead_id,
+            endpoint=endpoint,
+            model=self.model,
+        )
+        req = urllib_request.Request(
+            endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+
+        try:
+            with urllib_request.urlopen(req, timeout=AI_SERVICE_TIMEOUT_SECONDS) as response:
+                body = response.read().decode("utf-8")
+        except URLError as error:
+            raise RuntimeError(f"AI service request failed: {error}") from error
+
+        try:
+            parsed = json.loads(body)
+        except json.JSONDecodeError as error:
+            raise RuntimeError(f"Invalid AI service JSON response: {error}") from error
+
+        if not isinstance(parsed, dict):
+            raise RuntimeError("AI service response must be a JSON object.")
+
+        _log_event(
+            "lead_ai_service_success",
+            lead_id=lead_id,
+            endpoint=endpoint,
             parsed=True,
             keys=sorted(parsed.keys()),
         )

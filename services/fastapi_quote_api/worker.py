@@ -6,6 +6,7 @@ from rq import Connection, Worker
 
 from app.core.config import LEAD_AI_QUEUE_NAME, QUOTE_PDF_QUEUE_NAME
 from app.core.queue import get_redis_connection
+from app.core.observability import log_event
 
 
 def _resolve_queues() -> list[str]:
@@ -20,6 +21,7 @@ def _resolve_queues() -> list[str]:
 def main() -> None:
     connection = get_redis_connection()
     queues = _resolve_queues()
+    log_event("worker_start", queues=queues)
     with Connection(connection):
         worker = Worker(queues)
         worker.work()

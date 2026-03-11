@@ -8,6 +8,8 @@ import {
 } from '@/lib/admin/config-audit';
 import { requireAdminSession } from '@/lib/auth/require-admin';
 import { getRuntimeSetting } from '@/lib/config/runtime-settings';
+import { logApiEvent } from '@/lib/observability/logger';
+import { observeApiRequest } from '@/lib/observability/metrics';
 
 export const runtime = 'nodejs';
 
@@ -133,8 +135,11 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ scriptKey: string }> }
 ) {
+  const startedAt = Date.now();
+  const requestId = request.headers.get('x-request-id') || 'n/a';
   const sessionOrResponse = await requireAdminSession();
   if (sessionOrResponse instanceof NextResponse) {
+    observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', sessionOrResponse.status, Date.now() - startedAt);
     return sessionOrResponse;
   }
   const session = sessionOrResponse;
@@ -160,6 +165,14 @@ export async function POST(
         ok: result.ok,
         output: JSON.stringify(result.payload),
         errorMessage: result.ok ? undefined : JSON.stringify(result.payload),
+      });
+      observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', result.ok ? 200 : result.status, Date.now() - startedAt);
+      logApiEvent(result.ok ? 'info' : 'error', 'admin_config_script_run', {
+        request_id: requestId,
+        script_key: scriptKey,
+        ok: result.ok,
+        status: result.ok ? 200 : result.status,
+        duration_ms: Date.now() - startedAt,
       });
       return NextResponse.json(
         {
@@ -190,6 +203,7 @@ export async function POST(
         output: JSON.stringify(result.payload),
         errorMessage: result.ok ? undefined : JSON.stringify(result.payload),
       });
+      observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', result.ok ? 200 : result.status, Date.now() - startedAt);
       return NextResponse.json(
         {
           ok: result.ok,
@@ -223,6 +237,7 @@ export async function POST(
         output: JSON.stringify(result.payload),
         errorMessage: result.ok ? undefined : JSON.stringify(result.payload),
       });
+      observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', result.ok ? 200 : result.status, Date.now() - startedAt);
       return NextResponse.json(
         {
           ok: result.ok,
@@ -254,6 +269,7 @@ export async function POST(
         output: JSON.stringify(result.payload),
         errorMessage: result.ok ? undefined : JSON.stringify(result.payload),
       });
+      observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', result.ok ? 200 : result.status, Date.now() - startedAt);
       return NextResponse.json(
         {
           ok: result.ok,
@@ -282,6 +298,7 @@ export async function POST(
         output: JSON.stringify(result.result || {}),
         errorMessage: result.ok ? undefined : result.message,
       });
+      observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', result.ok ? 200 : 500, Date.now() - startedAt);
       return NextResponse.json(
         {
           ok: result.ok,
@@ -326,6 +343,7 @@ export async function POST(
         output: result.output,
         errorMessage: ok ? undefined : result.output,
       });
+      observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', ok ? 200 : 500, Date.now() - startedAt);
       return NextResponse.json(
         {
           ok,
@@ -338,9 +356,17 @@ export async function POST(
       );
     }
 
+    observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', 404, Date.now() - startedAt);
     return NextResponse.json({ message: `Unsupported script key: ${scriptKey}` }, { status: 404 });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Script execution failed.';
+    observeApiRequest('/api/admin/config/scripts/[scriptKey]/run', 500, Date.now() - startedAt);
+    logApiEvent('error', 'admin_config_script_run_failed', {
+      request_id: requestId,
+      script_key: scriptKey,
+      error: message,
+      duration_ms: Date.now() - startedAt,
+    });
     return NextResponse.json(
       {
         ok: false,

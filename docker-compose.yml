@@ -69,7 +69,10 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://ai_openai:8100
     depends_on:
+      ai_openai:
+        condition: service_started
       postgres:
         condition: service_healthy
       redis:
@@ -92,7 +95,10 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
       WORKER_QUEUES: lead_ai
+      AI_SERVICE_URL: http://ai_openai:8100
     depends_on:
+      ai_openai:
+        condition: service_started
       postgres:
         condition: service_healthy
       redis:
@@ -121,6 +127,17 @@ services:
     volumes:
       - ./services/fastapi_quote_api:/app
     command: python worker.py
+
+  ai_openai:
+    build:
+      context: ./services/ai_openai_service
+      dockerfile: Dockerfile
+    container_name: dubai_garments_ai_openai
+    restart: unless-stopped
+    env_file:
+      - ./services/fastapi_quote_api/.env.docker.local
+    ports:
+      - "8100:8100"
 
   storefront:
     build:

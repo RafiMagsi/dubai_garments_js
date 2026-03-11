@@ -37,12 +37,16 @@ Open:
 - Storefront: `http://localhost:3000`
 - Customer login: `http://localhost:3000/customer/login`
 - Admin login: `http://localhost:3000/admin/login`
+- Storefront metrics: `http://localhost:3000/api/metrics`
+- FastAPI metrics: `http://localhost:8000/metrics`
 
 ## Notes
 
 - Admin routes and admin APIs are role-protected by middleware.
 - Login credentials are fetched from the `users` table (not env credentials).
 - `db:seed:users` creates/updates one admin and one customer user from `BOOTSTRAP_*` vars in `.env.local`.
+- Request IDs are injected across storefront and FastAPI via `X-Request-ID`.
+- OpenAI inference runs as a dedicated service (`services/ai_openai_service`) and FastAPI calls it via `AI_SERVICE_URL`.
 
 ## Docker
 

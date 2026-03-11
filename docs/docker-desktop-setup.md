@@ -58,10 +58,11 @@ This starts:
 
 1. `postgres`
 2. `redis`
-3. `fastapi`
-4. `worker_lead_ai`
-5. `worker_quote_pdf`
-6. `storefront`
+3. `ai_openai`
+4. `fastapi`
+5. `worker_lead_ai`
+6. `worker_quote_pdf`
+7. `storefront`
 
 ## 4. Open Docker Desktop GUI
 
@@ -72,6 +73,7 @@ In Docker Desktop:
 3. Expand it to see:
    - `dubai_garments_postgres`
    - `dubai_garments_redis`
+   - `dubai_garments_ai_openai`
    - `dubai_garments_fastapi`
    - `dubai_garments_worker_lead_ai`
    - `dubai_garments_worker_quote_pdf`
@@ -106,7 +108,10 @@ After startup:
 
 1. Storefront: `http://localhost:3000`
 2. FastAPI: `http://localhost:8000`
-3. DB health: `http://localhost:3000/api/health/db`
+3. AI service: `http://localhost:8100/health`
+4. DB health: `http://localhost:3000/api/health/db`
+5. FastAPI metrics: `http://localhost:8000/metrics`
+6. Storefront metrics: `http://localhost:3000/api/metrics`
 
 ## 7. Useful Docker commands
 
@@ -138,6 +143,7 @@ Open logs:
 
 ```bash
 docker compose logs -f fastapi
+docker compose logs -f ai_openai
 docker compose logs -f worker_lead_ai
 docker compose logs -f worker_quote_pdf
 docker compose logs -f storefront
@@ -171,11 +177,12 @@ SOURCE_DATABASE_URL='postgresql://<local_user>:<local_password>@localhost:5432/d
 ## 8. What each service does
 
 1. `storefront`: Next.js customer/admin app
-2. `fastapi`: backend API
-3. `worker_lead_ai`: Redis queue worker for lead AI jobs
-4. `worker_quote_pdf`: Redis queue worker for quote PDF jobs
-5. `redis`: queue broker
-6. `postgres`: database
+2. `ai_openai`: dedicated OpenAI inference service
+3. `fastapi`: backend API
+4. `worker_lead_ai`: Redis queue worker for lead AI jobs
+5. `worker_quote_pdf`: Redis queue worker for quote PDF jobs
+6. `redis`: queue broker
+7. `postgres`: database
 
 ## 9. Recommended GUI workflow
 

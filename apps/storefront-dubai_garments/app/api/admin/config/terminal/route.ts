@@ -7,6 +7,8 @@ import {
   createAdminConfigCommandRun,
 } from '@/lib/admin/config-audit';
 import { requireAdminSession } from '@/lib/auth/require-admin';
+import { logApiEvent } from '@/lib/observability/logger';
+import { observeApiRequest } from '@/lib/observability/metrics';
 
 export const runtime = 'nodejs';
 
@@ -86,19 +88,25 @@ async function runCommand(command: string) {
 }
 
 export async function GET() {
+  const startedAt = Date.now();
   const sessionOrResponse = await requireAdminSession();
   if (sessionOrResponse instanceof NextResponse) {
+    observeApiRequest('/api/admin/config/terminal', sessionOrResponse.status, Date.now() - startedAt);
     return sessionOrResponse;
   }
 
+  observeApiRequest('/api/admin/config/terminal', 200, Date.now() - startedAt);
   return NextResponse.json({
     items: ALLOWED_COMMANDS.map((item) => item.label),
   });
 }
 
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
+  const requestId = request.headers.get('x-request-id') || 'n/a';
   const sessionOrResponse = await requireAdminSession();
   if (sessionOrResponse instanceof NextResponse) {
+    observeApiRequest('/api/admin/config/terminal', sessionOrResponse.status, Date.now() - startedAt);
     return sessionOrResponse;
   }
   const session = sessionOrResponse;
@@ -106,6 +114,7 @@ export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as { command?: string };
   const command = String(body.command || '').trim();
   if (!command) {
+    observeApiRequest('/api/admin/config/terminal', 422, Date.now() - startedAt);
     return NextResponse.json({ message: 'Command is required.' }, { status: 422 });
   }
 
@@ -124,6 +133,14 @@ export async function POST(request: NextRequest) {
     ok: result.ok,
     output: result.output,
     errorMessage: result.ok ? undefined : result.output,
+  });
+  observeApiRequest('/api/admin/config/terminal', result.status, Date.now() - startedAt);
+  logApiEvent(result.ok ? 'info' : 'error', 'admin_terminal_command', {
+    request_id: requestId,
+    command,
+    ok: result.ok,
+    status: result.status,
+    duration_ms: Date.now() - startedAt,
   });
   return NextResponse.json(
     {

@@ -5,6 +5,7 @@ Minimal backend service for quote requests.
 ## Endpoints
 
 - `GET /health`
+- `GET /metrics`
 - `POST /api/v1/quote-requests`
 - `GET /api/v1/leads`
 - `GET /api/v1/leads/{lead_id}`
@@ -97,6 +98,16 @@ Override explicitly if needed:
 - `CONFIG_MODE=env`
 - `CONFIG_MODE=db`
 
+## Observability
+
+- Request IDs:
+  - FastAPI accepts `X-Request-ID` and returns it on response headers.
+  - If missing, FastAPI generates one.
+- Structured logs:
+  - JSON log events for request lifecycle, AI processing, and worker jobs.
+- Metrics endpoint:
+  - `GET /metrics` (Prometheus format)
+
 ## Redis worker
 
 Lead AI processing is queued through Redis/RQ.
@@ -120,6 +131,19 @@ source .venv/bin/activate
 WORKER_QUEUES=lead_ai python worker.py
 WORKER_QUEUES=quote_pdf python worker.py
 ```
+
+## Separate AI service (OpenAI)
+
+You can run OpenAI calls through dedicated service:
+
+- `services/ai_openai_service`
+- Endpoint used by FastAPI: `POST /api/v1/lead-ai/analyze`
+
+FastAPI config:
+
+- `AI_SERVICE_ENABLED=true`
+- `AI_SERVICE_URL=http://localhost:8100` (or Docker internal URL)
+- `AI_SERVICE_AUTH_TOKEN=...` (optional shared token)
 
 ## Demo Data Seeder
 

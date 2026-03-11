@@ -42,7 +42,8 @@ Customer Storefront (Next.js)
   - `worker_quote_pdf` (queue: `quote_pdf`)
 
 6. AI Service (`OpenAI API`)
-- Lead extraction/scoring service: `app/services/lead_ai.py`
+- Dedicated microservice: `services/ai_openai_service`
+- FastAPI orchestration service: `services/fastapi_quote_api/app/services/lead_ai.py`
 - Queue-triggered after lead creation, with fallback processing
 
 7. Automation (`n8n workflows`)
@@ -72,3 +73,16 @@ To make this “store-ready” at enterprise quality:
    - migration safety checks
 5. Add backup/restore runbook for Postgres and object storage.
 
+## Observability Layer
+
+1. Request IDs
+- Storefront middleware injects `X-Request-ID`: `apps/storefront-dubai_garments/middleware.ts`
+- FastAPI middleware propagates/generates request IDs: `app/core/observability.py`
+
+2. Structured Logs
+- Storefront API JSON logs: `lib/observability/logger.ts`
+- FastAPI JSON logs + worker lifecycle logs: `app/core/observability.py`, `worker.py`, `app/workers/*`
+
+3. Metrics Endpoints
+- Storefront BFF: `GET /api/metrics` (Prometheus text)
+- FastAPI: `GET /metrics` (Prometheus text)

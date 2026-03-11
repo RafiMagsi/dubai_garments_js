@@ -12,6 +12,7 @@ import ExecutionAuditTable from '@/components/admin/configuration/execution-audi
 import ExecutionOutputModal, {
   ExecutionOutputModalState,
 } from '@/components/admin/configuration/execution-output-modal';
+import ObservabilityCard from '@/components/admin/configuration/observability-card';
 import {
   ConfigExecutionAuditItem,
   useConfigurationEnv,
@@ -57,6 +58,14 @@ export default function AdminConfigurationPage() {
   const [allowedCommands, setAllowedCommands] = useState<string[]>([]);
   const [terminalCommand, setTerminalCommand] = useState('npm run db:tables');
   const [terminalMessage, setTerminalMessage] = useState('');
+  const [observabilityItems, setObservabilityItems] = useState<
+    Array<{ key: string; label: string; url: string }>
+  >([]);
+  const [observabilityLoadingKey, setObservabilityLoadingKey] = useState<string | null>(null);
+  const [observabilityResults, setObservabilityResults] = useState<
+    Record<string, { ok: boolean; status: number; durationMs: number; preview: string }>
+  >({});
+  const [observabilityError, setObservabilityError] = useState('');
   const [auditOutputModal, setAuditOutputModal] = useState<ExecutionOutputModalState>({
     open: false,
     command: '',
@@ -90,6 +99,28 @@ export default function AdminConfigurationPage() {
       }
     }
     void loadTerminalCommands();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadObservabilityItems() {
+      try {
+        const response = await fetch('/api/admin/observability', { cache: 'no-store' });
+        const payload = (await response.json()) as {
+          items?: Array<{ key: string; label: string; url: string }>;
+        };
+        if (!mounted) return;
+        setObservabilityItems(payload.items || []);
+      } catch (error) {
+        if (!mounted) return;
+        const message = error instanceof Error ? error.message : 'Failed to load observability endpoints.';
+        setObservabilityError(message);
+      }
+    }
+    void loadObservabilityItems();
     return () => {
       mounted = false;
     };
@@ -321,6 +352,36 @@ export default function AdminConfigurationPage() {
     }
   }
 
+  async function handleCheckObservability(target: string) {
+    setObservabilityLoadingKey(target);
+    setObservabilityError('');
+    try {
+      const response = await fetch(`/api/admin/observability?target=${encodeURIComponent(target)}`, {
+        cache: 'no-store',
+      });
+      const payload = (await response.json()) as {
+        ok?: boolean;
+        status?: number;
+        durationMs?: number;
+        preview?: string;
+      };
+      setObservabilityResults((prev) => ({
+        ...prev,
+        [target]: {
+          ok: Boolean(payload.ok),
+          status: Number(payload.status || 0),
+          durationMs: Number(payload.durationMs || 0),
+          preview: payload.preview || '',
+        },
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch observability preview.';
+      setObservabilityError(message);
+    } finally {
+      setObservabilityLoadingKey(null);
+    }
+  }
+
   return (
     <AdminShell>
       <section className="dg-admin-page">
@@ -480,6 +541,16 @@ export default function AdminConfigurationPage() {
           </div>
           {terminalMessage ? <p className="dg-list-meta mt-2">{terminalMessage}</p> : null}
         </article>
+      </section>
+
+      <section className="dg-admin-page">
+        <ObservabilityCard
+          items={observabilityItems}
+          loadingKey={observabilityLoadingKey}
+          results={observabilityResults}
+          errorMessage={observabilityError}
+          onCheck={handleCheckObservability}
+        />
       </section>
 
       <section className="dg-admin-page">

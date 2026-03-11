@@ -17,6 +17,7 @@ from app.api.routers.quote_requests import router as quote_requests_router
 from app.api.routers.scheduler import router as scheduler_router
 from app.api.routers.webhooks import router as webhooks_router
 from app.core.config import CORS_ORIGINS
+from app.core.observability import RequestObservabilityMiddleware
 
 app = FastAPI(title="Dubai Garments Quote API", version="0.2.0")
 
@@ -28,6 +29,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestObservabilityMiddleware)
 
 app.include_router(health_router)
 app.include_router(quote_requests_router)
