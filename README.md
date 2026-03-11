@@ -57,3 +57,74 @@ Docker Compose and Docker Desktop setup is documented here:
 - [n8n Follow-up Automation](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-followup-automation.md)
 - [n8n Scheduler Cron](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-scheduler-cron.md)
 - [n8n SendGrid Inbound Test](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-sendgrid-inbound-test.md)
+
+## One-Command Bootstrap
+
+From project root:
+
+```bash
+./scripts/setup-install.sh
+```
+
+Optional (auto-open browser on local machine):
+
+```bash
+./scripts/setup-install.sh --open
+```
+
+This command will:
+
+1. Create missing Docker env files from templates
+2. Build and start Docker services
+3. Wait for storefront readiness
+4. Run DB migrations inside storefront container
+5. Print installer URL (`/install`, with token if configured)
+
+## Server Mode (No Docker + systemd)
+
+Use this when Docker is blocked or unavailable on the target server.
+
+Requirements:
+- Node.js 20+ and npm
+- Python 3.10+ with `venv`
+- PostgreSQL client (`psql`)
+- Reachable PostgreSQL + Redis (local or managed)
+
+### 1) Bootstrap everything (deps + venv + migrate + seed + build)
+
+```bash
+./scripts/non-docker-setup.sh
+```
+
+Optional flags:
+
+```bash
+./scripts/non-docker-setup.sh --skip-seed
+./scripts/non-docker-setup.sh --skip-build
+```
+
+### 2) Install systemd services
+
+```bash
+sudo ./scripts/install-systemd-units.sh
+```
+
+Optional AI service:
+
+```bash
+sudo ./scripts/install-systemd-units.sh --enable-ai
+```
+
+### 3) Verify service status
+
+```bash
+sudo systemctl status dubai-garments-storefront dubai-garments-fastapi dubai-garments-worker
+```
+
+### 4) Open installer
+
+- `http://localhost:3000/install`
+
+Unit files are in:
+
+- [deploy/systemd/README.md](/Users/rafi/developer/ai_development/projects/dubai_garments/deploy/systemd/README.md)

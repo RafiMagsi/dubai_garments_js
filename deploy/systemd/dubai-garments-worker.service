@@ -1,0 +1,17 @@
+[Unit]
+Description=Dubai Garments Background Worker (RQ)
+After=network.target dubai-garments-fastapi.service redis.service
+Wants=dubai-garments-fastapi.service
+
+[Service]
+Type=simple
+User=__RUN_USER__
+WorkingDirectory=__PROJECT_ROOT__/services/fastapi_quote_api
+EnvironmentFile=__PROJECT_ROOT__/services/fastapi_quote_api/.env
+ExecStart=__PROJECT_ROOT__/services/fastapi_quote_api/.venv/bin/python worker.py
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

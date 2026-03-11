@@ -1,0 +1,16 @@
+[Unit]
+Description=Dubai Garments FastAPI API
+After=network.target
+
+[Service]
+Type=simple
+User=__RUN_USER__
+WorkingDirectory=__PROJECT_ROOT__/services/fastapi_quote_api
+EnvironmentFile=__PROJECT_ROOT__/services/fastapi_quote_api/.env
+ExecStart=__PROJECT_ROOT__/services/fastapi_quote_api/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
