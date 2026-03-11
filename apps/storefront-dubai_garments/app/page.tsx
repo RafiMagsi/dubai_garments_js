@@ -6,75 +6,14 @@ import CategoryCard from '@/components/store/category-card';
 import ProductCard from '@/components/store/product-card';
 import TestimonialCard from '@/components/store/testimonial-card';
 import TrustItem from '@/components/store/trust-item';
-import { SectionHeader } from '@/components/ui';
+import { StoreSection } from '@/components/storefront/common';
 import { useFeaturedProducts } from '@/features/products';
-
-const categories = [
-  {
-    name: 'Corporate T-Shirts',
-    description: 'Breathable cotton t-shirts with branding-ready print and embroidery options.',
-    slug: 'corporate-tshirts',
-  },
-  {
-    name: 'Event Hoodies',
-    description: 'Premium fleece hoodies for team events, campaigns, and winter merch drops.',
-    slug: 'event-hoodies',
-  },
-  {
-    name: 'Staff Uniforms',
-    description: 'Durable uniform sets for hospitality, clinics, retail teams, and logistics crews.',
-    slug: 'staff-uniforms',
-  },
-  {
-    name: 'Sports Jerseys',
-    description: 'Performance-focused jerseys with sublimation and full custom color support.',
-    slug: 'sports-jerseys',
-  },
-];
-
-const process = [
-  {
-    title: 'Share Requirements',
-    description: 'Choose product type, add branding details, and mention quantity with delivery timeline.',
-  },
-  {
-    title: 'Review Quotation',
-    description: 'Receive pricing tiers, production lead time, and customization notes from our sales team.',
-  },
-  {
-    title: 'Approve & Produce',
-    description: 'Finalize design approvals and move directly into quality-controlled bulk production.',
-  },
-];
-
-const industries = [
-  'Corporate Teams',
-  'Schools & Universities',
-  'Restaurants & Cafes',
-  'Healthcare Clinics',
-  'Retail Franchises',
-  'Sports Clubs',
-  'Event Management Agencies',
-  'Logistics & Field Teams',
-];
-
-const testimonials = [
-  {
-    quote: 'Dubai Garments helped us deliver 1,200 event shirts on schedule with excellent print quality.',
-    name: 'Hassan K.',
-    role: 'Events Lead, BrandVista',
-  },
-  {
-    quote: 'Their quoting process is clear and fast. We now reorder uniforms every quarter without friction.',
-    name: 'Mariam A.',
-    role: 'Operations Manager, UrbanBites',
-  },
-  {
-    quote: 'Great communication, consistent quality, and dependable lead times for school sports kits.',
-    name: 'Faisal R.',
-    role: 'Procurement Officer, Al Noor Academy',
-  },
-];
+import {
+  homeCategories,
+  homeIndustries,
+  homeProcess,
+  homeTestimonials,
+} from '@/features/storefront/content/home-content';
 
 export default function HomePage() {
   const { data: featuredProducts = [] } = useFeaturedProducts();
@@ -110,58 +49,45 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="dg-section">
-          <div className="dg-container">
-            <SectionHeader
-              title="Shop by category"
-              subtitle="Choose a category and request a tailored quote for your bulk order."
-            />
-
+        <StoreSection
+          title="Shop by category"
+          subtitle="Choose a category and request a tailored quote for your bulk order."
+        >
             <div className="dg-category-grid">
-              {categories.map((category) => (
+              {homeCategories.map((category) => (
                 <CategoryCard key={category.slug} {...category} />
               ))}
             </div>
-          </div>
-        </section>
+        </StoreSection>
 
-        <section className="dg-section">
-          <div className="dg-container">
-            <SectionHeader
-              title="Featured products"
-              subtitle="Production-ready garments with clear MOQs, lead times, and customization options."
-              action={
-                <Link href="/products" className="dg-btn-secondary">View All Products</Link>
-              }
-            />
-
+        <StoreSection
+          title="Featured products"
+          subtitle="Production-ready garments with clear MOQs, lead times, and customization options."
+          action={<Link href="/products" className="dg-btn-secondary">View All Products</Link>}
+        >
             <div className="dg-product-grid">
               {featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
-          </div>
-        </section>
+        </StoreSection>
 
-        <section className="dg-section">
-          <div className="dg-container">
+        <StoreSection>
             <h2 className="dg-section-title">How bulk ordering works</h2>
             <div className="dg-process-grid">
-              {process.map((step, index) => (
+              {homeProcess.map((step, index) => (
                 <div key={step.title} className="dg-card dg-category-card">
                   <h3 className="dg-title-sm">{index + 1}. {step.title}</h3>
                   <p className="dg-muted-sm">{step.description}</p>
                 </div>
               ))}
             </div>
-          </div>
-        </section>
+        </StoreSection>
 
-        <section className="dg-section">
-          <div className="dg-container dg-two-col-grid">
+        <StoreSection containerClassName="dg-container dg-two-col-grid">
             <div className="dg-card dg-info-card">
               <h2 className="dg-section-title">Industries served</h2>
               <p className="dg-section-copy">Built for organizations ordering custom garments at scale.</p>
               <div className="dg-chip-cloud">
-                {industries.map((industry) => (
+                {homeIndustries.map((industry) => (
                   <span key={industry} className="dg-chip">{industry}</span>
                 ))}
               </div>
@@ -170,13 +96,12 @@ export default function HomePage() {
             <div className="dg-card dg-info-card">
               <h2 className="dg-section-title">Trusted by teams</h2>
               <div className="dg-testimonials">
-                {testimonials.map((testimonial) => (
+                {homeTestimonials.map((testimonial) => (
                   <TestimonialCard key={testimonial.name} {...testimonial} />
                 ))}
               </div>
             </div>
-          </div>
-        </section>
+        </StoreSection>
 
         <section className="dg-section">
           <div className="dg-container">

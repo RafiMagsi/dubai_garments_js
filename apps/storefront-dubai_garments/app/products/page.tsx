@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import StorefrontShell from '@/components/layout/storefront-shell';
 import ProductCard from '@/components/store/product-card';
-import { SectionHeader } from '@/components/ui';
+import { EmptyStateCard, StoreSection } from '@/components/storefront/common';
 import { ProductCategory, useProducts } from '@/features/products';
 
 const categoryOptions: Array<{ label: string; value: ProductCategory | 'all' }> = [
@@ -33,14 +33,11 @@ export default function ProductsPage() {
   return (
     <StorefrontShell>
       <main className="dg-main">
-        <section className="dg-section">
-          <div className="dg-container">
-            <SectionHeader
-              title="Product Catalog"
-              subtitle="Browse garments by category and request bulk quotations with customization details."
-              action={<span className="dg-badge">{products.length} Products</span>}
-            />
-
+        <StoreSection
+          title="Product Catalog"
+          subtitle="Browse garments by category and request bulk quotations with customization details."
+          action={<span className="dg-badge">{products.length} Products</span>}
+        >
             <div className="dg-card dg-filter-card">
               <div className="dg-filter-row">
                 {categoryOptions.map((option) => (
@@ -71,10 +68,10 @@ export default function ProductsPage() {
                 {products.map((product) => <ProductCard key={product.id} product={product} />)}
 
                 {products.length === 0 && (
-                  <div className="dg-card dg-info-card">
-                    <h3 className="dg-title-sm">No products found</h3>
-                    <p className="dg-muted-sm">Try another search term or clear the category filter.</p>
-                    <div className="dg-hero-actions">
+                  <EmptyStateCard
+                    title="No products found"
+                    description="Try another search term or clear the category filter."
+                    action={
                       <button
                         type="button"
                         className="dg-btn-primary"
@@ -85,13 +82,12 @@ export default function ProductsPage() {
                       >
                         Clear Filters
                       </button>
-                    </div>
-                  </div>
+                    }
+                  />
                 )}
               </div>
             )}
-          </div>
-        </section>
+        </StoreSection>
       </main>
     </StorefrontShell>
   );

@@ -5,13 +5,13 @@ import { FormEvent, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import ProductCard from '@/components/store/product-card';
 import StorefrontShell from '@/components/layout/storefront-shell';
-import { SectionHeader } from '@/components/ui';
+import { EmptyStateCard, StoreSection } from '@/components/storefront/common';
 import { useProductBySlug, useProducts } from '@/features/products';
 import {
-  formatAed,
   formatBadgeLabel,
   getStartingUnitPriceAED,
 } from '@/features/products/utils/product-pricing';
+import { productPriceLabelWithoutCategory } from '@/features/storefront/utils/product-labels';
 import { useQuoteStore } from '@/features/quote';
 
 type ProductConfig = {
@@ -112,8 +112,7 @@ export default function ProductDetailPage() {
                 <>
                   <span className="dg-badge">{formatBadgeLabel(product.category)}</span>
                   <p className="dg-muted-sm">
-                    Starting Price:{' '}
-                    {startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}
+                    {productPriceLabelWithoutCategory('Starting Price', startingPrice)}
                   </p>
                   <h1 className="dg-title-lg">{product.name}</h1>
                   <p className="dg-muted-sm">MOQ: {product.minOrderQty} pcs</p>
@@ -144,8 +143,7 @@ export default function ProductDetailPage() {
         </section>
 
         {product && (
-          <section className="dg-section">
-            <div className="dg-container">
+          <StoreSection>
               <div className="dg-card dg-config-card">
                 <h2 className="dg-section-title">Product Configuration</h2>
                 <p className="dg-section-copy">
@@ -287,31 +285,26 @@ export default function ProductDetailPage() {
                   </div>
                 ) : null}
               </div>
-            </div>
-          </section>
+          </StoreSection>
         )}
 
         {product && (
-          <section className="dg-section">
-            <div className="dg-container">
-              <SectionHeader
-                title="Related Products"
-                subtitle="Similar options available for your bulk order requirements."
-              />
+          <StoreSection
+            title="Related Products"
+            subtitle="Similar options available for your bulk order requirements."
+          >
               <div className="dg-product-grid">
                 {related.map((item) => (
                   <ProductCard key={item.id} product={item} />
                 ))}
               </div>
               {related.length === 0 ? (
-                <div className="dg-card dg-info-card">
-                  <p className="dg-muted-sm">
-                    No related products available right now. Browse the full catalog for more options.
-                  </p>
-                </div>
+                <EmptyStateCard
+                  title="No related products available"
+                  description="Browse the full catalog for more options."
+                />
               ) : null}
-            </div>
-          </section>
+          </StoreSection>
         )}
       </main>
     </StorefrontShell>
