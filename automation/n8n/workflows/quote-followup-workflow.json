@@ -1,0 +1,293 @@
+{
+  "name": "Dubai Garments - Quote Follow-up Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "quote-sent-followup",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "Webhook_QuoteSent",
+      "name": "Quote Sent Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        280,
+        260
+      ],
+      "webhookId": "quote-sent-followup"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "quoteId",
+              "type": "string",
+              "value": "={{ $json.body.quoteId || $json.quoteId }}"
+            },
+            {
+              "name": "quoteNumber",
+              "type": "string",
+              "value": "={{ $json.body.quoteNumber || $json.quoteNumber }}"
+            }
+          ]
+        }
+      },
+      "id": "Set_Payload",
+      "name": "Set Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "days"
+      },
+      "id": "Wait_Day2",
+      "name": "Wait Day 2",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FASTAPI_INTERNAL_URL + '/api/v1/automation/followups/dispatch' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Automation-Token",
+              "value": "={{ $env.AUTOMATION_SHARED_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"quote_id\":\"{{$json.quoteId}}\",\"step\":\"day_2\"}",
+        "options": {}
+      },
+      "id": "HTTP_Day2",
+      "name": "Send Day 2 Follow-up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "days"
+      },
+      "id": "Wait_Day5",
+      "name": "Wait Day 5",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1240,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FASTAPI_INTERNAL_URL + '/api/v1/automation/followups/dispatch' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Automation-Token",
+              "value": "={{ $env.AUTOMATION_SHARED_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"quote_id\":\"{{$json.quoteId}}\",\"step\":\"day_5\"}",
+        "options": {}
+      },
+      "id": "HTTP_Day5",
+      "name": "Send Day 5 Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1480,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "days"
+      },
+      "id": "Wait_Day10",
+      "name": "Wait Day 10",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1720,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FASTAPI_INTERNAL_URL + '/api/v1/automation/followups/dispatch' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Automation-Token",
+              "value": "={{ $env.AUTOMATION_SHARED_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"quote_id\":\"{{$json.quoteId}}\",\"step\":\"day_10\"}",
+        "options": {}
+      },
+      "id": "HTTP_Day10",
+      "name": "Send Day 10 Final",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1960,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"ok\":true,\"message\":\"Follow-up workflow scheduled\",\"quoteId\":\"{{$json.quoteId}}\"}"
+      },
+      "id": "Webhook_Response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2200,
+        260
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Quote Sent Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Payload": {
+      "main": [
+        [
+          {
+            "node": "Wait Day 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Day 2": {
+      "main": [
+        [
+          {
+            "node": "Send Day 2 Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Day 2 Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Wait Day 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Day 5": {
+      "main": [
+        [
+          {
+            "node": "Send Day 5 Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Day 5 Reminder": {
+      "main": [
+        [
+          {
+            "node": "Wait Day 10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Day 10": {
+      "main": [
+        [
+          {
+            "node": "Send Day 10 Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Day 10 Final": {
+      "main": [
+        [
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9d8b7f2e-fc1d-4f2f-87a2-quote-followup-v1"
+}

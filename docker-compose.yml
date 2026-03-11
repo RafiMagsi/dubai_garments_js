@@ -33,6 +33,31 @@ services:
       timeout: 5s
       retries: 5
 
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: dubai_garments_n8n
+    restart: unless-stopped
+    env_file:
+      - .env.docker.local
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: ${N8N_PORT:-5678}
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE:-true}
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-admin123}
+      GENERIC_TIMEZONE: ${N8N_TIMEZONE:-Asia/Karachi}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      FASTAPI_INTERNAL_URL: http://fastapi:8000
+      AUTOMATION_SHARED_SECRET: ${AUTOMATION_SHARED_SECRET:-}
+    depends_on:
+      fastapi:
+        condition: service_started
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
   fastapi:
     build:
       context: ./services/fastapi_quote_api
@@ -104,5 +129,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  n8n_data:
   storefront_node_modules:
   storefront_next_cache:

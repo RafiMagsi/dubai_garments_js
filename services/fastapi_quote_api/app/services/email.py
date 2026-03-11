@@ -315,3 +315,39 @@ def build_lead_notification_email(
         f"<strong>Quantity:</strong> {quantity}</p>"
     )
     return {"subject": subject, "text": text, "html": html}
+
+
+def build_quote_followup_email(
+    quote_number: str,
+    company_name: str,
+    step: str,
+    total_amount: float,
+    currency: str,
+) -> Dict[str, str]:
+    step_map = {
+        "day_2": ("Day 2 Follow-up", "Just checking if you had time to review the quote."),
+        "day_5": ("Day 5 Reminder", "We wanted to send a reminder in case you need any revisions."),
+        "day_10": ("Day 10 Final Message", "Final follow-up from our side before we close this quote."),
+    }
+    if step not in step_map:
+        step = "day_2"
+    title, opening = step_map[step]
+
+    subject = f"{title}: Quote {quote_number}"
+    text = (
+        f"Hello {company_name or 'Customer'},\n\n"
+        f"{opening}\n"
+        f"Quote: {quote_number}\n"
+        f"Total: {currency} {total_amount:.2f}\n\n"
+        "Reply to this email and we will assist immediately.\n\n"
+        "Dubai Garments Sales Team"
+    )
+    html = (
+        f"<p>Hello {company_name or 'Customer'},</p>"
+        f"<p>{opening}</p>"
+        f"<p><strong>Quote:</strong> {quote_number}<br/>"
+        f"<strong>Total:</strong> {currency} {total_amount:.2f}</p>"
+        "<p>Reply to this email and we will assist immediately.</p>"
+        "<p>Dubai Garments Sales Team</p>"
+    )
+    return {"subject": subject, "text": text, "html": html}

@@ -61,3 +61,13 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "true").strip().lower() in {"1", "true", "yes", "on"}
+
+N8N_FOLLOWUP_ENABLED = os.getenv("N8N_FOLLOWUP_ENABLED", "true").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+N8N_QUOTE_FOLLOWUP_WEBHOOK_URL = os.getenv("N8N_QUOTE_FOLLOWUP_WEBHOOK_URL", "")
+N8N_REQUEST_TIMEOUT_SECONDS = float(os.getenv("N8N_REQUEST_TIMEOUT_SECONDS", "10"))
+AUTOMATION_SHARED_SECRET = os.getenv("AUTOMATION_SHARED_SECRET", "")

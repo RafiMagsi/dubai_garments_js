@@ -26,6 +26,7 @@ from app.services.email import (
     finish_automation_run,
     send_email,
 )
+from app.services.n8n import trigger_quote_followup_workflow
 from app.services.quotes import create_quote
 from app.services.storage import read_local_binary
 
@@ -192,6 +193,7 @@ def view_quote(quote_id: str) -> Dict[str, object]:
 def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dict[str, object]:
     status = _normalize_quote_status(payload.status)
     now = datetime.now(timezone.utc)
+    followup_trigger_payload: Optional[Dict[str, object]] = None
 
     try:
         with get_db_connection() as connection:
@@ -454,11 +456,52 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
                                 status="failed",
                                 error_message=str(email_error),
                             )
+
+                    followup_trigger_payload = {
+                        "event": "quote_sent",
+                        "quoteId": quote_id,
+                        "quoteNumber": updated.get("quote_number"),
+                        "customerId": updated.get("customer_id"),
+                        "leadId": updated.get("lead_id"),
+                        "dealId": updated.get("deal_id"),
+                    }
             connection.commit()
     except HTTPException:
         raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Failed to update quote status: {error}") from error
+
+    if followup_trigger_payload:
+        try:
+            with get_db_connection() as connection:
+                run_id = create_automation_run(
+                    connection=connection,
+                    workflow_name="n8n_quote_followup_trigger",
+                    trigger_source="automation",
+                    trigger_entity_type="quote",
+                    trigger_entity_id=quote_id,
+                    request_payload=followup_trigger_payload,
+                )
+                response = trigger_quote_followup_workflow(followup_trigger_payload)
+                if response.get("ok"):
+                    finish_automation_run(
+                        connection=connection,
+                        run_id=run_id,
+                        status="success",
+                        response_payload=response,
+                    )
+                else:
+                    finish_automation_run(
+                        connection=connection,
+                        run_id=run_id,
+                        status="failed",
+                        response_payload=response,
+                        error_message=response.get("reason") or response.get("responseText"),
+                    )
+                connection.commit()
+        except Exception:
+            # n8n trigger failure should not block quote status update.
+            pass
 
     return {"item": updated}
 

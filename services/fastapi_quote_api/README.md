@@ -19,6 +19,7 @@ Minimal backend service for quote requests.
 - `GET /api/v1/activities`
 - `GET /api/v1/activities/{activity_id}`
 - `POST /api/v1/emails/send`
+- `POST /api/v1/automation/followups/dispatch`
 - `POST /api/v1/quotes/{quote_id}/generate-pdf`
 - `GET /api/v1/quotes/{quote_id}/pdf`
 - `GET /api/v1/quotes/{quote_id}/pdf/download`
@@ -78,5 +79,9 @@ Worker listens to:
   - New lead notification (to `ADMIN_NOTIFICATION_EMAIL`)
   - Follow-up emails on deal stage automation
   - Quote sent email when quote status changes to `sent`
+- n8n follow-up automation:
+  - Quote `sent` status triggers n8n webhook (`N8N_QUOTE_FOLLOWUP_WEBHOOK_URL`)
+  - n8n should call `POST /api/v1/automation/followups/dispatch` on day_2/day_5/day_10
+  - Secure this endpoint with `AUTOMATION_SHARED_SECRET` via `X-Automation-Token`
 - Activity log is append-only and system-generated. It is not manually created from the admin UI.
 - Activity log event types: `lead_created`, `ai_processed_lead`, `quote_generated`, `email_sent`, `followup_triggered`, `customer_replied`, plus lead and deal update events.

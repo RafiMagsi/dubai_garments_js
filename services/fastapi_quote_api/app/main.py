@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers.activities import router as activities_router
 from app.api.routers.deals import router as deals_router
 from app.api.routers.emails import router as emails_router
+from app.api.routers.followups import router as followups_router
 from app.api.routers.health import router as health_router
 from app.api.routers.leads import router as leads_router
 from app.api.routers.pricing import router as pricing_router
@@ -32,3 +33,4 @@ app.include_router(quotes_router)
 app.include_router(deals_router)
 app.include_router(activities_router)
 app.include_router(emails_router)
+app.include_router(followups_router)
