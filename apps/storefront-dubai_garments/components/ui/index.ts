@@ -10,3 +10,4 @@ export {
   TableHeadRow,
   TableRow,
 } from './table';
+export { default as Modal } from './modal';

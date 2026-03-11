@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { Button, Card, FieldLabel, TextField } from '@/components/ui';
 import { useQuotes, useUpdateQuoteStatus } from '@/features/admin/quotes';
+import { formatDate, titleCase } from '@/features/admin/shared/view-format';
 
 export default function AdminQuotesPage() {
   const [search, setSearch] = useState('');
@@ -32,22 +34,20 @@ export default function AdminQuotesPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Quote Management</h1>
-            <p className="dg-page-subtitle">
-              Manage draft, sent, approved, rejected, and expired quotations across all deals.
-            </p>
-          </div>
-          <div className="dg-admin-toolbar">
+        <AdminPageHeader
+          title="Quote Management"
+          subtitle="Manage draft, sent, approved, rejected, and expired quotations across all deals."
+          actions={
+            <>
             <Link href="/admin/dashboard" className="dg-btn-secondary">
               Dashboard
             </Link>
             <Link href="/admin/deals" className="dg-btn-secondary">
               Deals
             </Link>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         <Card className="dg-panel">
           <div className="dg-form-row">
@@ -119,13 +119,13 @@ export default function AdminQuotesPage() {
                       <td>{quote.customer_company_name || quote.customer_id || '-'}</td>
                       <td>
                         <span className={`dg-status-pill dg-status-pill-${quote.status.toUpperCase()}`}>
-                          {quote.status}
+                          {titleCase(quote.status)}
                         </span>
                       </td>
                       <td>
                         {quote.currency} {quote.total_amount.toFixed(2)}
                       </td>
-                      <td>{quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : '-'}</td>
+                      <td>{formatDate(quote.valid_until)}</td>
                       <td className="dg-form-row">
                         <Link href={`/admin/quotes/${quote.id}`} className="dg-btn-secondary">
                           Open

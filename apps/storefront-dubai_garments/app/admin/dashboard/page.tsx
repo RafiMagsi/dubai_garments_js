@@ -1,17 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { useDeals, usePipeline } from '@/features/admin/deals';
 import { useLeads } from '@/features/admin/leads';
 import { useQuotes } from '@/features/admin/quotes';
+import { shortCode, titleCase } from '@/features/admin/shared/view-format';
 
 const leadStatuses = ['new', 'qualified', 'quoted', 'won', 'lost'] as const;
 const dealStages = ['new', 'qualified', 'quoted', 'negotiation', 'won', 'lost'] as const;
-
-function titleCase(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
-}
 
 export default function AdminDashboardPage() {
   const leadsQuery = useLeads();
@@ -66,14 +64,11 @@ export default function AdminDashboardPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Dashboard Analytics</h1>
-            <p className="dg-page-subtitle">
-              Performance overview for lead intake, pipeline progress, and quote conversion.
-            </p>
-          </div>
-          <div className="dg-admin-toolbar">
+        <AdminPageHeader
+          title="Dashboard Analytics"
+          subtitle="Performance overview for lead intake, pipeline progress, and quote conversion."
+          actions={
+            <>
             <Link href="/admin/analytics" className="dg-btn-secondary">
               Analytics Dashboard
             </Link>
@@ -86,8 +81,9 @@ export default function AdminDashboardPage() {
             <Link href="/admin/quotes" className="dg-btn-secondary">
               Open Quotes
             </Link>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         <div className="dg-kpi-grid">
           <article className="dg-card dg-kpi-card">
@@ -207,7 +203,7 @@ export default function AdminDashboardPage() {
                   <div key={lead.id} className="dg-list-row">
                     <div className="dg-list-main">
                       <p className="dg-list-title">
-                        #{lead.id.slice(0, 6).toUpperCase()} {lead.contact_name || 'Unnamed Lead'}
+                        #{shortCode(lead.id)} {lead.contact_name || 'Unnamed Lead'}
                       </p>
                       <p className="dg-list-meta">
                         {titleCase(lead.status)} • {lead.ai_product || 'No product'}
@@ -232,7 +228,7 @@ export default function AdminDashboardPage() {
                   <div key={deal.id} className="dg-list-row">
                     <div className="dg-list-main">
                       <p className="dg-list-title">
-                        #{deal.id.slice(0, 6).toUpperCase()} {deal.lead_contact_name || 'No customer'}
+                        #{shortCode(deal.id)} {deal.lead_contact_name || 'No customer'}
                       </p>
                       <p className="dg-list-meta">{titleCase(deal.stage)} • Pipeline item</p>
                     </div>
@@ -272,7 +268,7 @@ export default function AdminDashboardPage() {
                 {recentQuotes.length > 0 ? (
                   recentQuotes.map((quote) => (
                     <tr key={quote.id}>
-                      <td>{quote.quote_number || `#${quote.id.slice(0, 6).toUpperCase()}`}</td>
+                      <td>{quote.quote_number || `#${shortCode(quote.id)}`}</td>
                       <td>{quote.customer_company_name || '-'}</td>
                       <td>
                         <span className="dg-status-pill">{quote.status}</span>

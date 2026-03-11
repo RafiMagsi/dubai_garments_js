@@ -3,8 +3,17 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
+import CommandRunLogModal, {
+  CommandRunLogModalState,
+} from '@/components/admin/configuration/command-run-log-modal';
+import ExecutionAuditTable from '@/components/admin/configuration/execution-audit-table';
+import ExecutionOutputModal, {
+  ExecutionOutputModalState,
+} from '@/components/admin/configuration/execution-output-modal';
 import {
+  ConfigExecutionAuditItem,
   useConfigurationEnv,
   useConfigurationAudit,
   useConfigurationScripts,
@@ -15,26 +24,11 @@ import {
   ConfigEnvItem,
   ConfigScriptItem,
 } from '@/features/admin/configuration/types/configuration.types';
-
-function formatDate(value?: string | null) {
-  if (!value) return '-';
-  return new Date(value).toLocaleString();
-}
-
-function titleCase(value: string) {
-  return value
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function statusBadgeClass(status?: string | null) {
-  if (!status) return 'dg-status-pill';
-  if (status === 'success') return 'dg-status-pill';
-  if (status === 'failed') return 'dg-status-pill dg-status-pill-LOST';
-  if (status === 'running') return 'dg-status-pill dg-status-pill-NEW';
-  if (status === 'queued') return 'dg-status-pill dg-status-pill-QUALIFIED';
-  return 'dg-status-pill';
-}
+import {
+  formatDate,
+  statusBadgeClass,
+  titleCase,
+} from '@/features/admin/configuration/utils/view-format';
 
 function defaultInputMap(script: ConfigScriptItem) {
   const map: Record<string, string> = {};
@@ -63,14 +57,7 @@ export default function AdminConfigurationPage() {
   const [allowedCommands, setAllowedCommands] = useState<string[]>([]);
   const [terminalCommand, setTerminalCommand] = useState('npm run db:tables');
   const [terminalMessage, setTerminalMessage] = useState('');
-  const [auditOutputModal, setAuditOutputModal] = useState<{
-    open: boolean;
-    command: string;
-    status: string;
-    output: string;
-    input: string;
-    executedAt: string;
-  }>({
+  const [auditOutputModal, setAuditOutputModal] = useState<ExecutionOutputModalState>({
     open: false,
     command: '',
     status: '',
@@ -78,13 +65,7 @@ export default function AdminConfigurationPage() {
     input: '',
     executedAt: '',
   });
-  const [runLogModal, setRunLogModal] = useState<{
-    open: boolean;
-    scriptName: string;
-    command: string;
-    status: 'running' | 'success' | 'failed';
-    output: string;
-  }>({
+  const [runLogModal, setRunLogModal] = useState<CommandRunLogModalState>({
     open: false,
     scriptName: '',
     command: '',
@@ -132,6 +113,18 @@ export default function AdminConfigurationPage() {
     acc[item.target].push(item);
     return acc;
   }, {});
+
+  function openAuditOutputModal(item: ConfigExecutionAuditItem) {
+    setAuditOutputModal({
+      open: true,
+      command: item.command_label || item.command_key,
+      status: item.status,
+      output: item.error_message || item.output_log || '-',
+      input:
+        Object.keys(item.input_payload || {}).length > 0 ? JSON.stringify(item.input_payload, null, 2) : '-',
+      executedAt: item.started_at,
+    });
+  }
 
   function getScriptInput(script: ConfigScriptItem, key: string) {
     if (inputsByScript[script.key]?.[key] !== undefined) {
@@ -331,14 +324,10 @@ export default function AdminConfigurationPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Configuration Center</h1>
-            <p className="dg-page-subtitle">
-              Run operational scripts, scheduler tasks, and data jobs from one controlled admin interface.
-            </p>
-          </div>
-        </div>
+        <AdminPageHeader
+          title="Configuration Center"
+          subtitle="Run operational scripts, scheduler tasks, and data jobs from one controlled admin interface."
+        />
 
         <div className="dg-kpi-grid">
           <article className="dg-card dg-kpi-card">
@@ -599,7 +588,7 @@ export default function AdminConfigurationPage() {
       <section className="dg-admin-page">
         <article className="dg-card dg-panel">
           <div className="dg-admin-head">
-            <h2 className="dg-title-sm">Execution Audit</h2>
+            <h2 className="dg-title-sm">Command Execution Audit</h2>
             <div className="flex items-center gap-2">
               <span className="dg-badge">{auditItems.length} recent runs</span>
               <Link href="/admin/configuration/audit" className="dg-btn-secondary">
@@ -615,167 +604,26 @@ export default function AdminConfigurationPage() {
             <p className="dg-alert-error">
               {auditQuery.error instanceof Error
                 ? auditQuery.error.message
-                : 'Failed to load execution audit records.'}
+                : 'Failed to load command execution audit records.'}
             </p>
           )}
           {!auditQuery.isLoading && !auditQuery.isError && (
-            <div className="dg-table-wrap">
-              <table className="dg-table">
-                <thead>
-                  <tr>
-                    <th>When</th>
-                    <th>User</th>
-                    <th>Type</th>
-                    <th>Command</th>
-                    <th>Status</th>
-                    <th>Input</th>
-                    <th>Output</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="text-center">
-                        No audit records yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    auditItems.map((item) => (
-                      <tr key={item.id}>
-                        <td>
-                          <p className="dg-list-title">{formatDate(item.started_at)}</p>
-                          <p className="dg-list-meta">Finished: {formatDate(item.finished_at)}</p>
-                        </td>
-                        <td>
-                          <p className="dg-list-title">{item.user_email || 'Unknown user'}</p>
-                          <p className="dg-list-meta">{item.user_id || '-'}</p>
-                        </td>
-                        <td>{titleCase(item.execution_type || 'unknown')}</td>
-                        <td>
-                          <p className="dg-list-title">{item.command_label || item.command_key}</p>
-                          <p className="dg-list-meta">{item.command_key}</p>
-                        </td>
-                        <td>
-                          <span className={statusBadgeClass(item.status)}>{titleCase(item.status)}</span>
-                        </td>
-                        <td className="max-w-72">
-                          <pre className="whitespace-pre-wrap break-words text-xs text-slate-600">
-                            {Object.keys(item.input_payload || {}).length > 0
-                              ? JSON.stringify(item.input_payload, null, 2)
-                              : '-'}
-                          </pre>
-                        </td>
-                        <td>
-                          {item.error_message || item.output_log ? (
-                            <button
-                              type="button"
-                              className="dg-btn-secondary"
-                              onClick={() =>
-                                setAuditOutputModal({
-                                  open: true,
-                                  command: item.command_label || item.command_key,
-                                  status: item.status,
-                                  output: item.error_message || item.output_log || '-',
-                                  input:
-                                    Object.keys(item.input_payload || {}).length > 0
-                                      ? JSON.stringify(item.input_payload, null, 2)
-                                      : '-',
-                                  executedAt: item.started_at,
-                                })
-                              }
-                            >
-                              View Output
-                            </button>
-                          ) : (
-                            <span className="dg-list-meta">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <ExecutionAuditTable
+              items={auditItems}
+              emptyMessage="No audit records yet."
+              onViewOutput={openAuditOutputModal}
+            />
           )}
         </article>
       </section>
-      {auditOutputModal.open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
-          <div className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-600">Execution Output</p>
-                <h3 className="text-lg font-bold text-slate-900">{auditOutputModal.command}</h3>
-                <p className="mt-1 text-xs text-slate-500">
-                  Executed: {formatDate(auditOutputModal.executedAt)}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={statusBadgeClass(auditOutputModal.status)}>
-                  {titleCase(auditOutputModal.status || 'unknown')}
-                </span>
-                <button
-                  type="button"
-                  className="dg-btn-secondary"
-                  onClick={() => setAuditOutputModal((prev) => ({ ...prev, open: false }))}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Input</p>
-                <pre className="max-h-[50vh] overflow-auto rounded-xl bg-slate-100 p-3 text-xs text-slate-700">
-                  {auditOutputModal.input}
-                </pre>
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Output</p>
-                <pre className="max-h-[50vh] overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
-                  {auditOutputModal.output}
-                </pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {runLogModal.open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
-          <div className="w-full max-w-4xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-600">Execution Log</p>
-                <h3 className="text-lg font-bold text-slate-900">{runLogModal.scriptName}</h3>
-                <p className="mt-1 text-xs text-slate-500">Command/Workflow: {runLogModal.command}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={
-                    runLogModal.status === 'success'
-                      ? 'dg-status-pill'
-                      : runLogModal.status === 'failed'
-                        ? 'dg-status-pill dg-status-pill-LOST'
-                        : 'dg-status-pill dg-status-pill-NEW'
-                  }
-                >
-                  {titleCase(runLogModal.status)}
-                </span>
-                <button
-                  type="button"
-                  className="dg-btn-secondary"
-                  onClick={() => setRunLogModal((prev) => ({ ...prev, open: false }))}
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-            <pre className="max-h-[65vh] overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
-              {runLogModal.output || 'No output yet.'}
-            </pre>
-          </div>
-        </div>
-      ) : null}
+      <ExecutionOutputModal
+        state={auditOutputModal}
+        onClose={() => setAuditOutputModal((prev) => ({ ...prev, open: false }))}
+      />
+      <CommandRunLogModal
+        state={runLogModal}
+        onClose={() => setRunLogModal((prev) => ({ ...prev, open: false }))}
+      />
     </AdminShell>
   );
 }

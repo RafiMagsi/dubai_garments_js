@@ -2,8 +2,14 @@
 
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { LeadStatus, useLeads } from '@/features/admin/leads';
+import {
+  formatDateTime,
+  shortCode,
+  titleCase,
+} from '@/features/admin/shared/view-format';
 
 const statusOptions: Array<{ label: string; value: LeadStatus | 'all' }> = [
   { label: 'All Statuses', value: 'all' },
@@ -16,10 +22,6 @@ const statusOptions: Array<{ label: string; value: LeadStatus | 'all' }> = [
 
 function statusPillClass(status: LeadStatus) {
   return `dg-status-pill dg-status-pill-${status.toUpperCase()}`;
-}
-
-function formatStatus(status: LeadStatus) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 export default function AdminLeadsPage() {
@@ -49,22 +51,20 @@ export default function AdminLeadsPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Lead List</h1>
-            <p className="dg-page-subtitle">
-              Review incoming requests, qualify opportunities, and move leads into deals.
-            </p>
-          </div>
-          <div className="dg-admin-toolbar">
+        <AdminPageHeader
+          title="Lead List"
+          subtitle="Review incoming requests, qualify opportunities, and move leads into deals."
+          actions={
+            <>
             <Link href="/admin/dashboard" className="dg-btn-secondary">
               Dashboard
             </Link>
             <Link href="/admin/deals" className="dg-btn-secondary">
               Deals
             </Link>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         <div className="dg-card dg-panel">
           <form onSubmit={handleApplyFilters} className="dg-form-row">
@@ -132,13 +132,13 @@ export default function AdminLeadsPage() {
                           <div>{lead.contact_name || '-'}</div>
                           <div className="dg-help">{lead.email || '-'}</div>
                         </td>
-                        <td>{lead.id.slice(0, 6).toUpperCase()}</td>
+                        <td>{shortCode(lead.id)}</td>
                         <td>{lead.ai_product || '-'}</td>
                         <td>{lead.requested_qty ? `${lead.requested_qty} pcs` : '-'}</td>
                         <td>
-                          <span className={statusPillClass(lead.status)}>{formatStatus(lead.status)}</span>
+                          <span className={statusPillClass(lead.status)}>{titleCase(lead.status)}</span>
                         </td>
-                        <td>{new Date(lead.created_at).toLocaleString()}</td>
+                        <td>{formatDateTime(lead.created_at)}</td>
                         <td>
                           <Link href={`/admin/leads/${lead.id}`} className="dg-btn-secondary">
                             View

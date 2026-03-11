@@ -2,8 +2,14 @@
 
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { useAutomationRuns, useRetryAutomationRun } from '@/features/admin/automation-runs';
+import {
+  formatDateTime,
+  statusBadgeClass,
+  titleCase,
+} from '@/features/admin/shared/view-format';
 
 const statusOptions = [
   { label: 'All Statuses', value: '' },
@@ -13,18 +19,6 @@ const statusOptions = [
   { label: 'Failed', value: 'failed' },
   { label: 'Cancelled', value: 'cancelled' },
 ];
-
-function formatStatus(status: string) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-function statusBadgeClass(status: string) {
-  if (status === 'success') return 'dg-status-pill';
-  if (status === 'failed') return 'dg-status-pill dg-status-pill-LOST';
-  if (status === 'running') return 'dg-status-pill dg-status-pill-NEW';
-  if (status === 'queued') return 'dg-status-pill dg-status-pill-QUALIFIED';
-  return 'dg-status-pill';
-}
 
 export default function AdminAutomationsPage() {
   const [searchInput, setSearchInput] = useState('');
@@ -70,22 +64,20 @@ export default function AdminAutomationsPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Automation Monitoring</h1>
-            <p className="dg-page-subtitle">
-              Track workflow history, inspect failed jobs, and trigger retry actions.
-            </p>
-          </div>
-          <div className="dg-admin-toolbar">
+        <AdminPageHeader
+          title="Automation Monitoring"
+          subtitle="Track workflow history, inspect failed jobs, and trigger retry actions."
+          actions={
+            <>
             <Link href="/admin/activities" className="dg-btn-secondary">
               Activities
             </Link>
             <Link href="/admin/dashboard" className="dg-btn-secondary">
               Dashboard
             </Link>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         <div className="dg-kpi-grid">
           <article className="dg-card dg-kpi-card">
@@ -187,15 +179,15 @@ export default function AdminAutomationsPage() {
                       <tr key={run.id}>
                         <td>{run.workflow_name}</td>
                         <td>
-                          <span className={statusBadgeClass(run.status)}>{formatStatus(run.status)}</span>
+                          <span className={statusBadgeClass(run.status)}>{titleCase(run.status)}</span>
                         </td>
                         <td>{run.trigger_source || '-'}</td>
                         <td>
                           {run.trigger_entity_type || '-'}
                           {run.trigger_entity_id ? `:${run.trigger_entity_id.slice(0, 8)}` : ''}
                         </td>
-                        <td>{run.started_at ? new Date(run.started_at).toLocaleString() : '-'}</td>
-                        <td>{run.finished_at ? new Date(run.finished_at).toLocaleString() : '-'}</td>
+                        <td>{formatDateTime(run.started_at)}</td>
+                        <td>{formatDateTime(run.finished_at)}</td>
                         <td className="max-w-72 truncate">{run.error_message || '-'}</td>
                         <td>
                           <button
@@ -223,4 +215,3 @@ export default function AdminAutomationsPage() {
     </AdminShell>
   );
 }
-

@@ -4,20 +4,22 @@ import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { isAxiosError } from 'axios';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { DealStage, useDealById, useSendDealEmail, useUpdateDeal } from '@/features/admin/deals';
 import { useProducts } from '@/features/products';
 import { formatAed, getStartingUnitPriceAED } from '@/features/products/utils/product-pricing';
 import { useCreateQuote } from '@/features/admin/quotes';
+import {
+  formatDateTime,
+  shortCode,
+  titleCase,
+} from '@/features/admin/shared/view-format';
 
 const stageOptions: DealStage[] = ['new', 'qualified', 'quoted', 'negotiation', 'won', 'lost'];
 
 function stageBadgeClass(stage: string) {
   return `dg-status-pill dg-status-pill-${stage.toUpperCase()}`;
-}
-
-function stageLabel(stage: string) {
-  return stage.charAt(0).toUpperCase() + stage.slice(1);
 }
 
 function productPriceLabel(name: string, startingPrice: number | null) {
@@ -181,12 +183,11 @@ export default function AdminDealDetailsPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Deal #{dealId.slice(0, 6).toUpperCase()}</h1>
-            <p className="dg-page-subtitle">Update stage, ownership, value, and generate related quotes.</p>
-          </div>
-          <div className="dg-admin-toolbar">
+        <AdminPageHeader
+          title={`Deal #${shortCode(dealId)}`}
+          subtitle="Update stage, ownership, value, and generate related quotes."
+          actions={
+            <>
             <Link href="/admin/deals" className="dg-btn-secondary">
               Back to Deals
             </Link>
@@ -198,8 +199,9 @@ export default function AdminDealDetailsPage() {
                 Lead
               </Link>
             ) : null}
-          </div>
-        </div>
+            </>
+          }
+        />
       </section>
 
       <section className="dg-admin-page">
@@ -224,7 +226,7 @@ export default function AdminDealDetailsPage() {
               <div className="dg-detail-list">
                 <div className="dg-detail-item">
                   <span>Stage</span>
-                  <span className={stageBadgeClass(deal.stage)}>{stageLabel(deal.stage)}</span>
+                  <span className={stageBadgeClass(deal.stage)}>{titleCase(deal.stage)}</span>
                 </div>
                 <div className="dg-detail-item">
                   <span>Priority</span>
@@ -242,11 +244,11 @@ export default function AdminDealDetailsPage() {
                 </div>
                 <div className="dg-detail-item">
                   <span>Created</span>
-                  <strong>{deal.created_at ? new Date(deal.created_at).toLocaleString() : '-'}</strong>
+                  <strong>{formatDateTime(deal.created_at)}</strong>
                 </div>
                 <div className="dg-detail-item">
                   <span>Updated</span>
-                  <strong>{deal.updated_at ? new Date(deal.updated_at).toLocaleString() : '-'}</strong>
+                  <strong>{formatDateTime(deal.updated_at)}</strong>
                 </div>
               </div>
 
@@ -255,7 +257,7 @@ export default function AdminDealDetailsPage() {
                 <div className="dg-detail-list">
                   <div className="dg-detail-item">
                     <span>Tracking Code</span>
-                    <strong>{deal.lead_id ? deal.lead_id.slice(0, 6).toUpperCase() : '-'}</strong>
+                    <strong>{shortCode(deal.lead_id)}</strong>
                   </div>
                   <div className="dg-detail-item">
                     <span>Customer</span>
@@ -319,7 +321,7 @@ export default function AdminDealDetailsPage() {
                       <select id="stage" name="stage" className="dg-select" defaultValue={deal.stage} required>
                         {stageOptions.map((stage) => (
                           <option key={stage} value={stage}>
-                            {stageLabel(stage)}
+                            {titleCase(stage)}
                           </option>
                         ))}
                       </select>
@@ -474,7 +476,7 @@ export default function AdminDealDetailsPage() {
                       id="subject"
                       name="subject"
                       className="dg-input"
-                      defaultValue={`Update on your order discussion - Deal #${deal.id.slice(0, 6).toUpperCase()}`}
+                      defaultValue={`Update on your order discussion - Deal #${shortCode(deal.id)}`}
                       required
                     />
                   </div>
@@ -507,7 +509,7 @@ export default function AdminDealDetailsPage() {
                           <p className="dg-list-title">{communication.subject || 'No subject'}</p>
                           <p className="dg-list-meta">
                             {deal.lead_email || '-'} • SENT •{' '}
-                            {new Date(communication.sent_at || communication.created_at).toLocaleString()}
+                            {formatDateTime(communication.sent_at || communication.created_at)}
                           </p>
                         </div>
                       </div>

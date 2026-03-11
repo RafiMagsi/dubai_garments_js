@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
-import { Card } from '@/components/ui';
 import { ActivityType, useActivities } from '@/features/admin/activities';
+import { formatDateTime, titleCase } from '@/features/admin/shared/view-format';
 
 const activityOptions: Array<{ label: string; value: ActivityType | 'all' }> = [
   { label: 'All Activities', value: 'all' },
@@ -22,27 +24,36 @@ const activityOptions: Array<{ label: string; value: ActivityType | 'all' }> = [
 export default function AdminActivitiesPage() {
   const [activityType, setActivityType] = useState<ActivityType | 'all'>('all');
   const { data, isLoading, isError, error } = useActivities({ activity_type: activityType });
+  const activities = data?.items ?? [];
 
   return (
     <AdminShell>
-      <Card>
-        <h1 className="text-xl font-semibold text-[var(--color-text)]">Activity Log System</h1>
-        <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-          Track system-generated actions across leads, deals, quotes, follow-ups, and customer communication.
-        </p>
-      </Card>
+      <section className="dg-admin-page">
+        <AdminPageHeader
+          title="Activity Log System"
+          subtitle="Track system-generated actions across leads, deals, quotes, follow-ups, and customer communication."
+          actions={
+            <>
+              <Link href="/admin/dashboard" className="dg-btn-secondary">
+                Dashboard
+              </Link>
+              <Link href="/admin/automations" className="dg-btn-secondary">
+                Automations
+              </Link>
+            </>
+          }
+        />
+      </section>
 
-      <section>
-        <Card className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
+      <section className="dg-admin-page">
+        <article className="dg-card dg-panel">
+          <div className="dg-admin-head">
             <div>
-              <h2 className="text-lg font-semibold text-[var(--color-text)]">Event Stream</h2>
-              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                Latest actions recorded automatically by the system.
-              </p>
+              <h2 className="dg-title-sm">Event Stream</h2>
+              <p className="dg-muted-sm">Latest actions recorded automatically by the system.</p>
             </div>
             <select
-              className="ui-field max-w-56"
+              className="dg-select dg-select-md"
               value={activityType}
               onChange={(event) => setActivityType(event.target.value as ActivityType | 'all')}
             >
@@ -54,47 +65,38 @@ export default function AdminActivitiesPage() {
             </select>
           </div>
 
-          {isLoading && <p className="text-sm text-[var(--color-text-muted)]">Loading activities...</p>}
+          {isLoading && <p className="dg-muted-sm">Loading activities...</p>}
           {isError && (
-            <p className="text-sm text-[var(--color-danger-text)]">
+            <p className="dg-alert-error">
               {error instanceof Error ? error.message : 'Failed to load activities.'}
             </p>
           )}
 
           {!isLoading && !isError && (
-            <div className="grid gap-3">
-              {data?.items.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--color-text)]">{activity.title}</p>
-                      <p className="text-xs uppercase tracking-[0.06em] text-[var(--color-ink-500)]">
-                        {activity.activity_type}
-                      </p>
+            <div className="dg-list">
+              {activities.map((activity) => (
+                <article key={activity.id} className="dg-list-row">
+                  <div className="dg-list-main">
+                    <p className="dg-list-title">{activity.title}</p>
+                    <p className="dg-list-meta">{titleCase(activity.activity_type)}</p>
+                    {activity.details ? <p className="dg-muted-sm">{activity.details}</p> : null}
+                    <div className="dg-pill-stack">
+                      {activity.lead_id && <span className="dg-status-pill">Lead: {activity.lead_id}</span>}
+                      {activity.deal_id && <span className="dg-status-pill">Deal: {activity.deal_id}</span>}
+                      {activity.quote_id && <span className="dg-status-pill">Quote: {activity.quote_id}</span>}
                     </div>
-                    <p className="text-xs text-[var(--color-text-muted)]">
-                      {new Date(activity.created_at).toLocaleString()}
-                    </p>
                   </div>
-                  {activity.details && (
-                    <p className="mt-2 text-sm text-[var(--color-text-muted)]">{activity.details}</p>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-[var(--color-ink-500)]">
-                    {activity.lead_id && <span>Lead: {activity.lead_id}</span>}
-                    {activity.deal_id && <span>Deal: {activity.deal_id}</span>}
-                    {activity.quote_id && <span>Quote: {activity.quote_id}</span>}
+                  <div className="text-right">
+                    <div>
+                      <span className="dg-badge">{formatDateTime(activity.created_at)}</span>
+                    </div>
                   </div>
-                </div>
+                </article>
               ))}
-              {data?.items.length === 0 && (
-                <p className="text-sm text-[var(--color-text-muted)]">No activity records found.</p>
-              )}
+              {activities.length === 0 && <p className="dg-muted-sm">No activity records found.</p>}
             </div>
           )}
-        </Card>
+        </article>
       </section>
     </AdminShell>
   );

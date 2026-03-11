@@ -16,10 +16,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { useDeals } from '@/features/admin/deals';
 import { useLeads } from '@/features/admin/leads';
 import { useQuotes } from '@/features/admin/quotes';
+import { titleCase } from '@/features/admin/shared/view-format';
 
 const STAGE_ORDER = ['new', 'qualified', 'quoted', 'negotiation', 'won', 'lost'] as const;
 const STATUS_COLORS = ['#c2410c', '#f59e0b', '#10b981', '#64748b', '#334155'];
@@ -46,10 +48,6 @@ function toMonthKey(value?: string | null) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-function titleCase(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 export default function AdminAnalyticsPage() {
@@ -110,14 +108,11 @@ export default function AdminAnalyticsPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Analytics Dashboard</h1>
-            <p className="dg-page-subtitle">
-              Business intelligence view for lead volume, conversion, hot leads, and quote acceptance.
-            </p>
-          </div>
-          <div className="dg-admin-toolbar">
+        <AdminPageHeader
+          title="Analytics Dashboard"
+          subtitle="Business intelligence view for lead volume, conversion, hot leads, and quote acceptance."
+          actions={
+            <>
             <Link href="/admin/dashboard" className="dg-btn-secondary">
               Back to Dashboard
             </Link>
@@ -130,8 +125,9 @@ export default function AdminAnalyticsPage() {
             <Link href="/admin/quotes" className="dg-btn-secondary">
               Quote Management
             </Link>
-          </div>
-        </div>
+            </>
+          }
+        />
       </section>
 
       <section className="dg-admin-page">
@@ -269,4 +265,3 @@ export default function AdminAnalyticsPage() {
     </AdminShell>
   );
 }
-

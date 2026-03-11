@@ -3,18 +3,20 @@
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { useConvertLeadToDeal } from '@/features/admin/deals/hooks/use-deals';
 import { LeadStatus, useLeadById, useSendLeadEmail, useUpdateLeadStatus } from '@/features/admin/leads';
+import {
+  formatDateTime,
+  shortCode,
+  titleCase,
+} from '@/features/admin/shared/view-format';
 
 const statusOptions: LeadStatus[] = ['new', 'qualified', 'quoted', 'won', 'lost'];
 
 function statusPillClass(status: string) {
   return `dg-status-pill dg-status-pill-${status.toUpperCase()}`;
-}
-
-function statusLabel(status: string) {
-  return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 export default function AdminLeadDetailsPage() {
@@ -64,7 +66,7 @@ export default function AdminLeadDetailsPage() {
       },
     });
 
-    setDealSuccess(`Deal created successfully: #${result.id.slice(0, 6).toUpperCase()}`);
+    setDealSuccess(`Deal created successfully: #${shortCode(result.id)}`);
   }
 
   async function handleSendEmail(event: FormEvent<HTMLFormElement>) {
@@ -86,22 +88,20 @@ export default function AdminLeadDetailsPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Lead #{leadId.slice(0, 6).toUpperCase()}</h1>
-            <p className="dg-page-subtitle">
-              Full context, communication history, and pipeline actions for this lead.
-            </p>
-          </div>
-          <div className="dg-admin-toolbar">
+        <AdminPageHeader
+          title={`Lead #${shortCode(leadId)}`}
+          subtitle="Full context, communication history, and pipeline actions for this lead."
+          actions={
+            <>
             <Link href="/admin/leads" className="dg-btn-secondary">
               Back to Leads
             </Link>
             <Link href="/admin/deals" className="dg-btn-secondary">
               Pipeline
             </Link>
-          </div>
-        </div>
+            </>
+          }
+        />
       </section>
 
       <section className="dg-admin-page">
@@ -126,7 +126,7 @@ export default function AdminLeadDetailsPage() {
               <div className="dg-detail-list">
                 <div className="dg-detail-item">
                   <span>Tracking Code</span>
-                  <strong>{lead.id.slice(0, 6).toUpperCase()}</strong>
+                  <strong>{shortCode(lead.id)}</strong>
                 </div>
                 <div className="dg-detail-item">
                   <span>Name</span>
@@ -158,7 +158,7 @@ export default function AdminLeadDetailsPage() {
                 </div>
                 <div className="dg-detail-item">
                   <span>Status</span>
-                  <span className={statusPillClass(lead.status)}>{statusLabel(lead.status)}</span>
+                  <span className={statusPillClass(lead.status)}>{titleCase(lead.status)}</span>
                 </div>
                 <div className="dg-detail-item">
                   <span>AI Score</span>
@@ -192,7 +192,7 @@ export default function AdminLeadDetailsPage() {
                     >
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>
-                          {statusLabel(status)}
+                          {titleCase(status)}
                         </option>
                       ))}
                     </select>
@@ -210,11 +210,11 @@ export default function AdminLeadDetailsPage() {
                     <div className="dg-detail-list">
                       <div className="dg-detail-item">
                         <span>Deal ID</span>
-                        <strong>#{deal.id.slice(0, 6).toUpperCase()}</strong>
+                        <strong>#{shortCode(deal.id)}</strong>
                       </div>
                       <div className="dg-detail-item">
                         <span>Stage</span>
-                        <strong>{statusLabel(deal.stage)}</strong>
+                        <strong>{titleCase(deal.stage)}</strong>
                       </div>
                     </div>
                     <div className="dg-hero-actions">
@@ -296,7 +296,7 @@ export default function AdminLeadDetailsPage() {
                       id="subject"
                       name="subject"
                       className="dg-input"
-                      defaultValue={`Regarding your quote request ${lead.id.slice(0, 6).toUpperCase()}`}
+                      defaultValue={`Regarding your quote request ${shortCode(lead.id)}`}
                       required
                     />
                   </div>
@@ -337,7 +337,7 @@ export default function AdminLeadDetailsPage() {
                   <div className="dg-detail-item">
                     <span>Processed At</span>
                     <strong>
-                      {lead.ai_processed_at ? new Date(lead.ai_processed_at).toLocaleString() : '-'}
+                      {formatDateTime(lead.ai_processed_at)}
                     </strong>
                   </div>
                   <div className="dg-detail-item">
@@ -374,8 +374,7 @@ export default function AdminLeadDetailsPage() {
                         <div className="dg-list-main">
                           <p className="dg-list-title">{communication.subject || 'No subject'}</p>
                           <p className="dg-list-meta">
-                            {lead.email || '-'} • SENT •{' '}
-                            {new Date(communication.sent_at || communication.created_at).toLocaleString()}
+                            {lead.email || '-'} • SENT • {formatDateTime(communication.sent_at || communication.created_at)}
                           </p>
                         </div>
                       </div>

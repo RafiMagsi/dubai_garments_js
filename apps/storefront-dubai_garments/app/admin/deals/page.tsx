@@ -2,8 +2,14 @@
 
 import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
+import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { DealStage, useDeals, usePipeline } from '@/features/admin/deals';
+import {
+  formatDateTime,
+  shortCode,
+  titleCase,
+} from '@/features/admin/shared/view-format';
 
 const stageOptions: Array<{ label: string; value: DealStage | 'all' }> = [
   { label: 'All Stages', value: 'all' },
@@ -17,10 +23,6 @@ const stageOptions: Array<{ label: string; value: DealStage | 'all' }> = [
 
 function stageBadgeClass(stage: string) {
   return `dg-status-pill dg-status-pill-${stage.toUpperCase()}`;
-}
-
-function stageLabel(stage: string) {
-  return stage.charAt(0).toUpperCase() + stage.slice(1);
 }
 
 export default function AdminDealsPage() {
@@ -52,22 +54,20 @@ export default function AdminDealsPage() {
   return (
     <AdminShell>
       <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">Deal Pipeline</h1>
-            <p className="dg-page-subtitle">
-              Manage deal progression from qualification to won/lost outcomes.
-            </p>
-          </div>
-          <div className="dg-admin-toolbar">
+        <AdminPageHeader
+          title="Deal Pipeline"
+          subtitle="Manage deal progression from qualification to won/lost outcomes."
+          actions={
+            <>
             <Link href="/admin/dashboard" className="dg-btn-secondary">
               Dashboard
             </Link>
             <Link href="/admin/quotes" className="dg-btn-secondary">
               Quotes
             </Link>
-          </div>
-        </div>
+            </>
+          }
+        />
 
         <div className="dg-card dg-panel">
           <form onSubmit={handleApply} className="dg-form-row">
@@ -110,7 +110,7 @@ export default function AdminDealsPage() {
                   stage.items.map((deal) => (
                     <article key={deal.id} className="dg-card dg-summary-card">
                       <p className="dg-muted-sm">
-                        <strong>#{deal.id.slice(0, 6).toUpperCase()}</strong>{' '}
+                        <strong>#{shortCode(deal.id)}</strong>{' '}
                         {deal.lead_contact_name || '-'}
                       </p>
                       <p className="dg-muted-sm">{deal.lead_product_name || '-'}</p>
@@ -171,15 +171,15 @@ export default function AdminDealsPage() {
                             : 'medium';
                       return (
                         <tr key={deal.id}>
-                          <td>#{deal.id.slice(0, 6).toUpperCase()}</td>
+                          <td>#{shortCode(deal.id)}</td>
                           <td>{deal.lead_contact_name || '-'}</td>
                           <td>
-                            <span className={stageBadgeClass(deal.stage)}>{stageLabel(deal.stage)}</span>
+                            <span className={stageBadgeClass(deal.stage)}>{titleCase(deal.stage)}</span>
                           </td>
                           <td>{priority}</td>
                           <td>AED {Number(deal.expected_value || 0).toFixed(2)}</td>
                           <td>{deal.owner_user_id ? deal.owner_user_id.slice(0, 6) : '-'}</td>
-                          <td>{deal.updated_at ? new Date(deal.updated_at).toLocaleString() : '-'}</td>
+                          <td>{formatDateTime(deal.updated_at)}</td>
                           <td>
                             <Link href={`/admin/deals/${deal.id}`} className="dg-btn-secondary">
                               View
