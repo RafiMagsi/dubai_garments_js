@@ -80,17 +80,39 @@ services:
       - ./services/fastapi_quote_api:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  worker:
+  worker_lead_ai:
     build:
       context: ./services/fastapi_quote_api
       dockerfile: Dockerfile
-    container_name: dubai_garments_worker
+    container_name: dubai_garments_worker_lead_ai
     restart: unless-stopped
     env_file:
       - ./services/fastapi_quote_api/.env.docker.local
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
+      WORKER_QUEUES: lead_ai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./services/fastapi_quote_api:/app
+    command: python worker.py
+
+  worker_quote_pdf:
+    build:
+      context: ./services/fastapi_quote_api
+      dockerfile: Dockerfile
+    container_name: dubai_garments_worker_quote_pdf
+    restart: unless-stopped
+    env_file:
+      - ./services/fastapi_quote_api/.env.docker.local
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      REDIS_URL: redis://redis:6379/0
+      WORKER_QUEUES: quote_pdf
     depends_on:
       postgres:
         condition: service_healthy

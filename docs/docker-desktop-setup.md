@@ -59,8 +59,9 @@ This starts:
 1. `postgres`
 2. `redis`
 3. `fastapi`
-4. `worker`
-5. `storefront`
+4. `worker_lead_ai`
+5. `worker_quote_pdf`
+6. `storefront`
 
 ## 4. Open Docker Desktop GUI
 
@@ -72,7 +73,8 @@ In Docker Desktop:
    - `dubai_garments_postgres`
    - `dubai_garments_redis`
    - `dubai_garments_fastapi`
-   - `dubai_garments_worker`
+   - `dubai_garments_worker_lead_ai`
+   - `dubai_garments_worker_quote_pdf`
    - `dubai_garments_storefront`
 
 From the GUI you can:
@@ -136,7 +138,8 @@ Open logs:
 
 ```bash
 docker compose logs -f fastapi
-docker compose logs -f worker
+docker compose logs -f worker_lead_ai
+docker compose logs -f worker_quote_pdf
 docker compose logs -f storefront
 ```
 
@@ -169,9 +172,10 @@ SOURCE_DATABASE_URL='postgresql://<local_user>:<local_password>@localhost:5432/d
 
 1. `storefront`: Next.js customer/admin app
 2. `fastapi`: backend API
-3. `worker`: Redis queue worker for AI jobs
-4. `redis`: queue broker
-5. `postgres`: database
+3. `worker_lead_ai`: Redis queue worker for lead AI jobs
+4. `worker_quote_pdf`: Redis queue worker for quote PDF jobs
+5. `redis`: queue broker
+6. `postgres`: database
 
 ## 9. Recommended GUI workflow
 

@@ -113,6 +113,14 @@ Worker listens to:
 - `lead_ai`
 - `quote_pdf`
 
+Run a dedicated worker per queue (recommended in production):
+
+```bash
+source .venv/bin/activate
+WORKER_QUEUES=lead_ai python worker.py
+WORKER_QUEUES=quote_pdf python worker.py
+```
+
 ## Demo Data Seeder
 
 Generate realistic demo records for:

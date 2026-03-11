@@ -49,6 +49,7 @@ Open:
 Docker Compose and Docker Desktop setup is documented here:
 
 - [Docker Desktop Setup](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/docker-desktop-setup.md)
+- [Architecture Overview](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/architecture-overview.md)
 - [n8n Follow-up Automation](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-followup-automation.md)
 - [n8n Scheduler Cron](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-scheduler-cron.md)
 - [n8n SendGrid Inbound Test](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-sendgrid-inbound-test.md)
