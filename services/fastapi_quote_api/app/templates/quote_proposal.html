@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ quote.quote_number }}</title>
+  <style>
+    @page { size: A4; margin: 18mm; }
+    body { font-family: Arial, sans-serif; color: #0f172a; font-size: 12px; }
+    .header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+    .title { font-size: 22px; font-weight: 700; margin: 0; }
+    .subtitle { color: #475569; font-size: 11px; margin-top: 4px; }
+    .meta { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fff; }
+    .label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; margin-bottom: 4px; }
+    .value { font-size: 12px; color: #0f172a; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+    th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+    th { background: #f8fafc; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; }
+    .num { text-align: right; white-space: nowrap; }
+    .totals { margin-top: 12px; margin-left: auto; width: 320px; }
+    .totals td { border: 0; border-bottom: 1px solid #e2e8f0; }
+    .totals tr:last-child td { border-bottom: 2px solid #0f172a; font-size: 13px; font-weight: 700; }
+    .footer { margin-top: 24px; color: #475569; font-size: 11px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1 class="title">Dubai Garments Proposal</h1>
+      <p class="subtitle">Bulk Apparel Quote Document</p>
+    </div>
+    <div class="value">{{ quote.quote_number }}</div>
+  </div>
+
+  <div class="meta">
+    <div class="card">
+      <div class="label">Customer</div>
+      <div class="value">{{ customer_name }}</div>
+    </div>
+    <div class="card">
+      <div class="label">Date</div>
+      <div class="value">{{ generated_at }}</div>
+    </div>
+    <div class="card">
+      <div class="label">Status</div>
+      <div class="value">{{ quote.status }}</div>
+    </div>
+    <div class="card">
+      <div class="label">Valid Until</div>
+      <div class="value">{{ quote.valid_until or "-" }}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th class="num">Qty</th>
+        <th class="num">Unit Price</th>
+        <th class="num">Line Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>
+          <div>{{ item.item_name }}</div>
+          {% if item.description %}
+          <div style="color:#64748b;font-size:11px;">{{ item.description }}</div>
+          {% endif %}
+        </td>
+        <td class="num">{{ item.quantity }}</td>
+        <td class="num">{{ quote.currency }} {{ "%.2f"|format(item.unit_price) }}</td>
+        <td class="num">{{ quote.currency }} {{ "%.2f"|format(item.line_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <table class="totals">
+    <tr><td>Subtotal</td><td class="num">{{ quote.currency }} {{ "%.2f"|format(quote.subtotal) }}</td></tr>
+    <tr><td>Tax</td><td class="num">{{ quote.currency }} {{ "%.2f"|format(quote.tax_amount) }}</td></tr>
+    <tr><td>Discount</td><td class="num">{{ quote.currency }} {{ "%.2f"|format(quote.discount_amount) }}</td></tr>
+    <tr><td>Total</td><td class="num">{{ quote.currency }} {{ "%.2f"|format(quote.total_amount) }}</td></tr>
+  </table>
+
+  <div class="footer">
+    <div><strong>Terms:</strong> {{ quote.terms or "Standard commercial terms apply." }}</div>
+    <div><strong>Notes:</strong> {{ quote.notes or "No additional notes." }}</div>
+    <div style="margin-top:10px;">Generated automatically by Dubai Garments AI Sales Automation Platform.</div>
+  </div>
+</body>
+</html>

@@ -11,6 +11,9 @@ from app.core.config import (
     LEAD_AI_JOB_TIMEOUT,
     LEAD_AI_QUEUE_NAME,
     LEAD_AI_RETRY_MAX,
+    QUOTE_PDF_JOB_TIMEOUT,
+    QUOTE_PDF_QUEUE_NAME,
+    QUOTE_PDF_RETRY_MAX,
     REDIS_URL,
 )
 
@@ -56,6 +59,48 @@ def enqueue_lead_ai_job(lead_id: str) -> Optional[str]:
                     "event": "lead_ai_enqueue_failed",
                     "lead_id": lead_id,
                     "queue": LEAD_AI_QUEUE_NAME,
+                    "error": str(error),
+                }
+            )
+        )
+        return None
+
+
+def get_quote_pdf_queue() -> Queue:
+    return Queue(
+        QUOTE_PDF_QUEUE_NAME,
+        connection=get_redis_connection(),
+        default_timeout=QUOTE_PDF_JOB_TIMEOUT,
+    )
+
+
+def enqueue_quote_pdf_job(quote_id: str) -> Optional[str]:
+    try:
+        queue = get_quote_pdf_queue()
+        job = queue.enqueue(
+            "app.workers.quote_pdf.run_quote_pdf_job",
+            quote_id,
+            retry=Retry(max=QUOTE_PDF_RETRY_MAX, interval=[15, 45]),
+            job_timeout=QUOTE_PDF_JOB_TIMEOUT,
+        )
+        logger.info(
+            json.dumps(
+                {
+                    "event": "quote_pdf_enqueued",
+                    "quote_id": quote_id,
+                    "queue": QUOTE_PDF_QUEUE_NAME,
+                    "job_id": job.id,
+                }
+            )
+        )
+        return job.id
+    except Exception as error:
+        logger.error(
+            json.dumps(
+                {
+                    "event": "quote_pdf_enqueue_failed",
+                    "quote_id": quote_id,
+                    "queue": QUOTE_PDF_QUEUE_NAME,
                     "error": str(error),
                 }
             )

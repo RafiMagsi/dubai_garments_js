@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createQuote,
+  generateQuotePdf,
   getQuoteById,
+  getQuotePdfStatus,
   getQuotes,
   updateQuoteStatus,
 } from '@/features/admin/quotes/services/quote-service';
@@ -22,6 +24,15 @@ export function useQuoteById(quoteId?: string) {
     queryKey: ['quote', quoteId],
     queryFn: () => getQuoteById(quoteId as string),
     enabled: Boolean(quoteId),
+  });
+}
+
+export function useQuotePdfStatus(quoteId?: string) {
+  return useQuery({
+    queryKey: ['quote-pdf', quoteId],
+    queryFn: () => getQuotePdfStatus(quoteId as string),
+    enabled: Boolean(quoteId),
+    refetchInterval: 5000,
   });
 }
 
@@ -56,6 +67,19 @@ export function useUpdateQuoteStatus() {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['pipeline'] });
+      queryClient.invalidateQueries({ queryKey: ['activities'] });
+    },
+  });
+}
+
+export function useGenerateQuotePdf() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (quoteId: string) => generateQuotePdf(quoteId),
+    onSuccess: (_, quoteId) => {
+      queryClient.invalidateQueries({ queryKey: ['quote-pdf', quoteId] });
+      queryClient.invalidateQueries({ queryKey: ['quote', quoteId] });
       queryClient.invalidateQueries({ queryKey: ['activities'] });
     },
   });

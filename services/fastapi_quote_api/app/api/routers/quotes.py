@@ -4,16 +4,24 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import Response
 
+from app.core.config import STORAGE_PROVIDER
 from app.core.db import get_db_connection
+from app.core.queue import enqueue_quote_pdf_job
 from app.schemas.quotes import (
     QuoteCreateRequest,
     QuoteCreateResponse,
     QuoteDetailResponse,
     QuoteStatusUpdateRequest,
 )
+from app.services.quote_pdf import (
+    enqueue_quote_document_placeholder,
+    get_latest_quote_document,
+)
 from app.services.activities import create_activity
 from app.services.quotes import create_quote
+from app.services.storage import read_local_binary
 
 router = APIRouter(prefix="/api/v1", tags=["quotes"])
 QUOTE_STATUSES = ("draft", "sent", "approved", "rejected", "expired")
@@ -333,12 +341,120 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
 
 @router.post("/quotes", response_model=QuoteCreateResponse)
 def create_quote_route(payload: QuoteCreateRequest) -> Dict[str, object]:
+    quote_id: Optional[str] = None
     try:
         with get_db_connection() as connection:
             with connection.transaction():
                 quote, items = create_quote(connection, payload)
-        return {"item": quote, "items": items}
+                quote_id = quote.get("id")
+                if quote_id:
+                    enqueue_quote_document_placeholder(connection, quote_id)
+
+        job_id = enqueue_quote_pdf_job(quote_id) if quote_id else None
+        return {"item": quote, "items": items, "pdfJobId": job_id}
     except HTTPException:
         raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Quote creation failed: {error}") from error
+
+
+@router.post("/quotes/{quote_id}/generate-pdf")
+def generate_quote_pdf(quote_id: str) -> Dict[str, object]:
+    try:
+        with get_db_connection() as connection:
+            with connection.transaction():
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT id::text FROM quotes WHERE id = %s::uuid",
+                        (quote_id,),
+                    )
+                    quote = cursor.fetchone()
+                    if not quote:
+                        raise HTTPException(status_code=404, detail="Quote not found.")
+                document_id = enqueue_quote_document_placeholder(connection, quote_id)
+        job_id = enqueue_quote_pdf_job(quote_id)
+        return {
+            "ok": True,
+            "quoteId": quote_id,
+            "documentId": document_id,
+            "jobId": job_id,
+            "message": "Quote PDF generation queued.",
+        }
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Failed to queue quote PDF generation: {error}") from error
+
+
+@router.get("/quotes/{quote_id}/pdf")
+def get_quote_pdf_status(quote_id: str) -> Dict[str, object]:
+    try:
+        with get_db_connection() as connection:
+            document = get_latest_quote_document(connection, quote_id)
+            if not document:
+                return {"quoteId": quote_id, "status": "not_generated", "document": None}
+
+            download_url: Optional[str] = None
+            if document.get("status") == "generated":
+                if document.get("storage_provider") == "local":
+                    download_url = f"/api/v1/quotes/{quote_id}/pdf/download"
+                else:
+                    download_url = document.get("storage_key")
+
+            return {
+                "quoteId": quote_id,
+                "status": document.get("status"),
+                "document": document,
+                "downloadUrl": download_url,
+            }
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch quote PDF status: {error}") from error
+
+
+@router.get("/quotes/{quote_id}/pdf/download")
+def download_quote_pdf(quote_id: str):
+    try:
+        with get_db_connection() as connection:
+            document = get_latest_quote_document(connection, quote_id)
+            if not document or document.get("status") != "generated":
+                raise HTTPException(status_code=404, detail="Generated quote PDF not found.")
+
+            storage_provider = document.get("storage_provider")
+            storage_key = document.get("storage_key")
+            if not storage_key:
+                raise HTTPException(status_code=404, detail="Quote PDF key is missing.")
+
+            if storage_provider == "local":
+                payload = read_local_binary(storage_key)
+                file_name = document.get("file_name") or f"quote-{quote_id}.pdf"
+                return Response(
+                    content=payload,
+                    media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="{file_name}"'},
+                )
+
+            # For S3/R2, return signed/public URL from status endpoint.
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "This document is stored on object storage. "
+                    "Use GET /api/v1/quotes/{quote_id}/pdf to obtain downloadUrl."
+                ),
+            )
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Failed to download quote PDF: {error}") from error
+
+
+@router.get("/quotes/files/{file_key:path}")
+def download_local_quote_file(file_key: str):
+    if STORAGE_PROVIDER != "local":
+        raise HTTPException(status_code=404, detail="Local file route is disabled for non-local storage.")
+    payload = read_local_binary(file_key)
+    file_name = file_key.split("/")[-1] or "quote.pdf"
+    return Response(
+        content=payload,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{file_name}"'},
+    )

@@ -5,7 +5,12 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/admin-shell';
 import { Card, FieldLabel, TextAreaField } from '@/components/ui';
-import { useQuoteById, useUpdateQuoteStatus } from '@/features/admin/quotes';
+import {
+  useGenerateQuotePdf,
+  useQuoteById,
+  useQuotePdfStatus,
+  useUpdateQuoteStatus,
+} from '@/features/admin/quotes';
 
 const statusOptions: Array<'draft' | 'sent' | 'approved' | 'rejected' | 'expired'> = [
   'draft',
@@ -19,7 +24,9 @@ export default function AdminQuoteDetailPage() {
   const params = useParams<{ quoteId: string }>();
   const quoteId = params?.quoteId;
   const { data, isLoading, isError, error } = useQuoteById(quoteId);
+  const { data: pdfStatus } = useQuotePdfStatus(quoteId);
   const updateStatusMutation = useUpdateQuoteStatus();
+  const generatePdfMutation = useGenerateQuotePdf();
   const [notes, setNotes] = useState('');
 
   const quote = data?.item;
@@ -31,6 +38,11 @@ export default function AdminQuoteDetailPage() {
       quoteId,
       payload: { status, notes: notes || undefined },
     });
+  }
+
+  async function handleGeneratePdf() {
+    if (!quoteId) return;
+    await generatePdfMutation.mutateAsync(quoteId);
   }
 
   return (
@@ -142,6 +154,39 @@ export default function AdminQuoteDetailPage() {
                     placeholder="Add notes for status transition..."
                   />
                 </div>
+              </Card>
+
+              <Card className="dg-summary-card">
+                <h3 className="dg-title-sm">Proposal PDF</h3>
+                <p className="dg-muted-sm">
+                  Generate a professional PDF proposal and share it with the customer.
+                </p>
+                <div className="dg-hero-actions">
+                  <button
+                    type="button"
+                    className="dg-btn-primary"
+                    disabled={generatePdfMutation.isPending}
+                    onClick={handleGeneratePdf}
+                  >
+                    {generatePdfMutation.isPending ? 'Queueing...' : 'Generate PDF'}
+                  </button>
+                  {pdfStatus?.status === 'generated' ? (
+                    <a
+                      href={`/api/admin/quotes/${quote.id}/pdf/download`}
+                      className="dg-btn-secondary"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open PDF
+                    </a>
+                  ) : null}
+                </div>
+                <p className="dg-help">
+                  Status: {pdfStatus?.status || 'not_generated'}
+                  {pdfStatus?.document?.error_message
+                    ? ` (${pdfStatus.document.error_message})`
+                    : ''}
+                </p>
               </Card>
             </Card>
 

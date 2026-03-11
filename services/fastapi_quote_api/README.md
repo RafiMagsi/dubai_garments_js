@@ -18,6 +18,9 @@ Minimal backend service for quote requests.
 - `GET /api/v1/pipeline`
 - `GET /api/v1/activities`
 - `GET /api/v1/activities/{activity_id}`
+- `POST /api/v1/quotes/{quote_id}/generate-pdf`
+- `GET /api/v1/quotes/{quote_id}/pdf`
+- `GET /api/v1/quotes/{quote_id}/pdf/download`
 
 ## Request fields (`multipart/form-data`)
 
@@ -54,6 +57,10 @@ source .venv/bin/activate
 python worker.py
 ```
 
+Worker listens to:
+- `lead_ai`
+- `quote_pdf`
+
 ## Notes
 
 - Records are inserted into the `leads` table.
@@ -63,5 +70,7 @@ python worker.py
 - LeadAIService uses heuristic system fallback when OpenAI is disabled, missing, or fails.
 - Deal stages: `new`, `qualified`, `quoted`, `negotiation`, `won`, `lost`.
 - Automation: stage changes to `quoted` or `negotiation` auto-create follow-ups and `automation_runs` records.
+- Quote PDF generation is asynchronous and runs via Redis queue worker.
+- Storage supports `local` (default) and `s3`/`r2` via `STORAGE_PROVIDER`.
 - Activity log is append-only and system-generated. It is not manually created from the admin UI.
 - Activity log event types: `lead_created`, `ai_processed_lead`, `quote_generated`, `email_sent`, `followup_triggered`, `customer_replied`, plus lead and deal update events.

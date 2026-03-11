@@ -44,6 +44,29 @@ export interface AdminQuoteDetailResponse {
   items: AdminQuoteItem[];
 }
 
+export interface AdminQuotePdfDocument {
+  id: string;
+  quote_id: string;
+  storage_provider: string;
+  storage_bucket?: string | null;
+  storage_key?: string | null;
+  file_name?: string | null;
+  mime_type: string;
+  file_size?: number | null;
+  status: 'queued' | 'processing' | 'generated' | 'failed' | string;
+  error_message?: string | null;
+  generated_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminQuotePdfStatusResponse {
+  quoteId: string;
+  status: 'not_generated' | 'queued' | 'processing' | 'generated' | 'failed' | string;
+  document?: AdminQuotePdfDocument | null;
+  downloadUrl?: string | null;
+}
+
 export interface AdminQuoteStatusUpdateInput {
   status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
   notes?: string;

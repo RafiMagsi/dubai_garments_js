@@ -3,6 +3,7 @@ import {
   AdminQuoteCreateInput,
   AdminQuote,
   AdminQuoteDetailResponse,
+  AdminQuotePdfStatusResponse,
   AdminQuoteStatusUpdateInput,
   AdminQuotesResponse,
 } from '@/features/admin/quotes/types/quote.types';
@@ -39,4 +40,16 @@ export async function updateQuoteStatus(
     payload
   );
   return response.data.item;
+}
+
+export async function generateQuotePdf(quoteId: string): Promise<{ ok: boolean; jobId?: string | null; message?: string }> {
+  const response = await apiClient.post<{ ok: boolean; jobId?: string | null; message?: string }>(
+    `/admin/quotes/${quoteId}/pdf/generate`
+  );
+  return response.data;
+}
+
+export async function getQuotePdfStatus(quoteId: string): Promise<AdminQuotePdfStatusResponse> {
+  const response = await apiClient.get<AdminQuotePdfStatusResponse>(`/admin/quotes/${quoteId}/pdf`);
+  return response.data;
 }
