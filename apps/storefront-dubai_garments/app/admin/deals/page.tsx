@@ -54,7 +54,7 @@ export default function AdminDealsPage() {
       <section className="dg-admin-page">
         <div className="dg-admin-page-head">
           <div>
-            <h1 className="dg-page-title">Deals Pipeline</h1>
+            <h1 className="dg-page-title">Deal Pipeline</h1>
             <p className="dg-page-subtitle">
               Manage deal progression from qualification to won/lost outcomes.
             </p>

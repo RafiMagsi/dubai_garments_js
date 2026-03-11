@@ -769,6 +769,11 @@
         gap: 1rem;
     }
 
+    .dg-three-col-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
     .dg-chart-card {
         padding: 1rem;
     }
@@ -1203,6 +1208,10 @@
 
         .dg-analytics-grid {
             grid-template-columns: 1.2fr 1fr;
+        }
+
+        .dg-three-col-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .dg-hero-grid {

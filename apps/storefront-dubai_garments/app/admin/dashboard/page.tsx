@@ -115,6 +115,41 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="dg-admin-page">
+        <div className="dg-three-col-grid">
+          <article className="dg-card dg-chart-card">
+            <p className="dg-kpi-label">Sales Module</p>
+            <h2 className="dg-title-sm mt-2">Lead List</h2>
+            <p className="dg-muted-sm">Track new and qualified opportunities with quick drill-down.</p>
+            <div className="mt-3">
+              <Link href="/admin/leads" className="dg-btn-secondary">
+                Open Lead List
+              </Link>
+            </div>
+          </article>
+          <article className="dg-card dg-chart-card">
+            <p className="dg-kpi-label">Sales Module</p>
+            <h2 className="dg-title-sm mt-2">Deal Pipeline</h2>
+            <p className="dg-muted-sm">Monitor stage movement from New to Won/Lost.</p>
+            <div className="mt-3">
+              <Link href="/admin/deals" className="dg-btn-secondary">
+                Open Deal Pipeline
+              </Link>
+            </div>
+          </article>
+          <article className="dg-card dg-chart-card">
+            <p className="dg-kpi-label">Sales Module</p>
+            <h2 className="dg-title-sm mt-2">Quote Management</h2>
+            <p className="dg-muted-sm">Manage draft/sent/approved quotes with full lifecycle actions.</p>
+            <div className="mt-3">
+              <Link href="/admin/quotes" className="dg-btn-secondary">
+                Open Quote Management
+              </Link>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="dg-admin-page">
         <div className="dg-analytics-grid">
           <article className="dg-card dg-chart-card">
             <h2 className="dg-title-sm">Lead Status Breakdown</h2>

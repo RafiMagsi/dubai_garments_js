@@ -51,7 +51,7 @@ export default function AdminLeadsPage() {
       <section className="dg-admin-page">
         <div className="dg-admin-page-head">
           <div>
-            <h1 className="dg-page-title">Lead Management</h1>
+            <h1 className="dg-page-title">Lead List</h1>
             <p className="dg-page-subtitle">
               Review incoming requests, qualify opportunities, and move leads into deals.
             </p>

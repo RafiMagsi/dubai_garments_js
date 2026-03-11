@@ -34,7 +34,7 @@ export default function AdminQuotesPage() {
       <section className="dg-admin-page">
         <div className="dg-admin-page-head">
           <div>
-            <h1 className="dg-page-title">Quote Builder</h1>
+            <h1 className="dg-page-title">Quote Management</h1>
             <p className="dg-page-subtitle">
               Manage draft, sent, approved, rejected, and expired quotations across all deals.
             </p>
