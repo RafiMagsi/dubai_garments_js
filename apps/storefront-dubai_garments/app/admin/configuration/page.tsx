@@ -2,8 +2,16 @@
 
 import { useState } from 'react';
 import AdminShell from '@/components/admin/admin-shell';
-import { useConfigurationScripts, useRunConfigurationScript } from '@/features/admin/configuration';
-import { ConfigScriptItem } from '@/features/admin/configuration/types/configuration.types';
+import {
+  useConfigurationEnv,
+  useConfigurationScripts,
+  useRunConfigurationScript,
+  useSaveConfigurationEnv,
+} from '@/features/admin/configuration';
+import {
+  ConfigEnvItem,
+  ConfigScriptItem,
+} from '@/features/admin/configuration/types/configuration.types';
 
 function formatDate(value?: string | null) {
   if (!value) return '-';
@@ -34,12 +42,17 @@ function defaultInputMap(script: ConfigScriptItem) {
 }
 
 export default function AdminConfigurationPage() {
+  const envQuery = useConfigurationEnv();
+  const saveEnvMutation = useSaveConfigurationEnv();
   const scriptsQuery = useConfigurationScripts();
   const runMutation = useRunConfigurationScript();
 
   const scripts = scriptsQuery.data?.items ?? [];
+  const envItems = envQuery.data?.items ?? [];
   const [inputsByScript, setInputsByScript] = useState<Record<string, Record<string, string>>>({});
   const [lastResultByScript, setLastResultByScript] = useState<Record<string, string>>({});
+  const [envDraft, setEnvDraft] = useState<Record<string, string>>({});
+  const [envSaveMessage, setEnvSaveMessage] = useState<Record<string, string>>({});
 
   const categories = scripts.reduce<Record<string, number>>((acc, script) => {
     acc[script.category] = (acc[script.category] || 0) + 1;
@@ -50,6 +63,13 @@ export default function AdminConfigurationPage() {
       acc[script.category] = [];
     }
     acc[script.category].push(script);
+    return acc;
+  }, {});
+  const envByTarget = envItems.reduce<Record<string, ConfigEnvItem[]>>((acc, item) => {
+    if (!acc[item.target]) {
+      acc[item.target] = [];
+    }
+    acc[item.target].push(item);
     return acc;
   }, {});
 
@@ -69,6 +89,42 @@ export default function AdminConfigurationPage() {
         [key]: value,
       },
     }));
+  }
+
+  function envDraftKey(item: ConfigEnvItem) {
+    return `${item.target}:${item.key}`;
+  }
+
+  function getEnvValue(item: ConfigEnvItem) {
+    const key = envDraftKey(item);
+    if (envDraft[key] !== undefined) {
+      return envDraft[key];
+    }
+    return item.value || '';
+  }
+
+  function handleEnvChange(item: ConfigEnvItem, value: string) {
+    const key = envDraftKey(item);
+    setEnvDraft((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSaveEnv(item: ConfigEnvItem) {
+    const key = envDraftKey(item);
+    const value = envDraft[key] !== undefined ? envDraft[key] : item.value || '';
+    try {
+      const response = await saveEnvMutation.mutateAsync({
+        target: item.target,
+        key: item.key,
+        value,
+      });
+      setEnvSaveMessage((prev) => ({
+        ...prev,
+        [key]: `${response.message} Restart required.`,
+      }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save env variable.';
+      setEnvSaveMessage((prev) => ({ ...prev, [key]: message }));
+    }
   }
 
   async function handleRun(script: ConfigScriptItem) {
@@ -146,6 +202,93 @@ export default function AdminConfigurationPage() {
             <p className="dg-kpi-meta">Executed from admin server runtime</p>
           </article>
         </div>
+      </section>
+
+      <section className="dg-admin-page">
+        <article className="dg-card dg-panel">
+          <div className="dg-admin-head">
+            <h2 className="dg-title-sm">Environment Variables</h2>
+            <span className="dg-badge">{envItems.length} keys</span>
+          </div>
+          <p className="dg-muted-sm mb-3">
+            Edit local env values from admin. Secret values are masked. Changes require service restart.
+          </p>
+
+          {envQuery.isLoading && <p className="dg-muted-sm">Loading environment settings...</p>}
+          {envQuery.isError && (
+            <p className="dg-alert-error">
+              {envQuery.error instanceof Error ? envQuery.error.message : 'Failed to load env settings.'}
+            </p>
+          )}
+
+          {!envQuery.isLoading && !envQuery.isError && (
+            <div className="dg-side-stack">
+              {Object.entries(envByTarget).map(([target, items]) => (
+                <article key={target} className="dg-card dg-panel">
+                  <div className="dg-admin-head">
+                    <h3 className="dg-title-sm">{titleCase(target)} Environment</h3>
+                    <span className="dg-badge">{items.length}</span>
+                  </div>
+                  <div className="dg-table-wrap">
+                    <table className="dg-table">
+                      <thead>
+                        <tr>
+                          <th>Key</th>
+                          <th>Description</th>
+                          <th>Value</th>
+                          <th>Save</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((item) => {
+                          const key = envDraftKey(item);
+                          const isSecret = item.secret;
+                          return (
+                            <tr key={`${item.target}-${item.key}`}>
+                              <td>
+                                <p className="dg-list-title">{item.key}</p>
+                                <p className="dg-list-meta">
+                                  {isSecret
+                                    ? item.hasValue
+                                      ? `Saved: ${item.maskedValue}`
+                                      : 'No value set'
+                                    : 'Plain text'}
+                                </p>
+                              </td>
+                              <td>{item.description}</td>
+                              <td>
+                                <input
+                                  type={isSecret ? 'password' : 'text'}
+                                  className="dg-input"
+                                  placeholder={isSecret ? 'Enter new secret value' : 'Value'}
+                                  value={getEnvValue(item)}
+                                  onChange={(event) => handleEnvChange(item, event.target.value)}
+                                />
+                              </td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="dg-btn-primary"
+                                  onClick={() => handleSaveEnv(item)}
+                                  disabled={saveEnvMutation.isPending}
+                                >
+                                  {saveEnvMutation.isPending ? 'Saving...' : 'Save'}
+                                </button>
+                                {envSaveMessage[key] ? (
+                                  <p className="dg-list-meta mt-2 max-w-72 truncate">{envSaveMessage[key]}</p>
+                                ) : null}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </article>
       </section>
 
       <section className="dg-admin-page">

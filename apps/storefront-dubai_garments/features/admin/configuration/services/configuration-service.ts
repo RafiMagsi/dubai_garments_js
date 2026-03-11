@@ -1,6 +1,9 @@
 import { apiClient } from '@/lib/api/axios';
 import {
+  ConfigurationEnvResponse,
   ConfigurationScriptsResponse,
+  SaveConfigEnvPayload,
+  SaveConfigEnvResponse,
   RunConfigurationScriptPayload,
   RunConfigurationScriptResponse,
 } from '@/features/admin/configuration/types/configuration.types';
@@ -18,5 +21,17 @@ export async function runConfigurationScript(
     `/admin/config/scripts/${scriptKey}/run`,
     payload || {}
   );
+  return response.data;
+}
+
+export async function getConfigurationEnv(): Promise<ConfigurationEnvResponse> {
+  const response = await apiClient.get<ConfigurationEnvResponse>('/admin/config/env');
+  return response.data;
+}
+
+export async function saveConfigurationEnv(
+  payload: SaveConfigEnvPayload
+): Promise<SaveConfigEnvResponse> {
+  const response = await apiClient.post<SaveConfigEnvResponse>('/admin/config/env', payload);
   return response.data;
 }

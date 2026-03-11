@@ -51,3 +51,35 @@ export interface RunConfigurationScriptResponse {
   output?: string;
   result?: Record<string, unknown>;
 }
+
+export type ConfigEnvTarget = 'storefront' | 'fastapi';
+
+export interface ConfigEnvItem {
+  key: string;
+  target: ConfigEnvTarget;
+  description: string;
+  secret: boolean;
+  hasValue: boolean;
+  value: string;
+  maskedValue: string;
+}
+
+export interface ConfigurationEnvResponse {
+  generatedAt: string;
+  items: ConfigEnvItem[];
+}
+
+export interface SaveConfigEnvPayload {
+  target: ConfigEnvTarget;
+  key: string;
+  value: string;
+}
+
+export interface SaveConfigEnvResponse {
+  ok: boolean;
+  target: ConfigEnvTarget;
+  key: string;
+  message: string;
+  requiresRestart: boolean;
+  savedAt: string;
+}
