@@ -28,8 +28,9 @@ from app.services.email import (
 )
 from app.services.n8n import trigger_quote_followup_workflow
 from app.services.quotes import create_quote
-from app.services.slack import notify_quote_accepted
+from app.services.slack import notify_quote_accepted as notify_quote_accepted_slack
 from app.services.storage import read_local_binary
+from app.services.telegram import notify_quote_accepted as notify_quote_accepted_telegram
 
 router = APIRouter(prefix="/api/v1", tags=["quotes"])
 QUOTE_STATUSES = ("draft", "sent", "approved", "rejected", "expired")
@@ -515,7 +516,13 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
             pass
 
     if quote_accepted_payload:
-        notify_quote_accepted(
+        notify_quote_accepted_slack(
+            quote_id=quote_accepted_payload["quoteId"],
+            quote_number=quote_accepted_payload["quoteNumber"],
+            total_amount=quote_accepted_payload["totalAmount"],
+            currency=quote_accepted_payload["currency"],
+        )
+        notify_quote_accepted_telegram(
             quote_id=quote_accepted_payload["quoteId"],
             quote_number=quote_accepted_payload["quoteNumber"],
             total_amount=quote_accepted_payload["totalAmount"],

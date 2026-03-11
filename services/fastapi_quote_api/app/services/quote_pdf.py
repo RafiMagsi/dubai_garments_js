@@ -10,8 +10,9 @@ from psycopg.errors import UndefinedTable
 
 from app.core.db import get_db_connection
 from app.services.activities import create_activity
-from app.services.slack import notify_automation_error
+from app.services.slack import notify_automation_error as notify_automation_error_slack
 from app.services.storage import store_binary
+from app.services.telegram import notify_automation_error as notify_automation_error_telegram
 
 
 def _quote_documents_table_exists(connection: Connection) -> bool:
@@ -282,7 +283,13 @@ def generate_quote_pdf_document(quote_id: str) -> Dict[str, Any]:
                         (quote_id, str(error)),
                     )
             connection.commit()
-            notify_automation_error(
+            notify_automation_error_slack(
+                workflow_name="quote_pdf_generation",
+                error_message=str(error),
+                trigger_entity_type="quote",
+                trigger_entity_id=quote_id,
+            )
+            notify_automation_error_telegram(
                 workflow_name="quote_pdf_generation",
                 error_message=str(error),
                 trigger_entity_type="quote",

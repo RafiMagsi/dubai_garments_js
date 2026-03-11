@@ -45,6 +45,22 @@ Events that send Slack notifications:
 - Customer replied (`/api/v1/webhooks/sendgrid/inbound`)
 - Automation run failed (`finish_automation_run(..., status='failed')`) and quote PDF generation failures
 
+## Telegram integration
+
+Set these in `services/fastapi_quote_api/.env`:
+
+- `TELEGRAM_ENABLED=true`
+- `TELEGRAM_BOT_TOKEN=...`
+- `TELEGRAM_CHAT_ID=...`
+- `TELEGRAM_PARSE_MODE=Markdown` (optional)
+
+Events that send Telegram notifications:
+
+- New HOT lead detected (LeadAIService result)
+- Quote accepted (`/api/v1/quotes/{quote_id}/status` -> `approved`)
+- Customer replied (`/api/v1/webhooks/sendgrid/inbound`)
+- Automation run failed (`finish_automation_run(..., status='failed')`) and quote PDF generation failures
+
 ## Request fields (`multipart/form-data`)
 
 - `name`

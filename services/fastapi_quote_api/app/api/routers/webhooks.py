@@ -10,7 +10,8 @@ from app.core.config import ADMIN_NOTIFICATION_EMAIL, SENDGRID_INBOUND_WEBHOOK_T
 from app.core.db import get_db_connection
 from app.services.activities import create_activity
 from app.services.email import create_automation_run, finish_automation_run, send_email
-from app.services.slack import notify_customer_replied
+from app.services.slack import notify_customer_replied as notify_customer_replied_slack
+from app.services.telegram import notify_customer_replied as notify_customer_replied_telegram
 
 router = APIRouter(prefix="/api/v1", tags=["webhooks"])
 
@@ -309,7 +310,15 @@ async def sendgrid_inbound_webhook(
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Failed to process inbound email webhook: {error}") from error
 
-    notify_customer_replied(
+    notify_customer_replied_slack(
+        sender_email=sender_email,
+        subject=subject,
+        paused_followups=paused_followups,
+        quote_id=quote_id,
+        lead_id=lead_id,
+        deal_id=deal_id,
+    )
+    notify_customer_replied_telegram(
         sender_email=sender_email,
         subject=subject,
         paused_followups=paused_followups,

@@ -25,7 +25,8 @@ from app.core.config import (
     SMTP_STARTTLS,
     SMTP_USERNAME,
 )
-from app.services.slack import notify_automation_error
+from app.services.slack import notify_automation_error as notify_automation_error_slack
+from app.services.telegram import notify_automation_error as notify_automation_error_telegram
 
 
 def _format_sender() -> str:
@@ -254,7 +255,13 @@ def finish_automation_run(
         trigger_entity_id = updated.get("trigger_entity_id")
 
     if status == "failed" and error_message:
-        notify_automation_error(
+        notify_automation_error_slack(
+            workflow_name=workflow_name or "unknown_workflow",
+            error_message=error_message,
+            trigger_entity_type=trigger_entity_type,
+            trigger_entity_id=trigger_entity_id,
+        )
+        notify_automation_error_telegram(
             workflow_name=workflow_name or "unknown_workflow",
             error_message=error_message,
             trigger_entity_type=trigger_entity_type,
