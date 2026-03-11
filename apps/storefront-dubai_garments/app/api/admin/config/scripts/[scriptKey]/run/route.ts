@@ -3,15 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/auth/require-admin';
+import { getRuntimeSetting } from '@/lib/config/runtime-settings';
 
 export const runtime = 'nodejs';
-
-const FASTAPI_BASE_URL =
-  process.env.FASTAPI_BASE_URL ||
-  process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ||
-  'http://localhost:8000';
-
-const AUTOMATION_SHARED_SECRET = process.env.AUTOMATION_SHARED_SECRET || '';
 
 function resolveStorefrontAppDir() {
   const cwd = process.cwd();
@@ -53,11 +47,22 @@ async function runCommand(command: string, args: string[], cwd: string) {
 }
 
 async function runFastApiPost(endpoint: string, body: Record<string, unknown>) {
+  const fastApiBaseUrl = await getRuntimeSetting({
+    key: 'FASTAPI_BASE_URL',
+    scope: 'storefront',
+    defaultValue: process.env.NEXT_PUBLIC_FASTAPI_BASE_URL || 'http://localhost:8000',
+  });
+  const automationSharedSecret = await getRuntimeSetting({
+    key: 'AUTOMATION_SHARED_SECRET',
+    scope: 'storefront',
+    defaultValue: '',
+  });
+
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (AUTOMATION_SHARED_SECRET.trim()) {
-    headers['X-Automation-Token'] = AUTOMATION_SHARED_SECRET.trim();
+  if (automationSharedSecret.trim()) {
+    headers['X-Automation-Token'] = automationSharedSecret.trim();
   }
-  const response = await fetch(`${FASTAPI_BASE_URL}${endpoint}`, {
+  const response = await fetch(`${fastApiBaseUrl}${endpoint}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -68,7 +73,12 @@ async function runFastApiPost(endpoint: string, body: Record<string, unknown>) {
 }
 
 async function runRetryFailedAutomations() {
-  const listResponse = await fetch(`${FASTAPI_BASE_URL}/api/v1/automation-runs?status=failed&limit=25`, {
+  const fastApiBaseUrl = await getRuntimeSetting({
+    key: 'FASTAPI_BASE_URL',
+    scope: 'storefront',
+    defaultValue: process.env.NEXT_PUBLIC_FASTAPI_BASE_URL || 'http://localhost:8000',
+  });
+  const listResponse = await fetch(`${fastApiBaseUrl}/api/v1/automation-runs?status=failed&limit=25`, {
     method: 'GET',
     cache: 'no-store',
   });
@@ -88,7 +98,7 @@ async function runRetryFailedAutomations() {
   const attempts: Array<Record<string, unknown>> = [];
 
   for (const item of retryables) {
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/automation-runs/${item.id}/retry`, {
+    const response = await fetch(`${fastApiBaseUrl}/api/v1/automation-runs/${item.id}/retry`, {
       method: 'POST',
       cache: 'no-store',
     });
@@ -209,11 +219,18 @@ export async function POST(
       );
     }
 
-    if (scriptKey === 'db_migrate' || scriptKey === 'db_seed_products' || scriptKey === 'db_seed_users') {
+    if (
+      scriptKey === 'db_migrate' ||
+      scriptKey === 'db_view_tables' ||
+      scriptKey === 'db_seed_products' ||
+      scriptKey === 'db_seed_users'
+    ) {
       const appDir = resolveStorefrontAppDir();
       const args =
         scriptKey === 'db_migrate'
           ? ['run', 'db:migrate']
+          : scriptKey === 'db_view_tables'
+            ? ['run', 'db:tables']
           : scriptKey === 'db_seed_products'
             ? ['run', 'db:seed']
             : ['run', 'db:seed:users'];

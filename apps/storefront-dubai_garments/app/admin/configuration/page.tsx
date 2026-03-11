@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import AdminShell from '@/components/admin/admin-shell';
 import {
   useConfigurationEnv,
@@ -53,6 +54,46 @@ export default function AdminConfigurationPage() {
   const [lastResultByScript, setLastResultByScript] = useState<Record<string, string>>({});
   const [envDraft, setEnvDraft] = useState<Record<string, string>>({});
   const [envSaveMessage, setEnvSaveMessage] = useState<Record<string, string>>({});
+  const [activeScriptKey, setActiveScriptKey] = useState<string | null>(null);
+  const [isTerminalRunning, setIsTerminalRunning] = useState(false);
+  const [allowedCommands, setAllowedCommands] = useState<string[]>([]);
+  const [terminalCommand, setTerminalCommand] = useState('npm run db:tables');
+  const [terminalMessage, setTerminalMessage] = useState('');
+  const [runLogModal, setRunLogModal] = useState<{
+    open: boolean;
+    scriptName: string;
+    command: string;
+    status: 'running' | 'success' | 'failed';
+    output: string;
+  }>({
+    open: false,
+    scriptName: '',
+    command: '',
+    status: 'running',
+    output: '',
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadTerminalCommands() {
+      try {
+        const response = await fetch('/api/admin/config/terminal', { cache: 'no-store' });
+        const payload = (await response.json()) as { items?: string[] };
+        if (!mounted) return;
+        const items = payload.items || [];
+        setAllowedCommands(items);
+        if (items.length > 0) {
+          setTerminalCommand(items[0]);
+        }
+      } catch {
+        if (!mounted) return;
+      }
+    }
+    void loadTerminalCommands();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const categories = scripts.reduce<Record<string, number>>((acc, script) => {
     acc[script.category] = (acc[script.category] || 0) + 1;
@@ -122,12 +163,31 @@ export default function AdminConfigurationPage() {
         [key]: `${response.message} Restart required.`,
       }));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to save env variable.';
+      let message = error instanceof Error ? error.message : 'Failed to save env variable.';
+      if (axios.isAxiosError(error)) {
+        const payload = error.response?.data as
+          | { message?: string; detail?: string; output?: string; result?: unknown }
+          | undefined;
+        message =
+          payload?.message ||
+          payload?.detail ||
+          (typeof payload?.output === 'string' ? payload.output.slice(0, 320) : message);
+      }
       setEnvSaveMessage((prev) => ({ ...prev, [key]: message }));
     }
   }
 
   async function handleRun(script: ConfigScriptItem) {
+    const commandLabel = script.commandLabel || script.workflowName || script.key;
+    setActiveScriptKey(script.key);
+    setRunLogModal({
+      open: true,
+      scriptName: script.name,
+      command: commandLabel,
+      status: 'running',
+      output: `Starting: ${commandLabel}\nPlease wait...`,
+    });
+
     const source = inputsByScript[script.key] || defaultInputMap(script);
     const parsedInput: Record<string, unknown> = {};
 
@@ -148,19 +208,104 @@ export default function AdminConfigurationPage() {
         scriptKey: script.key,
         payload: { input: parsedInput },
       });
-      const resultText = response.result
-        ? JSON.stringify(response.result).slice(0, 320)
-        : response.output || response.message;
+      const resultText = response.output
+        ? response.output
+        : response.result
+          ? JSON.stringify(response.result, null, 2)
+          : response.message;
       setLastResultByScript((prev) => ({
         ...prev,
-        [script.key]: resultText,
+        [script.key]: resultText.slice(0, 320),
       }));
+      setRunLogModal({
+        open: true,
+        scriptName: script.name,
+        command: commandLabel,
+        status: 'success',
+        output: resultText || response.message || 'Completed.',
+      });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Script execution failed.';
+      let message = error instanceof Error ? error.message : 'Script execution failed.';
+      let details = '';
+      if (axios.isAxiosError(error)) {
+        const payload = error.response?.data as
+          | { message?: string; detail?: string; output?: string; result?: unknown }
+          | undefined;
+        details =
+          typeof payload?.output === 'string'
+            ? payload.output
+            : payload?.result
+              ? JSON.stringify(payload.result, null, 2)
+              : '';
+        message = payload?.message || payload?.detail || details || message;
+      }
       setLastResultByScript((prev) => ({
         ...prev,
         [script.key]: message,
       }));
+      setRunLogModal({
+        open: true,
+        scriptName: script.name,
+        command: commandLabel,
+        status: 'failed',
+        output: [message, details].filter(Boolean).join('\n\n') || 'Execution failed.',
+      });
+    } finally {
+      setActiveScriptKey(null);
+    }
+  }
+
+  async function handleRunTerminalCommand() {
+    const command = terminalCommand.trim();
+    if (!command) {
+      setTerminalMessage('Select or enter a command first.');
+      return;
+    }
+
+    setIsTerminalRunning(true);
+    setTerminalMessage('');
+    setRunLogModal({
+      open: true,
+      scriptName: 'Admin Terminal',
+      command,
+      status: 'running',
+      output: `Starting terminal command: ${command}\nPlease wait...`,
+    });
+
+    try {
+      const response = await axios.post('/api/admin/config/terminal', { command });
+      const payload = response.data as {
+        ok?: boolean;
+        message?: string;
+        output?: string;
+      };
+      const output = payload.output || payload.message || 'Command completed.';
+      setRunLogModal({
+        open: true,
+        scriptName: 'Admin Terminal',
+        command,
+        status: payload.ok ? 'success' : 'failed',
+        output,
+      });
+      setTerminalMessage(payload.message || 'Command executed.');
+    } catch (error) {
+      let message = error instanceof Error ? error.message : 'Terminal command failed.';
+      let output = '';
+      if (axios.isAxiosError(error)) {
+        const payload = error.response?.data as { message?: string; output?: string } | undefined;
+        message = payload?.message || message;
+        output = payload?.output || '';
+      }
+      setRunLogModal({
+        open: true,
+        scriptName: 'Admin Terminal',
+        command,
+        status: 'failed',
+        output: [message, output].filter(Boolean).join('\n\n'),
+      });
+      setTerminalMessage(message);
+    } finally {
+      setIsTerminalRunning(false);
     }
   }
 
@@ -292,6 +437,44 @@ export default function AdminConfigurationPage() {
       </section>
 
       <section className="dg-admin-page">
+        <article className="dg-card dg-panel">
+          <div className="dg-admin-head">
+            <h2 className="dg-title-sm">Terminal</h2>
+            <span className="dg-badge">Restricted</span>
+          </div>
+          <p className="dg-muted-sm mb-3">
+            Run allowlisted operational commands directly from admin and inspect full logs.
+          </p>
+          <div className="dg-form-row">
+            <select
+              className="dg-select dg-col-fill"
+              value={terminalCommand}
+              onChange={(event) => setTerminalCommand(event.target.value)}
+            >
+              {allowedCommands.length > 0 ? (
+                allowedCommands.map((command) => (
+                  <option key={command} value={command}>
+                    {command}
+                  </option>
+                ))
+              ) : (
+                <option value="">No terminal commands available</option>
+              )}
+            </select>
+            <button
+              type="button"
+              className="dg-btn-primary"
+              onClick={handleRunTerminalCommand}
+              disabled={isTerminalRunning || !terminalCommand}
+            >
+              {isTerminalRunning ? 'Running...' : 'Run Command'}
+            </button>
+          </div>
+          {terminalMessage ? <p className="dg-list-meta mt-2">{terminalMessage}</p> : null}
+        </article>
+      </section>
+
+      <section className="dg-admin-page">
         {scriptsQuery.isLoading && <p className="dg-muted-sm">Loading script registry...</p>}
         {scriptsQuery.isError && (
           <p className="dg-alert-error">
@@ -374,9 +557,9 @@ export default function AdminConfigurationPage() {
                               type="button"
                               className="dg-btn-primary"
                               onClick={() => handleRun(script)}
-                              disabled={runMutation.isPending}
+                              disabled={Boolean(activeScriptKey)}
                             >
-                              {runMutation.isPending ? 'Running...' : 'Run'}
+                              {activeScriptKey === script.key ? 'Running...' : 'Run'}
                             </button>
                             {lastResultByScript[script.key] ? (
                               <p className="dg-list-meta mt-2 max-w-72 truncate">
@@ -394,6 +577,42 @@ export default function AdminConfigurationPage() {
           </div>
         )}
       </section>
+      {runLogModal.open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
+          <div className="w-full max-w-4xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-600">Execution Log</p>
+                <h3 className="text-lg font-bold text-slate-900">{runLogModal.scriptName}</h3>
+                <p className="mt-1 text-xs text-slate-500">Command/Workflow: {runLogModal.command}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={
+                    runLogModal.status === 'success'
+                      ? 'dg-status-pill'
+                      : runLogModal.status === 'failed'
+                        ? 'dg-status-pill dg-status-pill-LOST'
+                        : 'dg-status-pill dg-status-pill-NEW'
+                  }
+                >
+                  {titleCase(runLogModal.status)}
+                </span>
+                <button
+                  type="button"
+                  className="dg-btn-secondary"
+                  onClick={() => setRunLogModal((prev) => ({ ...prev, open: false }))}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <pre className="max-h-[65vh] overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
+              {runLogModal.output || 'No output yet.'}
+            </pre>
+          </div>
+        </div>
+      ) : null}
     </AdminShell>
   );
 }

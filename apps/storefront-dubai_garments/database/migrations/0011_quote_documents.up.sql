@@ -19,6 +19,18 @@ CREATE INDEX IF NOT EXISTS idx_quote_documents_quote_id ON quote_documents(quote
 CREATE INDEX IF NOT EXISTS idx_quote_documents_status ON quote_documents(status);
 CREATE INDEX IF NOT EXISTS idx_quote_documents_created_at ON quote_documents(created_at DESC);
 
-CREATE TRIGGER trg_quote_documents_updated_at
-BEFORE UPDATE ON quote_documents
-FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_trigger
+    WHERE tgname = 'trg_quote_documents_updated_at'
+      AND tgrelid = 'public.quote_documents'::regclass
+      AND NOT tgisinternal
+  ) THEN
+    CREATE TRIGGER trg_quote_documents_updated_at
+    BEFORE UPDATE ON quote_documents
+    FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+  END IF;
+END
+$$;

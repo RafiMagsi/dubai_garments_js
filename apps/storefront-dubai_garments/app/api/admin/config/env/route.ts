@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/auth/require-admin';
+import { prisma } from '@/lib/prisma';
 
 export const runtime = 'nodejs';
 
@@ -13,6 +14,8 @@ type EnvDef = {
   description: string;
   secret: boolean;
 };
+
+type StorageMode = 'env' | 'db';
 
 const ENV_DEFS: EnvDef[] = [
   { key: 'NEXT_PUBLIC_FASTAPI_BASE_URL', target: 'storefront', description: 'FastAPI base URL for admin/storefront proxy', secret: false },
@@ -36,6 +39,18 @@ const ENV_DEFS: EnvDef[] = [
   { key: 'N8N_QUOTE_FOLLOWUP_WEBHOOK_URL', target: 'fastapi', description: 'n8n webhook URL for quote follow-up automation', secret: true },
   { key: 'N8N_FOLLOWUP_ENABLED', target: 'fastapi', description: 'Enable or disable n8n follow-up trigger', secret: false },
 ];
+
+function isDevelopmentEnv() {
+  return process.env.NODE_ENV === 'development';
+}
+
+function resolveStorageMode(): StorageMode {
+  const configured = String(process.env.CONFIG_MODE || 'auto').trim().toLowerCase();
+  if (configured === 'env' || configured === 'db') {
+    return configured;
+  }
+  return isDevelopmentEnv() ? 'env' : 'db';
+}
 
 function storefrontEnvPath() {
   const cwd = process.cwd();
@@ -116,6 +131,75 @@ function upsertEnvValue(filePath: string, key: string, value: string) {
   fs.writeFileSync(filePath, `${updated.join('\n').replace(/\n*$/, '\n')}`, 'utf-8');
 }
 
+type DbSettingRow = {
+  scope: string;
+  key: string;
+  value: string;
+};
+
+async function loadDbSettingsMap() {
+  try {
+    const rows = await prisma.$queryRaw<DbSettingRow[]>`
+      SELECT scope, key, value
+      FROM system_settings
+      WHERE is_active = TRUE
+    `;
+    const map = new Map<string, string>();
+    rows.forEach((row) => {
+      map.set(`${row.scope}:${row.key}`, row.value || '');
+    });
+    return map;
+  } catch {
+    return new Map<string, string>();
+  }
+}
+
+function getSettingFromDb(
+  map: Map<string, string>,
+  target: EnvTarget,
+  key: string
+) {
+  return map.get(`${target}:${key}`) ?? map.get(`global:${key}`) ?? '';
+}
+
+async function upsertDbSetting(input: {
+  target: EnvTarget;
+  key: string;
+  value: string;
+  isSecret: boolean;
+  description: string;
+  updatedByUserId: string;
+}) {
+  await prisma.$executeRaw`
+    INSERT INTO system_settings (
+      scope,
+      key,
+      value,
+      is_secret,
+      is_active,
+      description,
+      updated_by_user_id
+    )
+    VALUES (
+      ${input.target},
+      ${input.key},
+      ${input.value},
+      ${input.isSecret},
+      TRUE,
+      ${input.description},
+      ${input.updatedByUserId}::uuid
+    )
+    ON CONFLICT (scope, key)
+    DO UPDATE SET
+      value = EXCLUDED.value,
+      is_secret = EXCLUDED.is_secret,
+      is_active = TRUE,
+      description = EXCLUDED.description,
+      updated_by_user_id = EXCLUDED.updated_by_user_id,
+      updated_at = NOW()
+  `;
+}
+
 export async function GET() {
   const sessionOrResponse = await requireAdminSession();
   if (sessionOrResponse instanceof NextResponse) {
@@ -127,10 +211,14 @@ export async function GET() {
     const fastapiPath = fastapiEnvPath();
     const storefrontMap = parseEnv(fs.existsSync(storefrontPath) ? fs.readFileSync(storefrontPath, 'utf-8') : '');
     const fastapiMap = parseEnv(fs.existsSync(fastapiPath) ? fs.readFileSync(fastapiPath, 'utf-8') : '');
+    const storageMode = resolveStorageMode();
+    const dbSettingsMap = storageMode === 'db' ? await loadDbSettingsMap() : new Map<string, string>();
 
     const items = ENV_DEFS.map((envDef) => {
       const sourceMap = envDef.target === 'storefront' ? storefrontMap : fastapiMap;
-      const raw = sourceMap.get(envDef.key) || '';
+      const fileValue = sourceMap.get(envDef.key) || '';
+      const dbValue = getSettingFromDb(dbSettingsMap, envDef.target, envDef.key);
+      const raw = storageMode === 'db' ? dbValue || fileValue : fileValue;
       return {
         ...envDef,
         hasValue: Boolean(raw),
@@ -140,6 +228,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
+      storageMode,
       generatedAt: new Date().toISOString(),
       items,
     });
@@ -178,14 +267,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: `Env key is not editable: ${key}` }, { status: 403 });
     }
 
-    const filePath = envFileByTarget(target);
-    upsertEnvValue(filePath, key, value);
+    const storageMode = resolveStorageMode();
+    if (storageMode === 'db') {
+      await upsertDbSetting({
+        target,
+        key,
+        value,
+        isSecret: def.secret,
+        description: def.description,
+        updatedByUserId: sessionOrResponse.sub,
+      });
+    } else {
+      const filePath = envFileByTarget(target);
+      upsertEnvValue(filePath, key, value);
+    }
 
     return NextResponse.json({
       ok: true,
       target,
       key,
-      message: `${key} saved to ${target} env file.`,
+      message:
+        storageMode === 'db'
+          ? `${key} saved to system settings (${target} scope).`
+          : `${key} saved to ${target} env file.`,
+      storageMode,
       requiresRestart: true,
       savedAt: new Date().toISOString(),
     });

@@ -204,6 +204,23 @@ Table followups {
   updated_at timestamptz [not null]
 }
 
+Table system_settings {
+  id uuid [pk]
+  scope text [not null, default: 'global']
+  key text [not null]
+  value text [not null]
+  is_secret boolean [not null, default: true]
+  is_active boolean [not null, default: true]
+  description text
+  updated_by_user_id uuid
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    (scope, key) [unique]
+  }
+}
+
 Ref: customers.owner_user_id > users.id
 Ref: products.created_by_user_id > users.id
 
@@ -242,3 +259,4 @@ Ref: followups.lead_id > leads.id
 Ref: followups.deal_id > deals.id
 Ref: followups.quote_id > quotes.id
 Ref: followups.assigned_to_user_id > users.id
+Ref: system_settings.updated_by_user_id > users.id

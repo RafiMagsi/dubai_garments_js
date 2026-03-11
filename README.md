@@ -11,6 +11,13 @@ cp .env.example .env.local
 Fill `.env.local` with your real values.  
 `.env.local` is ignored by git.
 
+## Config Mode
+
+Set `CONFIG_MODE=auto` in both storefront and FastAPI env files:
+
+- Development (`NODE_ENV=development`): configuration is read from local env files.
+- Production: configuration is read from DB-backed `system_settings` (managed from Admin Configuration page).
+
 ## Database Setup
 
 ```bash

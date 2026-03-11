@@ -85,6 +85,18 @@ set -a && source .env && set +a
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+## Config mode
+
+Use `CONFIG_MODE=auto` (recommended):
+
+- Non-production: reads from local `.env`
+- Production (`NODE_ENV=production` or `APP_ENV=production`): reads from DB-backed `system_settings` (scope `fastapi`, fallback `global`)
+
+Override explicitly if needed:
+
+- `CONFIG_MODE=env`
+- `CONFIG_MODE=db`
+
 ## Redis worker
 
 Lead AI processing is queued through Redis/RQ.

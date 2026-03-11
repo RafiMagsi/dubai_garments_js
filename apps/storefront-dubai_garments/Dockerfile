@@ -4,6 +4,8 @@ WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
+RUN apk add --no-cache postgresql-client
+
 COPY package*.json ./
 RUN npm ci
 

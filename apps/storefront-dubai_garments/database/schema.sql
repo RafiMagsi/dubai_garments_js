@@ -253,6 +253,21 @@ CREATE TABLE followups (
   CHECK (priority IN ('low', 'medium', 'high', 'urgent'))
 );
 
+-- system_settings
+CREATE TABLE system_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scope TEXT NOT NULL DEFAULT 'global',
+  key TEXT NOT NULL,
+  value TEXT NOT NULL DEFAULT '',
+  is_secret BOOLEAN NOT NULL DEFAULT TRUE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  description TEXT,
+  updated_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT uq_system_settings_scope_key UNIQUE (scope, key)
+);
+
 -- Indexes
 CREATE INDEX idx_customers_owner_user_id ON customers(owner_user_id);
 
@@ -311,6 +326,9 @@ CREATE INDEX idx_followups_quote_id ON followups(quote_id);
 CREATE INDEX idx_followups_assigned_to_user_id ON followups(assigned_to_user_id);
 CREATE INDEX idx_followups_status ON followups(status);
 CREATE INDEX idx_followups_due_at ON followups(due_at);
+CREATE INDEX idx_system_settings_scope ON system_settings(scope);
+CREATE INDEX idx_system_settings_key ON system_settings(key);
+CREATE INDEX idx_system_settings_is_active ON system_settings(is_active);
 
 -- updated_at triggers
 CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION set_updated_at();
@@ -325,3 +343,4 @@ CREATE TRIGGER trg_communications_updated_at BEFORE UPDATE ON communications FOR
 CREATE TRIGGER trg_activities_updated_at BEFORE UPDATE ON activities FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_automation_runs_updated_at BEFORE UPDATE ON automation_runs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE TRIGGER trg_followups_updated_at BEFORE UPDATE ON followups FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE TRIGGER trg_system_settings_updated_at BEFORE UPDATE ON system_settings FOR EACH ROW EXECUTE FUNCTION set_updated_at();

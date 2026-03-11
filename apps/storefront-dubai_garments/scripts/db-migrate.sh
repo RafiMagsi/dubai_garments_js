@@ -1,31 +1,34 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 MIGRATIONS_DIR="$ROOT_DIR/database/migrations"
 
 load_env_file() {
-  local env_file="$1"
-  [[ -f "$env_file" ]] || return 0
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-    local key="${line%%=*}"
-    local value="${line#*=}"
-    key="${key#"${key%%[![:space:]]*}"}"
-    key="${key%"${key##*[![:space:]]}"}"
-    [[ -z "$key" ]] && continue
+  env_file="$1"
+  [ -f "$env_file" ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|\#*) continue ;;
+    esac
+    key="${line%%=*}"
+    value="${line#*=}"
+    [ -z "$key" ] && continue
     export "$key=$value"
   done <"$env_file"
 }
 
-# Load environment variables from local env files when present.
-if [[ -f "$ROOT_DIR/.env.local" ]]; then
-  load_env_file "$ROOT_DIR/.env.local"
-elif [[ -f "$ROOT_DIR/.env" ]]; then
-  load_env_file "$ROOT_DIR/.env"
+# If DATABASE_URL is already provided (e.g. Docker env), do not override it.
+# Otherwise, load local env first, then fallback to .env.
+if [ -z "${DATABASE_URL:-}" ]; then
+  if [ -f "$ROOT_DIR/.env.local" ]; then
+    load_env_file "$ROOT_DIR/.env.local"
+  elif [ -f "$ROOT_DIR/.env" ]; then
+    load_env_file "$ROOT_DIR/.env"
+  fi
 fi
 
-if [[ -z "${DATABASE_URL:-}" ]]; then
+if [ -z "${DATABASE_URL:-}" ]; then
   echo "DATABASE_URL is not set."
   echo "Example: export DATABASE_URL=postgresql://user:pass@localhost:5432/dbname"
   exit 1
@@ -36,7 +39,7 @@ if ! command -v psql >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ ! -d "$MIGRATIONS_DIR" ]]; then
+if [ ! -d "$MIGRATIONS_DIR" ]; then
   echo "Migrations directory not found: $MIGRATIONS_DIR"
   exit 1
 fi
@@ -49,21 +52,19 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 SQL
 
 is_baseline_applied() {
-  local migration_name="$1"
+  migration_name="$1"
 
   case "$migration_name" in
     "0001_initial_schema.up.sql")
       # If core tables already exist, treat initial schema as already applied.
-      local users_exists products_exists
       users_exists="$(psql "$DATABASE_URL" -tAc "SELECT to_regclass('public.users') IS NOT NULL;")"
       products_exists="$(psql "$DATABASE_URL" -tAc "SELECT to_regclass('public.products') IS NOT NULL;")"
-      [[ "$users_exists" == "t" && "$products_exists" == "t" ]]
+      [ "$users_exists" = "t" ] && [ "$products_exists" = "t" ]
       ;;
     "0002_products_catalog_fields.up.sql")
       # If 0002 columns exist, treat it as already applied.
-      local sizes_exists
       sizes_exists="$(psql "$DATABASE_URL" -tAc "SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'sizes');")"
-      [[ "$sizes_exists" == "t" ]]
+      [ "$sizes_exists" = "t" ]
       ;;
     *)
       return 1
@@ -71,22 +72,19 @@ is_baseline_applied() {
   esac
 }
 
-shopt -s nullglob
-files=("$MIGRATIONS_DIR"/*.up.sql)
-
-if (( ${#files[@]} == 0 )); then
+if ! find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.up.sql' | grep -q .; then
   echo "No up migration files found in $MIGRATIONS_DIR"
   exit 0
 fi
 
-IFS=$'\n' sorted=( $(printf '%s\n' "${files[@]}" | sort) )
-unset IFS
+migration_list="$(mktemp)"
+find "$MIGRATIONS_DIR" -maxdepth 1 -type f -name '*.up.sql' | sort > "$migration_list"
 
-for file in "${sorted[@]}"; do
+while IFS= read -r file; do
   name="$(basename "$file")"
   already_applied="$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM schema_migrations WHERE name = '$name' LIMIT 1;")"
 
-  if [[ "$already_applied" == "1" ]]; then
+  if [ "$already_applied" = "1" ]; then
     echo "Skipping already applied: $name"
     continue
   fi
@@ -100,6 +98,8 @@ for file in "${sorted[@]}"; do
   echo "Applying migration: $name"
   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$file"
   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "INSERT INTO schema_migrations(name) VALUES ('$name');"
-done
+done < "$migration_list"
+
+rm -f "$migration_list"
 
 echo "Migrations completed successfully."

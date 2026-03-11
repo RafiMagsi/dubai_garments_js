@@ -1,37 +1,38 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 load_env_file() {
-  local env_file="$1"
-  [[ -f "$env_file" ]] || return 0
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-    local key="${line%%=*}"
-    local value="${line#*=}"
-    key="${key#"${key%%[![:space:]]*}"}"
-    key="${key%"${key##*[![:space:]]}"}"
-    [[ -z "$key" ]] && continue
+  env_file="$1"
+  [ -f "$env_file" ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|\#*) continue ;;
+    esac
+    key="${line%%=*}"
+    value="${line#*=}"
+    [ -z "$key" ] && continue
     export "$key=$value"
   done <"$env_file"
 }
 
-if [[ -f "$ROOT_DIR/.env.local" ]]; then
+# If DATABASE_URL is already provided (e.g. Docker env), do not override it.
+if [ -z "${DATABASE_URL:-}" ] && [ -f "$ROOT_DIR/.env.local" ]; then
   load_env_file "$ROOT_DIR/.env.local"
 fi
 
-if [[ -z "${DATABASE_URL:-}" ]]; then
+if [ -z "${DATABASE_URL:-}" ]; then
   echo "DATABASE_URL is not set. Add it in .env.local or .env.secrets.local"
   exit 1
 fi
 
-if [[ -z "${BOOTSTRAP_ADMIN_EMAIL:-}" || -z "${BOOTSTRAP_ADMIN_PASSWORD:-}" ]]; then
+if [ -z "${BOOTSTRAP_ADMIN_EMAIL:-}" ] || [ -z "${BOOTSTRAP_ADMIN_PASSWORD:-}" ]; then
   echo "BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD are required in .env.local"
   exit 1
 fi
 
-if [[ -z "${BOOTSTRAP_CUSTOMER_EMAIL:-}" || -z "${BOOTSTRAP_CUSTOMER_PASSWORD:-}" ]]; then
+if [ -z "${BOOTSTRAP_CUSTOMER_EMAIL:-}" ] || [ -z "${BOOTSTRAP_CUSTOMER_PASSWORD:-}" ]; then
   echo "BOOTSTRAP_CUSTOMER_EMAIL and BOOTSTRAP_CUSTOMER_PASSWORD are required in .env.local"
   exit 1
 fi

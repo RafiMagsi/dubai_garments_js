@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/auth/require-admin';
-
-const FASTAPI_BASE_URL =
-  process.env.FASTAPI_BASE_URL ||
-  process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ||
-  'http://localhost:8000';
+import { getRuntimeSetting } from '@/lib/config/runtime-settings';
 
 type ScriptDefinition = {
   key: string;
@@ -85,6 +81,14 @@ const SCRIPT_DEFINITIONS: ScriptDefinition[] = [
     commandLabel: 'npm run db:migrate',
   },
   {
+    key: 'db_view_tables',
+    name: 'View DB Tables',
+    category: 'Database',
+    description: 'List all tables in public schema.',
+    executionType: 'local',
+    commandLabel: 'npm run db:tables',
+  },
+  {
     key: 'db_seed_products',
     name: 'Seed Product Catalog',
     category: 'Database',
@@ -103,8 +107,13 @@ const SCRIPT_DEFINITIONS: ScriptDefinition[] = [
 ];
 
 async function fetchLastRun(workflowName: string) {
+  const fastApiBaseUrl = await getRuntimeSetting({
+    key: 'FASTAPI_BASE_URL',
+    scope: 'storefront',
+    defaultValue: process.env.NEXT_PUBLIC_FASTAPI_BASE_URL || 'http://localhost:8000',
+  });
   const response = await fetch(
-    `${FASTAPI_BASE_URL}/api/v1/automation-runs?workflow_name=${encodeURIComponent(workflowName)}&limit=1`,
+    `${fastApiBaseUrl}/api/v1/automation-runs?workflow_name=${encodeURIComponent(workflowName)}&limit=1`,
     {
       method: 'GET',
       cache: 'no-store',
