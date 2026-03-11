@@ -1,0 +1,206 @@
+{
+  "name": "Dubai Garments - SendGrid Inbound Test",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "Manual_Trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "from",
+              "type": "string",
+              "value": "customer@example.com"
+            },
+            {
+              "name": "to",
+              "type": "string",
+              "value": "sales@dubaigarments.ai"
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "value": "Re: Q-20260310-817E14"
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "value": "Can you revise delivery timeline and pricing options?"
+            },
+            {
+              "name": "message_id",
+              "type": "string",
+              "value": "n8n-test-message-001"
+            }
+          ]
+        }
+      },
+      "id": "Set_SendGridPayload",
+      "name": "Set Test Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FASTAPI_INTERNAL_URL + '/api/v1/webhooks/sendgrid/inbound' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Sendgrid-Inbound-Token",
+              "value": "={{ $env.SENDGRID_INBOUND_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "HTTP_PostInbound",
+      "name": "POST Inbound Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "from",
+              "type": "string",
+              "value": "another.customer@example.com"
+            },
+            {
+              "name": "to",
+              "type": "string",
+              "value": "sales@dubaigarments.ai"
+            },
+            {
+              "name": "subject",
+              "type": "string",
+              "value": "Re: General inquiry (no quote number)"
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "value": "Thanks. Please share MOQ details."
+            },
+            {
+              "name": "message_id",
+              "type": "string",
+              "value": "n8n-test-message-002"
+            }
+          ]
+        }
+      },
+      "id": "Set_FallbackPayload",
+      "name": "Set Fallback Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.FASTAPI_INTERNAL_URL + '/api/v1/webhooks/sendgrid/inbound' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Sendgrid-Inbound-Token",
+              "value": "={{ $env.SENDGRID_INBOUND_WEBHOOK_TOKEN }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "HTTP_PostFallbackInbound",
+      "name": "POST Fallback Inbound",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        800,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Test Payload",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Fallback Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Test Payload": {
+      "main": [
+        [
+          {
+            "node": "POST Inbound Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fallback Payload": {
+      "main": [
+        [
+          {
+            "node": "POST Fallback Inbound",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "sendgrid-inbound-test-v1"
+}

@@ -23,6 +23,7 @@ Minimal backend service for quote requests.
 - `POST /api/v1/automation/scheduler/followups/run`
 - `POST /api/v1/automation/scheduler/digest/run`
 - `POST /api/v1/automation/scheduler/cold-leads/run`
+- `POST /api/v1/webhooks/sendgrid/inbound`
 - `POST /api/v1/quotes/{quote_id}/generate-pdf`
 - `GET /api/v1/quotes/{quote_id}/pdf`
 - `GET /api/v1/quotes/{quote_id}/pdf/download`
@@ -90,5 +91,11 @@ Worker listens to:
   - Run via n8n cron or any scheduler
   - Endpoints available for follow-up sweep, digest report, and cold lead detection
   - `AUTOMATION_SHARED_SECRET` protects scheduler endpoints
+- Customer reply detection:
+  - SendGrid inbound webhook posts to `/api/v1/webhooks/sendgrid/inbound`
+  - Logs inbound communication (`direction=inbound`)
+  - Creates `customer_replied` activity
+  - Pauses pending follow-ups for related quote/deal/lead/customer
+  - Sends internal sales/admin notification email
 - Activity log is append-only and system-generated. It is not manually created from the admin UI.
 - Activity log event types: `lead_created`, `ai_processed_lead`, `quote_generated`, `email_sent`, `followup_triggered`, `customer_replied`, plus lead and deal update events.

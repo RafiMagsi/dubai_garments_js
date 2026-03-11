@@ -9,6 +9,8 @@ Trigger automated quote follow-ups at:
 ## Files
 - n8n workflow export:
   - `automation/n8n/workflows/quote-followup-workflow.json`
+  - test workflow for inbound reply simulation:
+    - `automation/n8n/workflows/sendgrid-inbound-test-workflow.json`
 
 ## FastAPI Endpoints Used
 - Triggered by quote status update (`sent`) from FastAPI to n8n webhook URL:

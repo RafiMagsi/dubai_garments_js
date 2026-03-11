@@ -13,6 +13,7 @@ from app.api.routers.pricing import router as pricing_router
 from app.api.routers.quotes import router as quotes_router
 from app.api.routers.quote_requests import router as quote_requests_router
 from app.api.routers.scheduler import router as scheduler_router
+from app.api.routers.webhooks import router as webhooks_router
 from app.core.config import CORS_ORIGINS
 
 app = FastAPI(title="Dubai Garments Quote API", version="0.2.0")
@@ -36,3 +37,4 @@ app.include_router(activities_router)
 app.include_router(emails_router)
 app.include_router(followups_router)
 app.include_router(scheduler_router)
+app.include_router(webhooks_router)
