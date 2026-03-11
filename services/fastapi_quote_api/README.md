@@ -27,6 +27,7 @@ Minimal backend service for quote requests.
 - `POST /api/v1/automation/scheduler/digest/run`
 - `POST /api/v1/automation/scheduler/cold-leads/run`
 - `POST /api/v1/webhooks/sendgrid/inbound`
+- `POST /api/v1/admin/config/demo-data/seed`
 - `POST /api/v1/quotes/{quote_id}/generate-pdf`
 - `GET /api/v1/quotes/{quote_id}/pdf`
 - `GET /api/v1/quotes/{quote_id}/pdf/download`
@@ -99,6 +100,26 @@ python worker.py
 Worker listens to:
 - `lead_ai`
 - `quote_pdf`
+
+## Demo Data Seeder
+
+Generate realistic demo records for:
+- leads
+- deals
+- quotes (with quote_items)
+
+Run from `services/fastapi_quote_api`:
+
+```bash
+source .venv/bin/activate
+python scripts/seed_demo_data.py --leads 40 --deals 28 --quotes 22
+```
+
+Optional override:
+
+```bash
+python scripts/seed_demo_data.py --database-url "postgresql://user:pass@localhost:5432/dbname"
+```
 
 ## Notes
 
