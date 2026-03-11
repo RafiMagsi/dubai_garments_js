@@ -128,3 +128,39 @@ sudo systemctl status dubai-garments-storefront dubai-garments-fastapi dubai-gar
 Unit files are in:
 
 - [deploy/systemd/README.md](/Users/rafi/developer/ai_development/projects/dubai_garments/deploy/systemd/README.md)
+
+## GitHub Deploy (CI/CD)
+
+Automated deploy workflow is included:
+
+- [.github/workflows/deploy.yml](/Users/rafi/developer/ai_development/projects/dubai_garments/.github/workflows/deploy.yml)
+- [scripts/github-deploy.sh](/Users/rafi/developer/ai_development/projects/dubai_garments/scripts/github-deploy.sh)
+
+### Required GitHub Secrets
+
+Add in repo settings: `Settings -> Secrets and variables -> Actions`
+
+- `DEPLOY_HOST` (server IP or domain)
+- `DEPLOY_USER` (SSH user)
+- `DEPLOY_SSH_KEY` (private key content)
+- `DEPLOY_PATH` (absolute path on server, e.g. `/opt/dubai_garments`)
+- `DEPLOY_REPO` (git clone URL; only needed for first-time server bootstrap)
+
+### Deploy trigger options
+
+1. Push to `main`:
+- runs deploy in `docker` mode by default
+
+2. Manual deploy:
+- GitHub Actions -> `Deploy` -> `Run workflow`
+- choose mode: `docker` or `systemd`
+- choose git ref/branch
+
+### Server prerequisites
+
+- For `docker` mode:
+  - Docker + Docker Compose installed
+- For `systemd` mode:
+  - Complete once: `./scripts/non-docker-setup.sh`
+  - Install units once: `sudo ./scripts/install-systemd-units.sh`
+  - Configure passwordless sudo for service restarts, or restart manually

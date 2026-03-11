@@ -1,0 +1,62 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_mode:
+        description: "Deployment mode"
+        required: true
+        default: "docker"
+        type: choice
+        options:
+          - docker
+          - systemd
+      deploy_ref:
+        description: "Git ref to deploy"
+        required: true
+        default: "main"
+        type: string
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy To Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          command_timeout: 60m
+          script: |
+            set -euo pipefail
+
+            if [ ! -d "${{ secrets.DEPLOY_PATH }}/.git" ]; then
+              if [ -z "${{ secrets.DEPLOY_REPO }}" ]; then
+                echo "DEPLOY_PATH is not a git repo and DEPLOY_REPO secret is empty."
+                exit 1
+              fi
+              mkdir -p "${{ secrets.DEPLOY_PATH }}"
+              git clone "${{ secrets.DEPLOY_REPO }}" "${{ secrets.DEPLOY_PATH }}"
+            fi
+
+            cd "${{ secrets.DEPLOY_PATH }}"
+            chmod +x scripts/*.sh || true
+            chmod +x apps/storefront-dubai_garments/scripts/*.sh || true
+
+            MODE="${{ github.event.inputs.deploy_mode }}"
+            REF="${{ github.event.inputs.deploy_ref }}"
+
+            if [ -z "$MODE" ]; then
+              MODE="docker"
+            fi
+            if [ -z "$REF" ]; then
+              REF="${{ github.ref_name }}"
+            fi
+
+            ./scripts/github-deploy.sh "$MODE" "$REF"
