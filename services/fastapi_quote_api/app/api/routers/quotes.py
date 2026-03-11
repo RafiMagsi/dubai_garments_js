@@ -20,6 +20,12 @@ from app.services.quote_pdf import (
     get_latest_quote_document,
 )
 from app.services.activities import create_activity
+from app.services.email import (
+    build_quote_sent_email,
+    create_automation_run,
+    finish_automation_run,
+    send_email,
+)
 from app.services.quotes import create_quote
 from app.services.storage import read_local_binary
 
@@ -330,6 +336,124 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
                             "to": status,
                         },
                     )
+
+                if current["status"] != status and status == "sent":
+                    cursor.execute(
+                        """
+                        SELECT
+                          c.email AS customer_email,
+                          c.company_name AS customer_company,
+                          l.email AS lead_email,
+                          l.company_name AS lead_company
+                        FROM quotes q
+                        LEFT JOIN customers c ON c.id = q.customer_id
+                        LEFT JOIN leads l ON l.id = q.lead_id
+                        WHERE q.id = %s::uuid
+                        """,
+                        (quote_id,),
+                    )
+                    recipient_row = cursor.fetchone() or {}
+                    recipient_email = (
+                        recipient_row.get("customer_email")
+                        or recipient_row.get("lead_email")
+                        or ""
+                    ).strip()
+                    company_name = (
+                        recipient_row.get("customer_company")
+                        or recipient_row.get("lead_company")
+                        or "Customer"
+                    )
+
+                    if recipient_email:
+                        mail = build_quote_sent_email(
+                            quote_number=updated.get("quote_number") or quote_id[:8].upper(),
+                            company_name=company_name,
+                            total_amount=float(updated.get("total_amount") or 0.0),
+                            currency=updated.get("currency") or "AED",
+                            valid_until=updated.get("valid_until"),
+                        )
+                        run_id = create_automation_run(
+                            connection=connection,
+                            workflow_name="quote_sent_email",
+                            trigger_source="automation",
+                            trigger_entity_type="quote",
+                            trigger_entity_id=quote_id,
+                            request_payload={"recipientEmail": recipient_email},
+                        )
+                        try:
+                            delivery = send_email(
+                                recipient_email=recipient_email,
+                                subject=mail["subject"],
+                                text_body=mail["text"],
+                                html_body=mail["html"],
+                            )
+                            cursor.execute(
+                                """
+                                INSERT INTO communications (
+                                  customer_id,
+                                  lead_id,
+                                  deal_id,
+                                  quote_id,
+                                  channel,
+                                  direction,
+                                  subject,
+                                  message_text,
+                                  external_message_id,
+                                  sent_at
+                                )
+                                VALUES (
+                                  %s::uuid,
+                                  %s::uuid,
+                                  %s::uuid,
+                                  %s::uuid,
+                                  'email',
+                                  'outbound',
+                                  %s,
+                                  %s,
+                                  %s,
+                                  NOW()
+                                )
+                                """,
+                                (
+                                    updated.get("customer_id"),
+                                    updated.get("lead_id"),
+                                    updated.get("deal_id"),
+                                    updated.get("id"),
+                                    mail["subject"],
+                                    f"To: {recipient_email}\n\n{mail['text']}",
+                                    delivery.get("messageId"),
+                                ),
+                            )
+                            create_activity(
+                                connection=connection,
+                                activity_type="email_sent",
+                                title="Quote email sent",
+                                customer_id=updated.get("customer_id"),
+                                lead_id=updated.get("lead_id"),
+                                deal_id=updated.get("deal_id"),
+                                quote_id=updated.get("id"),
+                                details=f"Quote sent to {recipient_email}",
+                                metadata={
+                                    "provider": delivery.get("provider"),
+                                    "recipientEmail": recipient_email,
+                                },
+                            )
+                            finish_automation_run(
+                                connection=connection,
+                                run_id=run_id,
+                                status="success",
+                                response_payload={
+                                    "provider": delivery.get("provider"),
+                                    "messageId": delivery.get("messageId"),
+                                },
+                            )
+                        except Exception as email_error:
+                            finish_automation_run(
+                                connection=connection,
+                                run_id=run_id,
+                                status="failed",
+                                error_message=str(email_error),
+                            )
             connection.commit()
     except HTTPException:
         raise

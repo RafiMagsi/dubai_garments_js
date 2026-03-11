@@ -9,6 +9,12 @@ from fastapi import HTTPException
 
 from app.core.config import DEAL_STAGES
 from app.services.activities import create_activity
+from app.services.email import (
+    build_followup_email,
+    create_automation_run,
+    finish_automation_run,
+    send_email,
+)
 
 
 def normalize_stage(stage: str) -> str:
@@ -86,6 +92,104 @@ def maybe_schedule_followup(
                 now,
             ),
         )
+
+        if lead_id:
+            cursor.execute(
+                """
+                SELECT l.email, l.company_name, d.title AS deal_title
+                FROM leads l
+                LEFT JOIN deals d ON d.id = %s::uuid
+                WHERE l.id = %s::uuid
+                """,
+                (deal_id, lead_id),
+            )
+            lead = cursor.fetchone()
+            recipient_email = (lead or {}).get("email")
+            company_name = (lead or {}).get("company_name") or "Customer"
+            deal_title = (lead or {}).get("deal_title") or "Deal Follow-up"
+            if recipient_email:
+                email_payload = build_followup_email(
+                    deal_title=deal_title,
+                    stage=stage,
+                )
+                email_run_id = create_automation_run(
+                    connection=connection,
+                    workflow_name="followup_email_dispatch",
+                    trigger_source="automation",
+                    trigger_entity_type="deal",
+                    trigger_entity_id=deal_id,
+                    request_payload={
+                        "recipientEmail": recipient_email,
+                        "stage": stage,
+                    },
+                )
+                try:
+                    delivery = send_email(
+                        recipient_email=recipient_email,
+                        subject=email_payload["subject"],
+                        text_body=email_payload["text"],
+                        html_body=email_payload["html"],
+                    )
+                    cursor.execute(
+                        """
+                        INSERT INTO communications (
+                          customer_id,
+                          lead_id,
+                          deal_id,
+                          channel,
+                          direction,
+                          subject,
+                          message_text,
+                          external_message_id,
+                          sent_at
+                        )
+                        VALUES (
+                          (SELECT customer_id FROM deals WHERE id = %s::uuid),
+                          %s::uuid,
+                          %s::uuid,
+                          'email',
+                          'outbound',
+                          %s,
+                          %s,
+                          %s,
+                          NOW()
+                        )
+                        """,
+                        (
+                            deal_id,
+                            lead_id,
+                            deal_id,
+                            email_payload["subject"],
+                            f"To: {recipient_email}\n\n{email_payload['text']}",
+                            delivery.get("messageId"),
+                        ),
+                    )
+                    finish_automation_run(
+                        connection=connection,
+                        run_id=email_run_id,
+                        status="success",
+                        response_payload={
+                            "provider": delivery.get("provider"),
+                            "messageId": delivery.get("messageId"),
+                            "companyName": company_name,
+                        },
+                    )
+                    create_activity(
+                        connection=connection,
+                        activity_type="email_sent",
+                        title="Follow-up email sent",
+                        lead_id=lead_id,
+                        deal_id=deal_id,
+                        details=f"Follow-up email sent to {recipient_email}",
+                        metadata={"stage": stage, "provider": delivery.get("provider")},
+                    )
+                except Exception as error:
+                    finish_automation_run(
+                        connection=connection,
+                        run_id=email_run_id,
+                        status="failed",
+                        error_message=str(error),
+                    )
 
     create_activity(
         connection=connection,

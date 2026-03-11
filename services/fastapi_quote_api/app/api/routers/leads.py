@@ -13,6 +13,7 @@ from app.schemas.leads import (
     LeadUpdateRequest,
 )
 from app.services.deals import stage_label
+from app.services.email import create_automation_run, finish_automation_run, send_email
 from app.services.leads import get_lead_by_id, normalize_lead_status, track_lead_activity
 
 router = APIRouter(prefix="/api/v1", tags=["leads"])
@@ -154,7 +155,19 @@ def view_lead(lead_id: str) -> Dict[str, object]:
                     (lead_id,),
                 )
                 activities = cursor.fetchall()
-    except HTTPException:
+    except HTTPException as error:
+        if run_id:
+            try:
+                with get_db_connection() as connection:
+                    finish_automation_run(
+                        connection=connection,
+                        run_id=run_id,
+                        status="failed",
+                        error_message=str(error.detail),
+                    )
+                    connection.commit()
+            except Exception:
+                pass
         raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Failed to fetch lead: {error}") from error
@@ -369,11 +382,30 @@ def send_lead_email(lead_id: str, payload: LeadSendEmailRequest) -> Dict[str, ob
             detail="recipient_email, subject, and message are required.",
         )
 
+    run_id: Optional[str] = None
     try:
         with get_db_connection() as connection:
             lead = get_lead_by_id(connection, lead_id)
             if not lead:
                 raise HTTPException(status_code=404, detail="Lead not found.")
+            run_id = create_automation_run(
+                connection=connection,
+                workflow_name="lead_email_dispatch",
+                trigger_source="api",
+                trigger_entity_type="lead",
+                trigger_entity_id=lead_id,
+                request_payload={
+                    "recipientEmail": recipient_email,
+                    "subject": subject,
+                },
+            )
+
+            delivery = send_email(
+                recipient_email=recipient_email,
+                subject=subject,
+                text_body=message,
+                html_body=f"<p>{message.replace(chr(10), '<br/>')}</p>",
+            )
 
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -385,15 +417,17 @@ def send_lead_email(lead_id: str, payload: LeadSendEmailRequest) -> Dict[str, ob
                       direction,
                       subject,
                       message_text,
+                      external_message_id,
                       sent_at
                     )
-                    VALUES (%s::uuid, %s::uuid, 'email', 'outbound', %s, %s, NOW())
+                    VALUES (%s::uuid, %s::uuid, 'email', 'outbound', %s, %s, %s, NOW())
                     RETURNING
                       id::text,
                       channel,
                       direction,
                       subject,
                       message_text,
+                      external_message_id,
                       sent_at,
                       created_at
                     """,
@@ -402,6 +436,7 @@ def send_lead_email(lead_id: str, payload: LeadSendEmailRequest) -> Dict[str, ob
                         lead_id,
                         subject,
                         f"To: {recipient_email}\n\n{message}",
+                        delivery.get("messageId"),
                     ),
                 )
                 communication = cursor.fetchone()
@@ -414,17 +449,43 @@ def send_lead_email(lead_id: str, payload: LeadSendEmailRequest) -> Dict[str, ob
                     "email_sent",
                     "Email sent",
                     details=f"Email sent to {recipient_email}",
-                    metadata={"channel": "email", "recipientEmail": recipient_email, "subject": subject},
+                    metadata={
+                        "channel": "email",
+                        "recipientEmail": recipient_email,
+                        "subject": subject,
+                        "provider": delivery.get("provider"),
+                    },
+                )
+                finish_automation_run(
+                    connection=connection,
+                    run_id=run_id,
+                    status="success",
+                    response_payload={
+                        "provider": delivery.get("provider"),
+                        "messageId": delivery.get("messageId"),
+                    },
                 )
 
             connection.commit()
     except HTTPException:
         raise
     except Exception as error:
+        if run_id:
+            try:
+                with get_db_connection() as connection:
+                    finish_automation_run(
+                        connection=connection,
+                        run_id=run_id,
+                        status="failed",
+                        error_message=str(error),
+                    )
+                    connection.commit()
+            except Exception:
+                pass
         raise HTTPException(status_code=500, detail=f"Failed to send email: {error}") from error
 
     return {
         "ok": True,
-        "message": "Email communication logged successfully.",
+        "message": "Email sent and communication logged successfully.",
         "item": communication,
     }

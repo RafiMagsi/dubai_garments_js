@@ -46,3 +46,18 @@ STORAGE_S3_ACCESS_KEY = os.getenv("STORAGE_S3_ACCESS_KEY", "")
 STORAGE_S3_SECRET_KEY = os.getenv("STORAGE_S3_SECRET_KEY", "")
 STORAGE_S3_PUBLIC_URL_BASE = os.getenv("STORAGE_S3_PUBLIC_URL_BASE", "")
 STORAGE_S3_PRESIGNED_EXPIRY = int(os.getenv("STORAGE_S3_PRESIGNED_EXPIRY", "3600"))
+
+EMAIL_ENABLED = os.getenv("EMAIL_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
+EMAIL_PROVIDER = os.getenv("EMAIL_PROVIDER", "log").strip().lower()
+EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Dubai Garments")
+EMAIL_FROM_ADDRESS = os.getenv("EMAIL_FROM_ADDRESS", "no-reply@dubaigarments.ai")
+ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "")
+
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
+
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "true").strip().lower() in {"1", "true", "yes", "on"}

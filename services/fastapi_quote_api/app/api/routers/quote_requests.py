@@ -10,6 +10,13 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from app.core.config import UPLOAD_DIR
 from app.core.db import get_db_connection
 from app.core.queue import enqueue_lead_ai_job
+from app.core.config import ADMIN_NOTIFICATION_EMAIL
+from app.services.email import (
+    build_lead_notification_email,
+    create_automation_run,
+    finish_automation_run,
+    send_email,
+)
 from app.services.leads import track_lead_activity
 from app.services.utils import to_lead_code
 
@@ -63,6 +70,7 @@ async def create_quote_request(
     """
 
     try:
+        lead_code = ""
         with get_db_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -82,6 +90,7 @@ async def create_quote_request(
                 if not row:
                     raise HTTPException(status_code=500, detail="Failed to create lead.")
                 lead_id = row["id"]
+                lead_code = to_lead_code(lead_id)
 
                 track_lead_activity(
                     connection,
@@ -91,6 +100,46 @@ async def create_quote_request(
                     details="Lead was created from public quote request form.",
                     metadata={"source": "website", "status": "new"},
                 )
+
+                if ADMIN_NOTIFICATION_EMAIL.strip():
+                    notification = build_lead_notification_email(
+                        lead_code=lead_code,
+                        contact_name=name.strip(),
+                        company_name=company.strip(),
+                        product=product.strip(),
+                        quantity=quantity,
+                    )
+                    run_id = create_automation_run(
+                        connection=connection,
+                        workflow_name="lead_notification_email",
+                        trigger_source="automation",
+                        trigger_entity_type="lead",
+                        trigger_entity_id=lead_id,
+                        request_payload={"recipientEmail": ADMIN_NOTIFICATION_EMAIL.strip()},
+                    )
+                    try:
+                        delivery = send_email(
+                            recipient_email=ADMIN_NOTIFICATION_EMAIL.strip(),
+                            subject=notification["subject"],
+                            text_body=notification["text"],
+                            html_body=notification["html"],
+                        )
+                        finish_automation_run(
+                            connection=connection,
+                            run_id=run_id,
+                            status="success",
+                            response_payload={
+                                "provider": delivery.get("provider"),
+                                "messageId": delivery.get("messageId"),
+                            },
+                        )
+                    except Exception as email_error:
+                        finish_automation_run(
+                            connection=connection,
+                            run_id=run_id,
+                            status="failed",
+                            error_message=str(email_error),
+                        )
             connection.commit()
 
         enqueue_lead_ai_job(lead_id)

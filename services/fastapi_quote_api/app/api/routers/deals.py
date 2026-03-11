@@ -22,6 +22,7 @@ from app.services.deals import (
     track_deal_activity,
     update_lead_status_from_deal,
 )
+from app.services.email import create_automation_run, finish_automation_run, send_email
 
 router = APIRouter(prefix="/api/v1", tags=["deals"])
 
@@ -176,7 +177,19 @@ def view_deal(deal_id: str) -> Dict[str, object]:
                 )
                 communications = cursor.fetchall()
 
-    except HTTPException:
+    except HTTPException as error:
+        if run_id:
+            try:
+                with get_db_connection() as connection:
+                    finish_automation_run(
+                        connection=connection,
+                        run_id=run_id,
+                        status="failed",
+                        error_message=str(error.detail),
+                    )
+                    connection.commit()
+            except Exception:
+                pass
         raise
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Failed to fetch deal: {error}") from error
@@ -521,6 +534,7 @@ def send_deal_email(deal_id: str, payload: DealSendEmailRequest) -> Dict[str, ob
             detail="recipient_email, subject, and message are required.",
         )
 
+    run_id: Optional[str] = None
     try:
         with get_db_connection() as connection:
             with connection.cursor() as cursor:
@@ -532,13 +546,32 @@ def send_deal_email(deal_id: str, payload: DealSendEmailRequest) -> Dict[str, ob
                 if not deal:
                     raise HTTPException(status_code=404, detail="Deal not found.")
 
+                run_id = create_automation_run(
+                    connection=connection,
+                    workflow_name="deal_email_dispatch",
+                    trigger_source="api",
+                    trigger_entity_type="deal",
+                    trigger_entity_id=deal_id,
+                    request_payload={
+                        "recipientEmail": recipient_email,
+                        "subject": subject,
+                    },
+                )
+
+                delivery = send_email(
+                    recipient_email=recipient_email,
+                    subject=subject,
+                    text_body=message,
+                    html_body=f"<p>{message.replace(chr(10), '<br/>')}</p>",
+                )
+
                 cursor.execute(
                     """
                     INSERT INTO communications (
-                      customer_id, lead_id, deal_id, channel, direction, subject, message_text, sent_at
+                      customer_id, lead_id, deal_id, channel, direction, subject, message_text, external_message_id, sent_at
                     )
-                    VALUES (%s::uuid, %s::uuid, %s::uuid, 'email', 'outbound', %s, %s, NOW())
-                    RETURNING id::text, channel, direction, subject, message_text, sent_at, created_at
+                    VALUES (%s::uuid, %s::uuid, %s::uuid, 'email', 'outbound', %s, %s, %s, NOW())
+                    RETURNING id::text, channel, direction, subject, message_text, external_message_id, sent_at, created_at
                     """,
                     (
                         deal.get("customer_id"),
@@ -546,6 +579,7 @@ def send_deal_email(deal_id: str, payload: DealSendEmailRequest) -> Dict[str, ob
                         deal_id,
                         subject,
                         f"To: {recipient_email}\n\n{message}",
+                        delivery.get("messageId"),
                     ),
                 )
                 communication = cursor.fetchone()
@@ -559,12 +593,38 @@ def send_deal_email(deal_id: str, payload: DealSendEmailRequest) -> Dict[str, ob
                     "Email sent",
                     lead_id=deal.get("lead_id"),
                     details=f"Email sent to {recipient_email}",
-                    metadata={"channel": "email", "recipientEmail": recipient_email, "subject": subject},
+                    metadata={
+                        "channel": "email",
+                        "recipientEmail": recipient_email,
+                        "subject": subject,
+                        "provider": delivery.get("provider"),
+                    },
+                )
+                finish_automation_run(
+                    connection=connection,
+                    run_id=run_id,
+                    status="success",
+                    response_payload={
+                        "provider": delivery.get("provider"),
+                        "messageId": delivery.get("messageId"),
+                    },
                 )
             connection.commit()
     except HTTPException:
         raise
     except Exception as error:
+        if run_id:
+            try:
+                with get_db_connection() as connection:
+                    finish_automation_run(
+                        connection=connection,
+                        run_id=run_id,
+                        status="failed",
+                        error_message=str(error),
+                    )
+                    connection.commit()
+            except Exception:
+                pass
         raise HTTPException(status_code=500, detail=f"Failed to send deal email: {error}") from error
 
-    return {"ok": True, "message": "Email communication logged successfully.", "item": communication}
+    return {"ok": True, "message": "Email sent and communication logged successfully.", "item": communication}
