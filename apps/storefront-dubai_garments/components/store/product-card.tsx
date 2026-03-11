@@ -20,20 +20,22 @@ export default function ProductCard({
   const startingPrice = getStartingUnitPriceAED(product);
 
   return (
-    <article className="dg-product-card">
-      <div className="dg-product-image dg-quick-card">
+    <article className="dg-product-card dgx-product-card">
+      <div className="dg-product-image dg-quick-card dgx-product-media">
         <span className="dg-product-tag">{formatBadgeLabel(product.category)}</span>
       </div>
       <div className="dg-product-body">
         <h3 className="dg-product-name">{product.name}</h3>
+        <div className="dgx-product-meta-grid">
+          <p className="dg-product-meta">
+            <strong>Price:</strong> {startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}
+          </p>
+          <p className="dg-product-meta"><strong>MOQ:</strong> {product.minOrderQty} pcs</p>
+          <p className="dg-product-meta"><strong>Lead Time:</strong> {product.leadTimeDays} days</p>
+          <p className="dg-product-meta"><strong>Fabric:</strong> {product.material || '-'}</p>
+        </div>
         <p className="dg-product-meta">
-          Price: {startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}
-        </p>
-        <p className="dg-product-meta">MOQ: {product.minOrderQty} pcs</p>
-        <p className="dg-product-meta">Lead Time: {product.leadTimeDays} days</p>
-        <p className="dg-product-meta">Fabric: {product.material || '-'}</p>
-        <p className="dg-product-meta">
-          Customization: {product.brandingOptions.length > 0 ? product.brandingOptions.join(', ') : '-'}
+          <strong>Customization:</strong> {product.brandingOptions.length > 0 ? product.brandingOptions.join(', ') : '-'}
         </p>
         <div className="dg-product-actions">
           <Link href={detailsHref} className="dg-col-fill">

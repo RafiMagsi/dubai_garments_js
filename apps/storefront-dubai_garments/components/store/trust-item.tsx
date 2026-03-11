@@ -3,5 +3,5 @@ type TrustItemProps = {
 };
 
 export default function TrustItem({ text }: TrustItemProps) {
-  return <p className="dg-trust-item">{text}</p>;
+  return <p className="dg-trust-item dgx-trust-item">{text}</p>;
 }

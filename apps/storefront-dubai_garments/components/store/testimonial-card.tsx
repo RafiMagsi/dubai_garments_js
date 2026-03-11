@@ -6,7 +6,7 @@ type TestimonialCardProps = {
 
 export default function TestimonialCard({ quote, name, role }: TestimonialCardProps) {
   return (
-    <blockquote className="dg-testimonial">
+    <blockquote className="dg-testimonial dgx-testimonial">
       &ldquo;{quote}&rdquo;
       <footer className="dg-testimonial-meta">
         {name} · {role}

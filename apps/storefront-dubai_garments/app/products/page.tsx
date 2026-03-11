@@ -32,13 +32,14 @@ export default function ProductsPage() {
 
   return (
     <StorefrontShell>
-      <main className="dg-main">
+      <main className="dg-main dgx-home">
         <StoreSection
-          title="Product Catalog"
-          subtitle="Browse garments by category and request bulk quotations with customization details."
+          title="Catalog Built For Qualification"
+          subtitle="Filter by category, compare production constraints, and move directly into quote capture."
           action={<span className="dg-badge">{products.length} Products</span>}
+          className="dg-section dgx-surface-section"
         >
-            <div className="dg-card dg-filter-card">
+            <div className="dg-card dg-filter-card dgx-filter-card">
               <div className="dg-filter-row">
                 {categoryOptions.map((option) => (
                   <button
@@ -52,7 +53,7 @@ export default function ProductsPage() {
                 ))}
                 <input
                   className="dg-input dg-col-fill"
-                  placeholder="Search products..."
+                  placeholder="Search product, use-case, or material..."
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />

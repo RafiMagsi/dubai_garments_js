@@ -98,14 +98,14 @@ export default function ProductDetailPage() {
 
   return (
     <StorefrontShell>
-      <main className="dg-main">
-        <section className="dg-section">
+      <main className="dg-main dgx-home">
+        <section className="dg-section dgx-surface-section">
           <div className="dg-container dg-detail-grid">
-            <div className="dg-card dg-detail-media">
+            <div className="dg-card dg-detail-media dgx-product-hero-media">
               <div className="dg-product-image" />
             </div>
 
-            <div className="dg-card dg-info-card">
+            <div className="dg-card dg-info-card dgx-product-hero-card">
               {isLoading && <p className="dg-muted-sm">Loading product...</p>}
               {!isLoading && !product && <p className="dg-muted-sm">Product not found.</p>}
               {product && (
@@ -143,7 +143,7 @@ export default function ProductDetailPage() {
         </section>
 
         {product && (
-          <StoreSection>
+          <StoreSection className="dg-section dgx-surface-section">
               <div className="dg-card dg-config-card">
                 <h2 className="dg-section-title">Product Configuration</h2>
                 <p className="dg-section-copy">
@@ -292,6 +292,7 @@ export default function ProductDetailPage() {
           <StoreSection
             title="Related Products"
             subtitle="Similar options available for your bulk order requirements."
+            className="dg-section dgx-surface-section"
           >
               <div className="dg-product-grid">
                 {related.map((item) => (

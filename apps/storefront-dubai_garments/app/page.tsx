@@ -21,34 +21,36 @@ export default function HomePage() {
 
   return (
     <StorefrontShell>
-      <main className="dg-main">
+      <main className="dg-main dgx-home">
         <HeroSection
-          badge="B2B Custom Garments"
-          title="Order Branded Apparel in Bulk with Faster Quotations"
-          subtitle="Browse production-ready garments, submit your quantity and branding requirements, and get a clear quote with timeline, pricing, and follow-up support."
+          className="dgx-hero-section"
+          badge="AI SALES AUTOMATION"
+          title="Turn Bulk Garment Inquiries Into Closed Deals Faster"
+          subtitle="Deploy a conversion-focused storefront that captures qualified leads, scores intent with AI, and routes opportunities to your sales team with zero manual handoffs."
           actions={
             <>
-              <Link href="/quote" className="dg-btn-primary">Start Quote Request</Link>
-              <Link href="/products" className="dg-btn-secondary">Browse Catalog</Link>
+              <Link href="/quote" className="dg-btn-primary">Start Free Demo Flow</Link>
+              <Link href="/products" className="dg-btn-secondary">Explore Product Catalog</Link>
             </>
           }
           aside={
-            <div className="dg-card dg-quick-card">
-              <p className="dg-eyebrow">Quick Request</p>
-              <h2 className="dg-title-md">Get Quote in Minutes</h2>
+            <div className="dg-card dg-quick-card dgx-hero-aside">
+              <p className="dg-eyebrow">Pipeline Snapshot</p>
+              <h2 className="dg-title-md">Live Sales Workflow</h2>
               <div className="dg-quick-list">
-                <p className="dg-quick-item">1. Select product category</p>
-                <p className="dg-quick-item">2. Upload logo or design file</p>
-                <p className="dg-quick-item">3. Share quantity and deadline</p>
+                <p className="dg-quick-item">Lead Captured from storefront form</p>
+                <p className="dg-quick-item">AI scored as HOT with urgency tags</p>
+                <p className="dg-quick-item">Quote + automated follow-up sent</p>
               </div>
-              <Link href="/quote" className="dg-btn-primary dg-btn-block">Submit Bulk Quote</Link>
+              <Link href="/admin/dashboard" className="dg-btn-primary dg-btn-block">View Sales Console</Link>
             </div>
           }
         />
 
         <StoreSection
           title="Shop by category"
-          subtitle="Choose a category and request a tailored quote for your bulk order."
+          subtitle="Launch with production-ready category pages and map each inquiry directly to your quote workflow."
+          className="dg-section dgx-surface-section"
         >
             <div className="dg-category-grid">
               {homeCategories.map((category) => (
@@ -59,15 +61,16 @@ export default function HomePage() {
 
         <StoreSection
           title="Featured products"
-          subtitle="Production-ready garments with clear MOQs, lead times, and customization options."
+          subtitle="High-intent catalog cards built for discovery, qualification, and rapid quote conversion."
           action={<Link href="/products" className="dg-btn-secondary">View All Products</Link>}
+          className="dg-section dgx-surface-section"
         >
             <div className="dg-product-grid">
               {featuredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
             </div>
         </StoreSection>
 
-        <StoreSection>
+        <StoreSection className="dg-section dgx-surface-section">
             <h2 className="dg-section-title">How bulk ordering works</h2>
             <WorkflowTimeline
               className="dg-process-grid"
@@ -75,7 +78,7 @@ export default function HomePage() {
             />
         </StoreSection>
 
-        <StoreSection containerClassName="dg-container dg-two-col-grid">
+        <StoreSection className="dg-section dgx-surface-section" containerClassName="dg-container dg-two-col-grid">
             <div className="dg-card dg-info-card">
               <h2 className="dg-section-title">Industries served</h2>
               <p className="dg-section-copy">Built for organizations ordering custom garments at scale.</p>
@@ -96,17 +99,17 @@ export default function HomePage() {
             </div>
         </StoreSection>
 
-        <section className="dg-section">
+        <section className="dg-section dgx-surface-section">
           <div className="dg-container">
-            <div className="dg-card dg-cta-card">
+            <div className="dg-card dg-cta-card dgx-home-cta">
               <div className="dg-cta-grid">
                 <div>
-                  <h2 className="dg-title-lg">Ready to place your bulk garment order?</h2>
-                  <p className="dg-muted-sm">Send your requirements and get a quotation with timeline and production plan.</p>
+                  <h2 className="dg-title-lg">Build your AI-enabled quote-to-close motion</h2>
+                  <p className="dg-muted-sm">Deploy storefront + admin + automation modules and integrate into your existing sales system.</p>
                 </div>
                 <div className="dg-actions-wrap">
-                  <Link href="/quote" className="dg-btn-primary">Request Bulk Quote</Link>
-                  <a href="#" className="dg-btn-secondary">Talk to Sales</a>
+                  <Link href="/quote" className="dg-btn-primary">Book Implementation Call</Link>
+                  <Link href="/admin/design-system" className="dg-btn-secondary">Open Design System</Link>
                 </div>
               </div>
               <div className="dg-trust-grid">

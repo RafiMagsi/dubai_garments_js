@@ -84,9 +84,9 @@ export default function QuotePage() {
 
   return (
     <StorefrontShell>
-      <main className="dg-main">
-        <StoreSection>
-            <div className="dg-card dg-config-card">
+      <main className="dg-main dgx-home">
+        <StoreSection className="dg-section dgx-surface-section">
+            <div className="dg-card dg-config-card dgx-quote-card">
               {submitted ? (
                 <QuoteSuccessView
                   leadCode={submittedLeadCode}

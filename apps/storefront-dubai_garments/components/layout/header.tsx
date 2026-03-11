@@ -18,56 +18,66 @@ export default function Header() {
 
   return (
     <>
-      <div className="dg-topbar">
-        <div className="dg-container dg-topbar-inner">
-          <p>Bulk Orders Support: +92 300 0000000</p>
-          <p>Email: sales@dubaigarments.ai | Delivery: UAE, KSA, Pakistan</p>
+      <div className="dgx-topbar">
+        <div className="dg-container dgx-topbar-inner">
+          <p>AI Sales Automation for B2B Apparel Teams</p>
+          <p>UAE · KSA · Pakistan</p>
         </div>
       </div>
 
-      <header className="dg-header">
+      <header className="dgx-header">
         <div className="dg-container">
-          <div className="dg-card dg-header-inner">
-            <div>
-              <p className="dg-brand-subtitle">Dubai Garments Platform</p>
-              <Link href="/" className="dg-brand-title">
-                AI Sales Storefront
+          <div className="dgx-header-shell">
+            <div className="dgx-brand-wrap">
+              <p className="dgx-brand-kicker">Dubai Garments</p>
+              <Link href="/" className="dgx-brand-title">
+                RevenueOS Storefront
               </Link>
             </div>
 
+            <nav className="dgx-nav">
+              <Link href="/" className={`dgx-nav-link ${pathname === '/' ? 'is-active' : ''}`}>
+                Home
+              </Link>
+              <Link href="/products" className={`dgx-nav-link ${pathname.startsWith('/products') ? 'is-active' : ''}`}>
+                Products
+              </Link>
+              <Link href="/quote" className={`dgx-nav-link ${pathname.startsWith('/quote') ? 'is-active' : ''}`}>
+                Quotes
+              </Link>
+              <a href="#" className="dgx-nav-link">How It Works</a>
+            </nav>
+
+            <div className="dgx-header-actions">
+              <Link href="/customer/dashboard" className="dg-btn-secondary">Client Portal</Link>
+              <Link href="/quote" className="dg-btn-primary">Book Demo</Link>
+            </div>
+          </div>
+
+          <div className="dgx-search-band">
             <form action="/products" method="GET" className="dg-search-wrap">
               <TextField
                 type="search"
                 name="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search products, categories, fabrics..."
+                placeholder="Search products, fabrics, categories, and use-cases..."
               />
             </form>
-
-            <div className="dg-header-actions">
-              <Link href="/customer/dashboard" className="dg-btn-secondary">Client Portal</Link>
-              <Link href="/quote" className="dg-btn-primary">Request Bulk Quote</Link>
-            </div>
           </div>
-
-          <nav className="dg-card dg-nav">
-            <div className="dg-nav-inner">
-              {categories.map((category) => (
-                <Link
-                  key={category.slug}
-                  href={`/products?category=${category.slug}`}
-                  className="dg-nav-link"
-                >
-                  {category.name}
-                </Link>
-              ))}
-              <Link href="/products" className={`dg-nav-link ${pathname === '/products' ? 'is-active' : ''}`}>
-                All Products
+        </div>
+        <div className="dgx-category-strip">
+          <div className="dg-container dgx-category-inner">
+            {categories.map((category) => (
+              <Link
+                key={category.slug}
+                href={`/products?category=${category.slug}`}
+                className="dgx-category-pill"
+              >
+                {category.name}
               </Link>
-              <a href="#" className="dg-nav-link">Contact</a>
-            </div>
-          </nav>
+            ))}
+          </div>
         </div>
       </header>
     </>
