@@ -33,6 +33,19 @@ Minimal backend service for quote requests.
 - `GET /api/v1/quotes/{quote_id}/pdf`
 - `GET /api/v1/quotes/{quote_id}/pdf/download`
 
+## Multi-tenant foundation
+
+- Migration: `0015_multi_tenant_foundation`
+- Adds `tenants` table and `tenant_id` to core tables.
+- FastAPI resolves tenant context from:
+  - `X-Tenant-ID` (UUID) or
+  - `X-Tenant-Slug` (slug), fallback `DEFAULT_TENANT_SLUG`.
+- Row-level security (RLS) is enabled on sales operational tables:
+  - `customers`, `leads`, `deals`, `quotes`, `quote_items`,
+  - `communications`, `activities`, `automation_runs`, `followups`, `quote_documents`.
+- Middleware sets per-request tenant context and DB connection sets `app.tenant_id`.
+- Queue workers carry tenant context per job for `lead_ai` and `quote_pdf`.
+
 ## Slack integration
 
 Set these in `services/fastapi_quote_api/.env`:

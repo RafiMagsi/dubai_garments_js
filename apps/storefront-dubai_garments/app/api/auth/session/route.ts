@@ -18,6 +18,8 @@ export async function GET() {
       email: session.email,
       displayName: session.displayName,
       role: session.role,
+      tenantId: session.tenantId || null,
+      tenantSlug: session.tenantSlug,
     },
   });
 }

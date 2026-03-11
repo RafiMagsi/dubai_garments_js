@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/auth/require-admin';
 import { getRuntimeSetting } from '@/lib/config/runtime-settings';
+import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
 
 type ScriptDefinition = {
   key: string;
@@ -106,13 +107,15 @@ const SCRIPT_DEFINITIONS: ScriptDefinition[] = [
   },
 ];
 
-async function fetchLastRun(workflowName: string) {
+async function fetchLastRun(workflowName: string, request: Request, tenantId?: string) {
   const fastApiBaseUrl = await getRuntimeSetting({
     key: 'FASTAPI_BASE_URL',
     scope: 'storefront',
     defaultValue: process.env.NEXT_PUBLIC_FASTAPI_BASE_URL || 'http://localhost:8000',
+    tenantId,
   });
-  const response = await fetch(
+  const response = await fastApiFetch(
+    request,
     `${fastApiBaseUrl}/api/v1/automation-runs?workflow_name=${encodeURIComponent(workflowName)}&limit=1`,
     {
       method: 'GET',
@@ -136,17 +139,18 @@ async function fetchLastRun(workflowName: string) {
   };
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const sessionOrResponse = await requireAdminSession();
   if (sessionOrResponse instanceof NextResponse) {
     return sessionOrResponse;
   }
+  const session = sessionOrResponse;
 
   try {
     const items = await Promise.all(
       SCRIPT_DEFINITIONS.map(async (script) => ({
         ...script,
-        lastRun: script.workflowName ? await fetchLastRun(script.workflowName) : null,
+        lastRun: script.workflowName ? await fetchLastRun(script.workflowName, request, session.tenantId) : null,
       }))
     );
 

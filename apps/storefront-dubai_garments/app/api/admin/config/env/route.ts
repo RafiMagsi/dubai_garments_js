@@ -137,12 +137,13 @@ type DbSettingRow = {
   value: string;
 };
 
-async function loadDbSettingsMap() {
+async function loadDbSettingsMap(tenantId: string) {
   try {
     const rows = await prisma.$queryRaw<DbSettingRow[]>`
       SELECT scope, key, value
       FROM system_settings
       WHERE is_active = TRUE
+        AND tenant_id = ${tenantId}::uuid
     `;
     const map = new Map<string, string>();
     rows.forEach((row) => {
@@ -169,6 +170,7 @@ async function upsertDbSetting(input: {
   isSecret: boolean;
   description: string;
   updatedByUserId: string;
+  tenantId: string;
 }) {
   await prisma.$executeRaw`
     INSERT INTO system_settings (
@@ -178,7 +180,8 @@ async function upsertDbSetting(input: {
       is_secret,
       is_active,
       description,
-      updated_by_user_id
+      updated_by_user_id,
+      tenant_id
     )
     VALUES (
       ${input.target},
@@ -187,15 +190,17 @@ async function upsertDbSetting(input: {
       ${input.isSecret},
       TRUE,
       ${input.description},
-      ${input.updatedByUserId}::uuid
+      ${input.updatedByUserId}::uuid,
+      ${input.tenantId}::uuid
     )
-    ON CONFLICT (scope, key)
+    ON CONFLICT (tenant_id, scope, key)
     DO UPDATE SET
       value = EXCLUDED.value,
       is_secret = EXCLUDED.is_secret,
       is_active = TRUE,
       description = EXCLUDED.description,
       updated_by_user_id = EXCLUDED.updated_by_user_id,
+      tenant_id = EXCLUDED.tenant_id,
       updated_at = NOW()
   `;
 }
@@ -205,6 +210,7 @@ export async function GET() {
   if (sessionOrResponse instanceof NextResponse) {
     return sessionOrResponse;
   }
+  const session = sessionOrResponse;
 
   try {
     const storefrontPath = storefrontEnvPath();
@@ -212,7 +218,8 @@ export async function GET() {
     const storefrontMap = parseEnv(fs.existsSync(storefrontPath) ? fs.readFileSync(storefrontPath, 'utf-8') : '');
     const fastapiMap = parseEnv(fs.existsSync(fastapiPath) ? fs.readFileSync(fastapiPath, 'utf-8') : '');
     const storageMode = resolveStorageMode();
-    const dbSettingsMap = storageMode === 'db' ? await loadDbSettingsMap() : new Map<string, string>();
+    const dbSettingsMap =
+      storageMode === 'db' && session.tenantId ? await loadDbSettingsMap(session.tenantId) : new Map<string, string>();
 
     const items = ENV_DEFS.map((envDef) => {
       const sourceMap = envDef.target === 'storefront' ? storefrontMap : fastapiMap;
@@ -243,6 +250,7 @@ export async function POST(request: NextRequest) {
   if (sessionOrResponse instanceof NextResponse) {
     return sessionOrResponse;
   }
+  const session = sessionOrResponse;
 
   try {
     const body = (await request.json()) as {
@@ -269,13 +277,17 @@ export async function POST(request: NextRequest) {
 
     const storageMode = resolveStorageMode();
     if (storageMode === 'db') {
+      if (!session.tenantId) {
+        return NextResponse.json({ message: 'Tenant context is missing in admin session.' }, { status: 422 });
+      }
       await upsertDbSetting({
         target,
         key,
         value,
         isSecret: def.secret,
         description: def.description,
-        updatedByUserId: sessionOrResponse.sub,
+        updatedByUserId: session.sub,
+        tenantId: session.tenantId,
       });
     } else {
       const filePath = envFileByTarget(target);

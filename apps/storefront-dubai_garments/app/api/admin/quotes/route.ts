@@ -1,3 +1,4 @@
+import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
 import { NextRequest, NextResponse } from 'next/server';
 
 const FASTAPI_BASE_URL =
@@ -8,7 +9,7 @@ const FASTAPI_BASE_URL =
 export async function GET(request: NextRequest) {
   try {
     const query = request.nextUrl.search;
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/quotes${query}`, {
+    const response = await fastApiFetch(request, `${FASTAPI_BASE_URL}/api/v1/quotes${query}`, {
       method: 'GET',
       cache: 'no-store',
     });
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/quotes`, {
+    const response = await fastApiFetch(request, `${FASTAPI_BASE_URL}/api/v1/quotes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

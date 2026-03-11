@@ -8,6 +8,8 @@ export type SessionPayload = {
   email: string;
   displayName: string;
   role: AppRole;
+  tenantId?: string;
+  tenantSlug: string;
   exp: number;
 };
 
@@ -90,6 +92,9 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     }
     if (!payload.sub || !payload.email || !payload.displayName) {
       return null;
+    }
+    if (!payload.tenantSlug) {
+      payload.tenantSlug = String(process.env.DEFAULT_TENANT_SLUG || 'default').trim() || 'default';
     }
     return payload;
   } catch {

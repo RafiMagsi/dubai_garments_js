@@ -9,6 +9,8 @@ export async function buildLoginResponse(input: {
   email: string;
   role: AppRole;
   displayName: string;
+  tenantSlug: string;
+  tenantId?: string;
 }) {
   const token = await createSessionToken(
     {
@@ -16,6 +18,8 @@ export async function buildLoginResponse(input: {
       email: input.email,
       displayName: input.displayName,
       role: input.role,
+      tenantSlug: input.tenantSlug,
+      tenantId: input.tenantId,
     },
     SESSION_MAX_AGE_SECONDS
   );
@@ -24,6 +28,7 @@ export async function buildLoginResponse(input: {
     ok: true,
     role: input.role,
     displayName: input.displayName,
+    tenantSlug: input.tenantSlug,
   });
   response.cookies.set({
     name: SESSION_COOKIE,

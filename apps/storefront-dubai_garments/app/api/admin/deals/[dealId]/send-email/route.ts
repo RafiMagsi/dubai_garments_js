@@ -1,3 +1,4 @@
+import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
 import { NextRequest, NextResponse } from 'next/server';
 
 const FASTAPI_BASE_URL =
@@ -12,7 +13,7 @@ export async function POST(
   try {
     const { dealId } = await context.params;
     const body = await request.json();
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/deals/${dealId}/send-email`, {
+    const response = await fastApiFetch(request, `${FASTAPI_BASE_URL}/api/v1/deals/${dealId}/send-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

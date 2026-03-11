@@ -6,6 +6,8 @@ export type AppUser = {
   email: string;
   role: AppRole;
   displayName: string;
+  tenantId?: string;
+  tenantSlug: string;
 };
 
 type DbUser = {
@@ -13,22 +15,33 @@ type DbUser = {
   email: string;
   full_name: string;
   role: string;
+  tenant_id?: string;
+  tenant_slug: string;
 };
 
 export async function findUserByCredentials(
   role: AppRole,
   email: string,
-  password: string
+  password: string,
+  tenantSlug: string
 ): Promise<AppUser | null> {
   const normalizedEmail = email.trim().toLowerCase();
 
   const users = await prisma.$queryRaw<DbUser[]>`
-    SELECT id::text, email, full_name, role
-    FROM users
-    WHERE LOWER(email) = ${normalizedEmail}
-      AND role = ${role}
-      AND is_active = TRUE
-      AND password_hash = crypt(${password}, password_hash)
+    SELECT
+      u.id::text,
+      u.email,
+      u.full_name,
+      u.role,
+      u.tenant_id::text AS tenant_id,
+      t.slug AS tenant_slug
+    FROM users u
+    JOIN tenants t ON t.id = u.tenant_id
+    WHERE LOWER(u.email) = ${normalizedEmail}
+      AND u.role = ${role}
+      AND t.slug = ${tenantSlug}
+      AND u.is_active = TRUE
+      AND u.password_hash = crypt(${password}, u.password_hash)
     LIMIT 1
   `;
 
@@ -42,5 +55,7 @@ export async function findUserByCredentials(
     email: user.email,
     role: user.role as AppRole,
     displayName: user.full_name,
+    tenantId: user.tenant_id,
+    tenantSlug: user.tenant_slug,
   };
 }

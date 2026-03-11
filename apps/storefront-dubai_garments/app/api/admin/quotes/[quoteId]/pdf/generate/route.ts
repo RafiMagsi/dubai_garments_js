@@ -1,3 +1,4 @@
+import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
 import { NextRequest, NextResponse } from 'next/server';
 
 const FASTAPI_BASE_URL =
@@ -6,12 +7,12 @@ const FASTAPI_BASE_URL =
   'http://localhost:8000';
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ quoteId: string }> }
 ) {
   try {
     const { quoteId } = await context.params;
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/quotes/${quoteId}/generate-pdf`, {
+    const response = await fastApiFetch(request, `${FASTAPI_BASE_URL}/api/v1/quotes/${quoteId}/generate-pdf`, {
       method: 'POST',
       cache: 'no-store',
     });

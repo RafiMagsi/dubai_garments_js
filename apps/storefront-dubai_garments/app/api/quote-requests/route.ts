@@ -1,3 +1,4 @@
+import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
 import { NextResponse } from 'next/server';
 import { logApiEvent } from '@/lib/observability/logger';
 import { observeApiRequest } from '@/lib/observability/metrics';
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
 
-    const upstreamResponse = await fetch(`${FASTAPI_BASE_URL}/api/v1/quote-requests`, {
+    const upstreamResponse = await fastApiFetch(request, `${FASTAPI_BASE_URL}/api/v1/quote-requests`, {
       method: 'POST',
       body: formData,
       headers: {

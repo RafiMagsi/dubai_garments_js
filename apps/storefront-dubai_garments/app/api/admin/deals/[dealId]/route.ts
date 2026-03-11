@@ -1,3 +1,4 @@
+import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
 import { NextRequest, NextResponse } from 'next/server';
 
 const FASTAPI_BASE_URL =
@@ -6,12 +7,12 @@ const FASTAPI_BASE_URL =
   'http://localhost:8000';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ dealId: string }> }
 ) {
   try {
     const { dealId } = await context.params;
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/deals/${dealId}`, {
+    const response = await fastApiFetch(request, `${FASTAPI_BASE_URL}/api/v1/deals/${dealId}`, {
       method: 'GET',
       cache: 'no-store',
     });
@@ -30,7 +31,7 @@ export async function PATCH(
   try {
     const { dealId } = await context.params;
     const body = await request.json();
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/deals/${dealId}`, {
+    const response = await fastApiFetch(request, `${FASTAPI_BASE_URL}/api/v1/deals/${dealId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

@@ -10,6 +10,7 @@ import { requireAdminSession } from '@/lib/auth/require-admin';
 import { getRuntimeSetting } from '@/lib/config/runtime-settings';
 import { logApiEvent } from '@/lib/observability/logger';
 import { observeApiRequest } from '@/lib/observability/metrics';
+import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
 
 export const runtime = 'nodejs';
 
@@ -52,23 +53,30 @@ async function runCommand(command: string, args: string[], cwd: string) {
   });
 }
 
-async function runFastApiPost(endpoint: string, body: Record<string, unknown>) {
+async function runFastApiPost(
+  request: Request,
+  endpoint: string,
+  body: Record<string, unknown>,
+  tenantId?: string
+) {
   const fastApiBaseUrl = await getRuntimeSetting({
     key: 'FASTAPI_BASE_URL',
     scope: 'storefront',
     defaultValue: process.env.NEXT_PUBLIC_FASTAPI_BASE_URL || 'http://localhost:8000',
+    tenantId,
   });
   const automationSharedSecret = await getRuntimeSetting({
     key: 'AUTOMATION_SHARED_SECRET',
     scope: 'storefront',
     defaultValue: '',
+    tenantId,
   });
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (automationSharedSecret.trim()) {
     headers['X-Automation-Token'] = automationSharedSecret.trim();
   }
-  const response = await fetch(`${fastApiBaseUrl}${endpoint}`, {
+  const response = await fastApiFetch(request, `${fastApiBaseUrl}${endpoint}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -78,13 +86,14 @@ async function runFastApiPost(endpoint: string, body: Record<string, unknown>) {
   return { ok: response.ok, status: response.status, payload };
 }
 
-async function runRetryFailedAutomations() {
+async function runRetryFailedAutomations(request: Request, tenantId?: string) {
   const fastApiBaseUrl = await getRuntimeSetting({
     key: 'FASTAPI_BASE_URL',
     scope: 'storefront',
     defaultValue: process.env.NEXT_PUBLIC_FASTAPI_BASE_URL || 'http://localhost:8000',
+    tenantId,
   });
-  const listResponse = await fetch(`${fastApiBaseUrl}/api/v1/automation-runs?status=failed&limit=25`, {
+  const listResponse = await fastApiFetch(request, `${fastApiBaseUrl}/api/v1/automation-runs?status=failed&limit=25`, {
     method: 'GET',
     cache: 'no-store',
   });
@@ -104,7 +113,7 @@ async function runRetryFailedAutomations() {
   const attempts: Array<Record<string, unknown>> = [];
 
   for (const item of retryables) {
-    const response = await fetch(`${fastApiBaseUrl}/api/v1/automation-runs/${item.id}/retry`, {
+    const response = await fastApiFetch(request, `${fastApiBaseUrl}/api/v1/automation-runs/${item.id}/retry`, {
       method: 'POST',
       cache: 'no-store',
     });
@@ -159,7 +168,7 @@ export async function POST(
         inputPayload: input,
       });
       const limit = Number(input.limit || 100);
-      const result = await runFastApiPost('/api/v1/automation/scheduler/followups/run', { limit });
+      const result = await runFastApiPost(request, '/api/v1/automation/scheduler/followups/run', { limit }, session.tenantId);
       await completeAdminConfigCommandRun({
         runId,
         ok: result.ok,
@@ -196,7 +205,7 @@ export async function POST(
         inputPayload: input,
       });
       const recipient_email = String(input.recipient_email || '').trim() || null;
-      const result = await runFastApiPost('/api/v1/automation/scheduler/digest/run', { recipient_email });
+      const result = await runFastApiPost(request, '/api/v1/automation/scheduler/digest/run', { recipient_email }, session.tenantId);
       await completeAdminConfigCommandRun({
         runId,
         ok: result.ok,
@@ -227,10 +236,10 @@ export async function POST(
       });
       const threshold_days = Number(input.threshold_days || 10);
       const limit = Number(input.limit || 200);
-      const result = await runFastApiPost('/api/v1/automation/scheduler/cold-leads/run', {
+      const result = await runFastApiPost(request, '/api/v1/automation/scheduler/cold-leads/run', {
         threshold_days,
         limit,
-      });
+      }, session.tenantId);
       await completeAdminConfigCommandRun({
         runId,
         ok: result.ok,
@@ -262,7 +271,7 @@ export async function POST(
       const leads = Number(input.leads || 40);
       const deals = Number(input.deals || 28);
       const quotes = Number(input.quotes || 22);
-      const result = await runFastApiPost('/api/v1/admin/config/demo-data/seed', { leads, deals, quotes });
+      const result = await runFastApiPost(request, '/api/v1/admin/config/demo-data/seed', { leads, deals, quotes }, session.tenantId);
       await completeAdminConfigCommandRun({
         runId,
         ok: result.ok,
@@ -291,7 +300,7 @@ export async function POST(
         commandLabel: 'retry_failed_automations',
         inputPayload: input,
       });
-      const result = await runRetryFailedAutomations();
+      const result = await runRetryFailedAutomations(request, session.tenantId);
       await completeAdminConfigCommandRun({
         runId,
         ok: result.ok,

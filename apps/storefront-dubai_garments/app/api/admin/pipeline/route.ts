@@ -1,3 +1,4 @@
+import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
 import { NextResponse } from 'next/server';
 
 const FASTAPI_BASE_URL =
@@ -5,9 +6,9 @@ const FASTAPI_BASE_URL =
   process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ||
   'http://localhost:8000';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const response = await fetch(`${FASTAPI_BASE_URL}/api/v1/pipeline`, {
+    const response = await fastApiFetch(request, `${FASTAPI_BASE_URL}/api/v1/pipeline`, {
       method: 'GET',
       cache: 'no-store',
     });
