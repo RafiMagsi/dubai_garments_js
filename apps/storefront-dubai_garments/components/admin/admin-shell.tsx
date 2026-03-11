@@ -15,6 +15,7 @@ const adminNavItems = [
   { href: '/admin/automations', label: 'Automations', hint: 'Workflow Monitoring', section: 'Platform Control' },
   { href: '/admin/observability', label: 'Observability', hint: 'Health & Metrics', section: 'Platform Control' },
   { href: '/admin/configuration', label: 'Configuration', hint: 'Scripts & Runtime', section: 'Platform Control' },
+  { href: '/admin/reconfigure', label: 'Reconfigure', hint: 'Install Settings', section: 'Platform Control' },
   { href: '/admin/design-system', label: 'Design System', hint: 'Tokens & UI Kit', section: 'Platform Control' },
 ];
 
