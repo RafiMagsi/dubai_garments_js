@@ -74,6 +74,9 @@ export default function AdminDashboardPage() {
             </p>
           </div>
           <div className="dg-admin-toolbar">
+            <Link href="/admin/analytics" className="dg-btn-secondary">
+              Analytics Dashboard
+            </Link>
             <Link href="/admin/leads" className="dg-btn-secondary">
               Open Leads
             </Link>

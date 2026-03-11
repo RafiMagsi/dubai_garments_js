@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Dashboard', hint: 'Analytics' },
+  { href: '/admin/analytics', label: 'Analytics', hint: 'BI Metrics' },
   { href: '/admin/leads', label: 'Leads', hint: 'Qualification' },
   { href: '/admin/deals', label: 'Deals', hint: 'Pipeline' },
   { href: '/admin/quotes', label: 'Quotes', hint: 'Pricing' },
