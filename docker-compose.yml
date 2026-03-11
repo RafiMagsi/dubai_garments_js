@@ -139,6 +139,33 @@ services:
     ports:
       - "8100:8100"
 
+  observability:
+    build:
+      context: ./services/observability_service
+      dockerfile: Dockerfile
+    container_name: dubai_garments_observability
+    restart: unless-stopped
+    env_file:
+      - ./services/fastapi_quote_api/.env.docker.local
+    environment:
+      FASTAPI_URL: http://fastapi:8000
+      STOREFRONT_URL: http://storefront:3000
+      AI_SERVICE_URL: http://ai_openai:8100
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      REDIS_URL: redis://redis:6379/0
+      OBSERVABILITY_SERVICE_TOKEN: ${OBSERVABILITY_SERVICE_TOKEN:-}
+    depends_on:
+      fastapi:
+        condition: service_started
+      ai_openai:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8200:8200"
+
   storefront:
     build:
       context: ./apps/storefront-dubai_garments
@@ -150,10 +177,14 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       FASTAPI_BASE_URL: http://fastapi:8000
+      OBSERVABILITY_SERVICE_URL: http://observability:8200
+      OBSERVABILITY_SERVICE_TOKEN: ${OBSERVABILITY_SERVICE_TOKEN:-}
       NEXT_PUBLIC_API_BASE_URL: /api
       NEXT_PUBLIC_FASTAPI_BASE_URL: /api
     depends_on:
       fastapi:
+        condition: service_started
+      observability:
         condition: service_started
       postgres:
         condition: service_healthy
