@@ -15,6 +15,10 @@ copy_if_missing() {
   src="$1"
   dst="$2"
   if [ ! -f "$dst" ]; then
+    if [ ! -f "$src" ]; then
+      echo "ERROR: template file not found: $src"
+      exit 1
+    fi
     cp "$src" "$dst"
     echo "Created $dst from template."
   fi
