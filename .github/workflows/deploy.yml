@@ -40,19 +40,6 @@ jobs:
           script: |
             set -euo pipefail
 
-            if [ ! -d "${{ secrets.DEPLOY_PATH }}/.git" ]; then
-              if [ -z "${{ secrets.DEPLOY_REPO }}" ]; then
-                echo "DEPLOY_PATH is not a git repo and DEPLOY_REPO secret is empty."
-                exit 1
-              fi
-              mkdir -p "${{ secrets.DEPLOY_PATH }}"
-              git clone "${{ secrets.DEPLOY_REPO }}" "${{ secrets.DEPLOY_PATH }}"
-            fi
-
-            cd "${{ secrets.DEPLOY_PATH }}"
-            chmod +x scripts/*.sh || true
-            chmod +x apps/storefront-dubai_garments/scripts/*.sh || true
-
             MODE="${{ github.event.inputs.deploy_mode }}"
             REF="${{ github.event.inputs.deploy_ref }}"
 
@@ -62,5 +49,30 @@ jobs:
             if [ -z "$REF" ]; then
               REF="${{ github.ref_name }}"
             fi
+
+            if [ ! -d "${{ secrets.DEPLOY_PATH }}/.git" ]; then
+              if [ -z "${{ secrets.DEPLOY_REPO }}" ]; then
+                echo "DEPLOY_PATH is not a git repo and DEPLOY_REPO secret is empty."
+                exit 1
+              fi
+
+              mkdir -p "${{ secrets.DEPLOY_PATH }}"
+
+              if [ -z "$(ls -A "${{ secrets.DEPLOY_PATH }}")" ]; then
+                git clone "${{ secrets.DEPLOY_REPO }}" "${{ secrets.DEPLOY_PATH }}"
+              else
+                echo "DEPLOY_PATH exists and is not a git repo; initializing git in-place."
+                cd "${{ secrets.DEPLOY_PATH }}"
+                git init
+                git remote remove origin || true
+                git remote add origin "${{ secrets.DEPLOY_REPO }}"
+                git fetch origin "$REF"
+                git checkout -B "$REF" "origin/$REF"
+              fi
+            fi
+
+            cd "${{ secrets.DEPLOY_PATH }}"
+            chmod +x scripts/*.sh || true
+            chmod +x apps/storefront-dubai_garments/scripts/*.sh || true
 
             ./scripts/github-deploy.sh "$MODE" "$REF"
