@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "npx prisma generate",
     "db:migrate": "./scripts/db-migrate.sh",
     "db:rollback": "./scripts/db-rollback.sh",
     "db:tables": "sh ./scripts/db-tables.sh",
@@ -15,7 +15,6 @@
     "db:seed:users": "./scripts/db-seed-users.sh"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.2",
     "@tanstack/react-query": "^5.90.21",
     "axios": "^1.13.6",
     "clsx": "^2.1.1",
@@ -35,6 +34,7 @@
     "prisma": "^6.19.2",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@prisma/client": "^6.19.2"
   }
 }
