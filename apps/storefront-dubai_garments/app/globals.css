@@ -1773,6 +1773,8 @@
 }
 
 :root {
+  --font-instrument-sans: 'Manrope', 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-jetbrains-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --color-border: #e2e8f0;
   --color-success-bg: #ecfdf3;
   --color-success-text: #166534;
