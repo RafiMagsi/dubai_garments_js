@@ -31,7 +31,7 @@ copy_if_missing "services/fastapi_quote_api/.env.docker.example" "services/fasta
 if [ -f ".env.docker.local" ]; then
   set -a
   # shellcheck disable=SC1091
-  . ".env.docker.local"
+  . "./.env.docker.local"
   set +a
 fi
 
