@@ -164,3 +164,34 @@ Add in repo settings: `Settings -> Secrets and variables -> Actions`
   - Complete once: `./scripts/non-docker-setup.sh`
   - Install units once: `sudo ./scripts/install-systemd-units.sh`
   - Configure passwordless sudo for service restarts, or restart manually
+
+## AWS Lightsail Setup (aisales.appcenter.me)
+
+1. Create Lightsail instance (Ubuntu 22.04+ recommended).
+2. Attach a Static IP.
+3. DNS in Lightsail zone (`appcenter.me`):
+   - `A` record `appcenter.me` -> Static IP
+   - `CNAME` record `www.appcenter.me` -> `appcenter.me`
+   - `A` record `aisales.appcenter.me` -> Static IP
+4. Point domain nameservers at registrar to Lightsail nameservers.
+5. Verify DNS:
+   - `dig aisales.appcenter.me A +short`
+   - expected: your Static IP
+
+### GitHub Actions secrets for this domain
+
+- `DEPLOY_HOST=aisales.appcenter.me` (or use server public IP)
+- `DEPLOY_USER=<your-ssh-user>`
+- `DEPLOY_SSH_KEY=<private key content>`
+- `DEPLOY_PATH=/home/<your-ssh-user>/apps/dubai_garments`
+- `DEPLOY_REPO=<git clone URL>`
+
+### First deploy
+
+1. Push repo changes.
+2. In GitHub: `Actions -> Deploy -> Run workflow`.
+3. Choose:
+   - `deploy_mode=docker` (recommended first run), or
+   - `deploy_mode=systemd`
+4. Open installer:
+   - `http://aisales.appcenter.me/install`
