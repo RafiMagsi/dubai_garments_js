@@ -4,7 +4,11 @@ WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN apk add --no-cache postgresql-client
+RUN set -eux; \
+    for i in 1 2 3; do apk update && break || sleep 3; done; \
+    apk add --no-cache postgresql17-client || \
+    apk add --no-cache postgresql16-client || \
+    apk add --no-cache postgresql-client
 
 COPY package*.json ./
 RUN npm ci
