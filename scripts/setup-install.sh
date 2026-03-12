@@ -28,6 +28,13 @@ copy_if_missing ".env.docker.example" ".env.docker.local"
 copy_if_missing "apps/storefront-dubai_garments/.env.docker.example" "apps/storefront-dubai_garments/.env.docker.local"
 copy_if_missing "services/fastapi_quote_api/.env.docker.example" "services/fastapi_quote_api/.env.docker.local"
 
+if [ -f ".env.docker.local" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . ".env.docker.local"
+  set +a
+fi
+
 echo "==> Starting docker services (build + detached)..."
 docker compose up -d --build
 
@@ -54,7 +61,11 @@ echo "==> Running database migrations inside storefront container..."
 MIGRATE_OK="false"
 j=1
 while [ "$j" -le 20 ]; do
-  if docker compose exec storefront sh ./scripts/db-migrate.sh >/tmp/dg_migrate.log 2>&1; then
+  if docker compose run --rm -T \
+    -e DATABASE_URL="postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/${POSTGRES_DB:-dubai_garments}" \
+    -v "$ROOT_DIR/apps/storefront-dubai_garments:/work" \
+    -w /work \
+    postgres sh ./scripts/db-migrate.sh >/tmp/dg_migrate.log 2>&1; then
     MIGRATE_OK="true"
     break
   fi
