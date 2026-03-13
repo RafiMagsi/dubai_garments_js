@@ -19,6 +19,14 @@ CREATE INDEX IF NOT EXISTS idx_quote_documents_quote_id ON quote_documents(quote
 CREATE INDEX IF NOT EXISTS idx_quote_documents_status ON quote_documents(status);
 CREATE INDEX IF NOT EXISTS idx_quote_documents_created_at ON quote_documents(created_at DESC);
 
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 DO $$
 BEGIN
   IF NOT EXISTS (

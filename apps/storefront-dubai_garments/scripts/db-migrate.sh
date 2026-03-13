@@ -45,6 +45,14 @@ if [ ! -d "$MIGRATIONS_DIR" ]; then
 fi
 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE IF NOT EXISTS schema_migrations (
   name TEXT PRIMARY KEY,
   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
