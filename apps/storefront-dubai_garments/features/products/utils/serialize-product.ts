@@ -1,35 +1,37 @@
 import { Product as DbProduct } from '@prisma/client';
-import { Product } from '@/features/products/types/product.types';
+import { OrderTier, Product } from '@/features/products/types/product.types';
 
 function parsePriceTiers(value: unknown): Product['priceTiers'] {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value
-    .map((tier) => {
-      if (typeof tier !== 'object' || tier === null) {
-        return null;
-      }
+  const parsed: OrderTier[] = [];
 
-      const candidate = tier as Record<string, unknown>;
-      const minQty = Number(candidate.min_qty ?? candidate.minQty);
-      const maxQtyRaw = candidate.max_qty ?? candidate.maxQty;
-      const unitPriceAED = Number(
-        candidate.unit_price ?? candidate.unitPrice ?? candidate.unitPriceAED
-      );
+  for (const tier of value) {
+    if (typeof tier !== 'object' || tier === null) {
+      continue;
+    }
 
-      if (!Number.isFinite(minQty) || !Number.isFinite(unitPriceAED)) {
-        return null;
-      }
+    const candidate = tier as Record<string, unknown>;
+    const minQty = Number(candidate.min_qty ?? candidate.minQty);
+    const maxQtyRaw = candidate.max_qty ?? candidate.maxQty;
+    const unitPriceAED = Number(
+      candidate.unit_price ?? candidate.unitPrice ?? candidate.unitPriceAED
+    );
 
-      return {
-        minQty,
-        maxQty: typeof maxQtyRaw === 'number' ? maxQtyRaw : undefined,
-        unitPriceAED,
-      };
-    })
-    .filter((tier): tier is Product['priceTiers'][number] => tier !== null);
+    if (!Number.isFinite(minQty) || !Number.isFinite(unitPriceAED)) {
+      continue;
+    }
+
+    parsed.push({
+      minQty,
+      maxQty: typeof maxQtyRaw === 'number' ? maxQtyRaw : undefined,
+      unitPriceAED,
+    });
+  }
+
+  return parsed;
 }
 
 export function serializeProduct(product: DbProduct): Product {

@@ -4,6 +4,10 @@ WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
 RUN set -eux; \
     npm config set fund false; \
