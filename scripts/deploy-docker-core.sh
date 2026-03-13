@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 IDLE_TIMEOUT_SECONDS="${IDLE_TIMEOUT_SECONDS:-120}"
 CORE_BUILD_SERVICES="${CORE_BUILD_SERVICES:-fastapi storefront}"
 CORE_RUN_SERVICES="${CORE_RUN_SERVICES:-postgres redis fastapi storefront}"
+FORCE_DOCKER_NETFIX="${FORCE_DOCKER_NETFIX:-false}"
 
 copy_if_missing() {
   src="$1"
@@ -97,9 +98,15 @@ if [ -f ".env.docker.local" ]; then
 fi
 
 echo "==> Docker network preflight"
-if ! docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1; then
+if [ "$FORCE_DOCKER_NETFIX" = "true" ]; then
+  echo "FORCE_DOCKER_NETFIX=true -> applying forwarding rule path before ping check."
+fi
+
+if [ "$FORCE_DOCKER_NETFIX" = "true" ] || ! docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1; then
   echo "Docker connectivity check failed. Attempting nft forwarding rule fix..."
-  cat /tmp/dg_docker_ping.log || true
+  if [ -f /tmp/dg_docker_ping.log ]; then
+    cat /tmp/dg_docker_ping.log || true
+  fi
 
   if command -v nft >/dev/null 2>&1; then
     if sudo -n true >/dev/null 2>&1; then
@@ -158,6 +165,8 @@ if ! docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1; the
     cat /tmp/dg_docker_ping.log || true
     exit 1
   fi
+else
+  echo "Docker connectivity ping check passed; nft/iptables fix not required."
 fi
 
 docker run --rm alpine nslookup pypi.org >/tmp/dg_docker_dns.log 2>&1 || {
