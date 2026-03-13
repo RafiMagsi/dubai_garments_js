@@ -40,7 +40,7 @@ export DOCKER_BUILDKIT=1
 export BUILDKIT_PROGRESS=plain
 
 echo "==> Building docker images with verbose logs..."
-docker compose build --progress=plain --network host
+docker compose build --progress=plain
 
 echo "==> Starting docker services..."
 docker compose up -d
