@@ -14,7 +14,7 @@ cd services/ai_openai_service
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.test .env
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8100
 ```
 

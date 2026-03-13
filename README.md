@@ -5,11 +5,10 @@ Next.js storefront and private admin panel for AI sales automation workflows.
 ## Environment Setup
 
 ```bash
-cp .env.example .env.local
+cp .env.test .env
 ```
 
-Fill `.env.local` with your real values.  
-`.env.local` is ignored by git.
+Use `.env.test` as local defaults and copy/update `.env` for runtime values.
 
 ## Config Mode
 
@@ -44,7 +43,7 @@ Open:
 
 - Admin routes and admin APIs are role-protected by middleware.
 - Login credentials are fetched from the `users` table (not env credentials).
-- `db:seed:users` creates/updates one admin and one customer user from `BOOTSTRAP_*` vars in `.env.local`.
+- `db:seed:users` creates/updates one admin and one customer user from `BOOTSTRAP_*` vars in `.env.test`.
 - Request IDs are injected across storefront and FastAPI via `X-Request-ID`.
 - OpenAI inference runs as a dedicated service (`services/ai_openai_service`) and FastAPI calls it via `AI_SERVICE_URL`.
 
@@ -144,12 +143,13 @@ Add in repo settings: `Settings -> Secrets and variables -> Actions`
 - `DEPLOY_USER` (SSH user)
 - `DEPLOY_SSH_KEY` (private key content)
 - `DEPLOY_PATH` (absolute path on server, e.g. `/opt/dubai_garments`)
-- `ROOT_ENV_DOCKER_LOCAL` (full content of root `.env.docker.local`)
-- `STOREFRONT_ENV_DOCKER_LOCAL` (full content of `apps/storefront-dubai_garments/.env.docker.local`)
-- `FASTAPI_ENV_DOCKER_LOCAL` (full content of `services/fastapi_quote_api/.env.docker.local`)
 
-The workflow writes these files on server before deploy.  
-`.env.local` is for your Mac/dev only and is never uploaded to server.
+Server env files are managed directly on server (not from GitHub secrets):
+- `${DEPLOY_PATH}/.env`
+- `${DEPLOY_PATH}/apps/storefront-dubai_garments/.env`
+- `${DEPLOY_PATH}/services/fastapi_quote_api/.env`
+
+`.env.test` is for your Mac/dev only and is never uploaded.
 
 ### Deploy trigger options
 
@@ -211,9 +211,6 @@ Manual check (no hard fail):
 - `DEPLOY_USER=<your-ssh-user>`
 - `DEPLOY_SSH_KEY=<private key content>`
 - `DEPLOY_PATH=/home/<your-ssh-user>/apps/dubai_garments`
-- `ROOT_ENV_DOCKER_LOCAL=<paste full env file content>`
-- `STOREFRONT_ENV_DOCKER_LOCAL=<paste full env file content>`
-- `FASTAPI_ENV_DOCKER_LOCAL=<paste full env file content>`
 
 ### First deploy
 

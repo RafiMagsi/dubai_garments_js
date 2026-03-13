@@ -80,15 +80,15 @@ check_file() {
 }
 
 check_file \
-  ".env.docker.local" \
-  POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD AUTH_SESSION_SECRET BOOTSTRAP_ADMIN_EMAIL BOOTSTRAP_ADMIN_PASSWORD
+  ".env" \
+  POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD AUTOMATION_SHARED_SECRET
 
 check_file \
-  "apps/storefront-dubai_garments/.env.docker.local" \
-  DATABASE_URL FASTAPI_BASE_URL AUTH_SESSION_SECRET NEXT_PUBLIC_API_BASE_URL
+  "apps/storefront-dubai_garments/.env" \
+  DATABASE_URL FASTAPI_BASE_URL AUTH_SESSION_SECRET BOOTSTRAP_ADMIN_EMAIL BOOTSTRAP_ADMIN_PASSWORD NEXT_PUBLIC_API_BASE_URL
 
 check_file \
-  "services/fastapi_quote_api/.env.docker.local" \
+  "services/fastapi_quote_api/.env" \
   DATABASE_URL REDIS_URL CORS_ORIGINS
 
 echo ""

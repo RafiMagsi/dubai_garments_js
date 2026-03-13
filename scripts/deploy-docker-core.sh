@@ -9,16 +9,13 @@ CORE_BUILD_SERVICES="${CORE_BUILD_SERVICES:-fastapi storefront}"
 CORE_RUN_SERVICES="${CORE_RUN_SERVICES:-postgres redis fastapi storefront}"
 FORCE_DOCKER_NETFIX="${FORCE_DOCKER_NETFIX:-false}"
 
-copy_if_missing() {
-  src="$1"
-  dst="$2"
-  if [ ! -f "$dst" ]; then
-    if [ ! -f "$src" ]; then
-      echo "ERROR: template file not found: $src"
-      exit 1
-    fi
-    cp "$src" "$dst"
-    echo "Created $dst from template."
+require_file() {
+  file="$1"
+  abs_path="$ROOT_DIR/$file"
+  if [ ! -f "$file" ]; then
+    echo "ERROR: required env file is missing: $abs_path"
+    echo "Create it on server first (do not rely on template in CI deploy)."
+    exit 1
   fi
 }
 
@@ -101,22 +98,22 @@ PY
 
 echo "==> Dubai Garments core deploy (lightweight)"
 
-copy_if_missing ".env.docker.example" ".env.docker.local"
-copy_if_missing "apps/storefront-dubai_garments/.env.docker.example" "apps/storefront-dubai_garments/.env.docker.local"
-copy_if_missing "services/fastapi_quote_api/.env.docker.example" "services/fastapi_quote_api/.env.docker.local"
+require_file ".env"
+require_file "apps/storefront-dubai_garments/.env"
+require_file "services/fastapi_quote_api/.env"
 
-validate_env_file ".env.docker.local"
-validate_env_file "apps/storefront-dubai_garments/.env.docker.local"
-validate_env_file "services/fastapi_quote_api/.env.docker.local"
+validate_env_file ".env"
+validate_env_file "apps/storefront-dubai_garments/.env"
+validate_env_file "services/fastapi_quote_api/.env"
 
 echo "==> Running env doctor"
 chmod +x ./scripts/env-doctor.sh || true
 ./scripts/env-doctor.sh --strict
 
-if [ -f ".env.docker.local" ]; then
+if [ -f ".env" ]; then
   set -a
   # shellcheck disable=SC1091
-  . "./.env.docker.local"
+  . "./.env"
   set +a
 fi
 

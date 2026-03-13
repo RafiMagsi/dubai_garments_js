@@ -4,7 +4,7 @@ services:
     container_name: dubai_garments_postgres
     restart: unless-stopped
     env_file:
-      - .env.docker.local
+      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dubai_garments}
       POSTGRES_USER: ${POSTGRES_USER:-rafi}
@@ -38,7 +38,7 @@ services:
     container_name: dubai_garments_n8n
     restart: unless-stopped
     env_file:
-      - .env.docker.local
+      - .env
     environment:
       N8N_HOST: ${N8N_HOST:-localhost}
       N8N_PORT: ${N8N_PORT:-5678}
@@ -65,7 +65,7 @@ services:
     container_name: dubai_garments_fastapi
     restart: unless-stopped
     env_file:
-      - ./services/fastapi_quote_api/.env.docker.local
+      - ./services/fastapi_quote_api/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
@@ -88,7 +88,7 @@ services:
     container_name: dubai_garments_worker_lead_ai
     restart: unless-stopped
     env_file:
-      - ./services/fastapi_quote_api/.env.docker.local
+      - ./services/fastapi_quote_api/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
@@ -110,7 +110,7 @@ services:
     container_name: dubai_garments_worker_quote_pdf
     restart: unless-stopped
     env_file:
-      - ./services/fastapi_quote_api/.env.docker.local
+      - ./services/fastapi_quote_api/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       REDIS_URL: redis://redis:6379/0
@@ -131,7 +131,7 @@ services:
     container_name: dubai_garments_ai_openai
     restart: unless-stopped
     env_file:
-      - ./services/fastapi_quote_api/.env.docker.local
+      - ./services/fastapi_quote_api/.env
     ports:
       - "8100:8100"
 
@@ -142,7 +142,7 @@ services:
     container_name: dubai_garments_observability
     restart: unless-stopped
     env_file:
-      - ./services/fastapi_quote_api/.env.docker.local
+      - ./services/fastapi_quote_api/.env
     environment:
       FASTAPI_URL: http://fastapi:8000
       STOREFRONT_URL: http://storefront:3000
@@ -171,7 +171,7 @@ services:
     container_name: dubai_garments_storefront
     restart: unless-stopped
     env_file:
-      - ./apps/storefront-dubai_garments/.env.docker.local
+      - ./apps/storefront-dubai_garments/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
       FASTAPI_BASE_URL: http://fastapi:8000

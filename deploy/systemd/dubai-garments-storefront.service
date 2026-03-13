@@ -8,7 +8,7 @@ Type=simple
 User=__RUN_USER__
 WorkingDirectory=__PROJECT_ROOT__/apps/storefront-dubai_garments
 Environment=NODE_ENV=production
-EnvironmentFile=__PROJECT_ROOT__/apps/storefront-dubai_garments/.env.local
+EnvironmentFile=__PROJECT_ROOT__/apps/storefront-dubai_garments/.env
 ExecStart=/usr/bin/env npm run start -- -H 0.0.0.0 -p 3000
 Restart=always
 RestartSec=5

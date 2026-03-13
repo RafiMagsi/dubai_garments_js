@@ -89,11 +89,11 @@ ensure_cmd python3
 ensure_cmd psql
 
 log "Preparing env files"
-copy_if_missing "$STOREFRONT_DIR/.env.example" "$STOREFRONT_DIR/.env.local"
-copy_if_missing "$FASTAPI_DIR/.env.example" "$FASTAPI_DIR/.env"
-copy_if_missing "$AI_DIR/.env.example" "$AI_DIR/.env"
+copy_if_missing "$STOREFRONT_DIR/.env.test" "$STOREFRONT_DIR/.env"
+copy_if_missing "$FASTAPI_DIR/.env.test" "$FASTAPI_DIR/.env"
+copy_if_missing "$AI_DIR/.env.test" "$AI_DIR/.env"
 
-ensure_database_url_configured "$STOREFRONT_DIR/.env.local"
+ensure_database_url_configured "$STOREFRONT_DIR/.env"
 ensure_database_url_configured "$FASTAPI_DIR/.env"
 
 log "Installing storefront dependencies"

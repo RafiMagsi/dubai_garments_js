@@ -24,14 +24,14 @@ copy_if_missing() {
   fi
 }
 
-copy_if_missing ".env.docker.example" ".env.docker.local"
-copy_if_missing "apps/storefront-dubai_garments/.env.docker.example" "apps/storefront-dubai_garments/.env.docker.local"
-copy_if_missing "services/fastapi_quote_api/.env.docker.example" "services/fastapi_quote_api/.env.docker.local"
+copy_if_missing ".env.test" ".env"
+copy_if_missing "apps/storefront-dubai_garments/.env.test" "apps/storefront-dubai_garments/.env"
+copy_if_missing "services/fastapi_quote_api/.env.test" "services/fastapi_quote_api/.env"
 
-if [ -f ".env.docker.local" ]; then
+if [ -f ".env" ]; then
   set -a
   # shellcheck disable=SC1091
-  . "./.env.docker.local"
+  . "./.env"
   set +a
 fi
 
@@ -119,7 +119,7 @@ if [ "$MIGRATE_OK" != "true" ]; then
   exit 1
 fi
 
-TOKEN="$(grep -E '^INSTALL_SETUP_TOKEN=' apps/storefront-dubai_garments/.env.docker.local 2>/dev/null | head -n1 | cut -d'=' -f2- || true)"
+TOKEN="$(grep -E '^INSTALL_SETUP_TOKEN=' apps/storefront-dubai_garments/.env 2>/dev/null | head -n1 | cut -d'=' -f2- || true)"
 TOKEN="$(printf "%s" "$TOKEN" | tr -d '\r\n')"
 
 INSTALL_URL="http://localhost:3000/install"

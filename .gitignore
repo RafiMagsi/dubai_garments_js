@@ -8,6 +8,8 @@
 **/.env.local
 **/.env.*.local
 **/.env.docker.local
+**/.env
+!**/.env.test
 **/.python-version
 **/__pycache__/
 **/*.pyc

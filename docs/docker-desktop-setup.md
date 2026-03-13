@@ -27,9 +27,9 @@ Download and install Docker Desktop for macOS:
 From project root:
 
 ```bash
-cp .env.docker.example .env.docker.local
-cp apps/storefront-dubai_garments/.env.docker.example apps/storefront-dubai_garments/.env.docker.local
-cp services/fastapi_quote_api/.env.docker.example services/fastapi_quote_api/.env.docker.local
+cp .env.test .env
+cp apps/storefront-dubai_garments/.env.test apps/storefront-dubai_garments/.env
+cp services/fastapi_quote_api/.env.test services/fastapi_quote_api/.env
 ```
 
 Then fill the real values:

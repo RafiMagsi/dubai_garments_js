@@ -54,18 +54,20 @@ function resolveStorageMode(): StorageMode {
 
 function storefrontEnvPath() {
   const cwd = process.cwd();
-  if (fs.existsSync(path.join(cwd, '.env.local'))) {
-    return path.join(cwd, '.env.local');
+  const filename = isDevelopmentEnv() ? '.env.test' : '.env';
+  if (fs.existsSync(path.join(cwd, filename))) {
+    return path.join(cwd, filename);
   }
-  return path.join(cwd, 'apps', 'storefront-dubai_garments', '.env.local');
+  return path.join(cwd, 'apps', 'storefront-dubai_garments', filename);
 }
 
 function fastapiEnvPath() {
   const cwd = process.cwd();
-  if (fs.existsSync(path.join(cwd, 'services', 'fastapi_quote_api', '.env'))) {
-    return path.join(cwd, 'services', 'fastapi_quote_api', '.env');
+  const filename = isDevelopmentEnv() ? '.env.test' : '.env';
+  if (fs.existsSync(path.join(cwd, 'services', 'fastapi_quote_api', filename))) {
+    return path.join(cwd, 'services', 'fastapi_quote_api', filename);
   }
-  return path.join(cwd, '..', 'services', 'fastapi_quote_api', '.env');
+  return path.join(cwd, '..', 'services', 'fastapi_quote_api', filename);
 }
 
 function envFileByTarget(target: EnvTarget) {

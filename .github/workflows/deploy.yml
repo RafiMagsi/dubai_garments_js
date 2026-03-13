@@ -53,6 +53,9 @@ jobs:
           ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "mkdir -p '${{ secrets.DEPLOY_PATH }}'"
           rsync -az --delete --itemize-changes --human-readable --info=NAME,STATS2 \
             -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts" \
+            --filter "P .env" \
+            --filter "P apps/storefront-dubai_garments/.env" \
+            --filter "P services/fastapi_quote_api/.env" \
             --filter "P apps/apps/" \
             --filter "P apps/storefront-dubai_garments/apps/" \
             --filter "P apps/storefront-dubai_garments/*.sql" \
@@ -62,8 +65,8 @@ jobs:
             --exclude "**/.next/" \
             --exclude "**/.venv/" \
             --exclude "**/__pycache__/" \
-            --exclude "**/.env.local" \
-            --exclude "**/.env.*.local" \
+            --exclude "**/.env" \
+            --exclude "**/.env.test" \
             ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
 
       - name: Check server and docker status
@@ -86,35 +89,16 @@ jobs:
 
       - name: Run deployment on server
         uses: appleboy/ssh-action@v1.2.0
-        env:
-          ROOT_ENV_DOCKER_LOCAL: ${{ secrets.ROOT_ENV_DOCKER_LOCAL }}
-          STOREFRONT_ENV_DOCKER_LOCAL: ${{ secrets.STOREFRONT_ENV_DOCKER_LOCAL }}
-          FASTAPI_ENV_DOCKER_LOCAL: ${{ secrets.FASTAPI_ENV_DOCKER_LOCAL }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script_stop: true
           command_timeout: 60m
-          envs: ROOT_ENV_DOCKER_LOCAL,STOREFRONT_ENV_DOCKER_LOCAL,FASTAPI_ENV_DOCKER_LOCAL
           script: |
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PATH }}"
             chmod +x scripts/*.sh || true
             chmod +x apps/storefront-dubai_garments/scripts/*.sh || true
-
-            # Write server env files from GitHub Secrets when provided.
-            if [ -n "${ROOT_ENV_DOCKER_LOCAL:-}" ]; then
-              printf '%s\n' "$ROOT_ENV_DOCKER_LOCAL" > .env.docker.local
-              chmod 600 .env.docker.local
-            fi
-            if [ -n "${STOREFRONT_ENV_DOCKER_LOCAL:-}" ]; then
-              printf '%s\n' "$STOREFRONT_ENV_DOCKER_LOCAL" > apps/storefront-dubai_garments/.env.docker.local
-              chmod 600 apps/storefront-dubai_garments/.env.docker.local
-            fi
-            if [ -n "${FASTAPI_ENV_DOCKER_LOCAL:-}" ]; then
-              printf '%s\n' "$FASTAPI_ENV_DOCKER_LOCAL" > services/fastapi_quote_api/.env.docker.local
-              chmod 600 services/fastapi_quote_api/.env.docker.local
-            fi
 
             SKIP_GIT_SYNC=true ./scripts/github-deploy.sh "${{ env.DEPLOY_MODE }}" "${{ env.DEPLOY_REF }}"

@@ -19,8 +19,8 @@ load_env_file() {
 
 # If DATABASE_URL is already provided (e.g. Docker env), do not override it.
 if [ -z "${DATABASE_URL:-}" ]; then
-  if [ -f "$ROOT_DIR/.env.local" ]; then
-    load_env_file "$ROOT_DIR/.env.local"
+  if [ -f "$ROOT_DIR/.env.test" ]; then
+    load_env_file "$ROOT_DIR/.env.test"
   elif [ -f "$ROOT_DIR/.env" ]; then
     load_env_file "$ROOT_DIR/.env"
   fi

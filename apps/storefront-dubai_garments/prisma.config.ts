@@ -1,8 +1,8 @@
 import { config as loadEnv } from "dotenv";
 import { defineConfig } from "prisma/config";
 
-// Prisma CLI reads `.env` by default; we keep credentials in `.env.local`.
-loadEnv({ path: ".env.local" });
+// Prisma CLI reads `.env` by default; we keep credentials in `.env.test`.
+loadEnv({ path: ".env.test" });
 loadEnv();
 
 export default defineConfig({
