@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
         ttlMinutes: body.ttlMinutes,
       });
       return NextResponse.json({
-        ok: true,
+        // ok: true,
         message: enabled ? 'Reconfigure mode enabled.' : 'Reconfigure mode disabled.',
         ...result,
       });
