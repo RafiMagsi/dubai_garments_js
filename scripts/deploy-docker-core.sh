@@ -111,8 +111,20 @@ if ! docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1; the
       exit 1
     fi
   else
-    echo "ERROR: nft command not found; cannot auto-apply forwarding rule."
-    exit 1
+    echo "nft command not found; attempting iptables forwarding rule fallback..."
+    if command -v iptables >/dev/null 2>&1; then
+      if sudo -n true >/dev/null 2>&1; then
+        sudo iptables -C FORWARD -j ACCEPT >/dev/null 2>&1 || sudo iptables -I FORWARD -j ACCEPT
+      else
+        echo "ERROR: sudo passwordless access unavailable for iptables fallback."
+        echo "Run manually on server:"
+        echo "  sudo iptables -I FORWARD -j ACCEPT"
+        exit 1
+      fi
+    else
+      echo "ERROR: Neither nft nor iptables command is available for forwarding rule fix."
+      exit 1
+    fi
   fi
 
   if ! docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1; then
