@@ -26,21 +26,6 @@ require_file() {
   fi
 }
 
-validate_env_file() {
-  file="$1"
-  abs_path="$ROOT_DIR/$file"
-  if [ ! -f "$file" ]; then
-    echo "ERROR: missing env file: $abs_path"
-    exit 1
-  fi
-
-  if grep -Eq '(<[^>]+>|change_me|change_this_shared_secret|<long-random-secret>|<admin-|<DB_)' "$file"; then
-    echo "ERROR: placeholder values detected in $abs_path"
-    echo "Set real server values before deploy."
-    exit 1
-  fi
-}
-
 run_with_idle_timeout() {
   if ! command -v python3 >/dev/null 2>&1; then
     "$@"
@@ -108,10 +93,6 @@ echo "==> Dubai Garments core deploy (lightweight)"
 require_file ".env"
 require_file "apps/storefront-dubai_garments/.env"
 require_file "services/fastapi_quote_api/.env"
-
-validate_env_file ".env"
-validate_env_file "apps/storefront-dubai_garments/.env"
-validate_env_file "services/fastapi_quote_api/.env"
 
 echo "==> Running env doctor"
 chmod +x ./scripts/env-doctor.sh || true
