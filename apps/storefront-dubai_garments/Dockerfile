@@ -33,7 +33,7 @@ RUN set -eux; \
     fi
 COPY . .
 RUN npm run prisma:generate
-RUN npm run build -- --debug
+RUN npm run build -verbose
 
 EXPOSE 3000
 
