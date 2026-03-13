@@ -16,7 +16,7 @@ RUN set -eux; \
     ok=0; \
     for i in 1 2 3; do \
       npm cache clean --force || true; \
-      if npm ci --no-audit --no-fund; then \
+      if npm ci --no-audit --no-fund --verbose; then \
         ok=1; \
         break; \
       fi; \
