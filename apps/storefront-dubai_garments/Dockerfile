@@ -7,8 +7,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY package*.json ./
 RUN npm ci
 
+RUN npm install
 COPY . .
-RUN npm run prisma:generate
+RUN npx prisma generate
 RUN npm run build
 
 EXPOSE 3000

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "npx prisma generate",
     "db:migrate": "./scripts/db-migrate.sh",
     "db:rollback": "./scripts/db-rollback.sh",
     "db:tables": "sh ./scripts/db-tables.sh",
