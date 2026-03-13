@@ -71,8 +71,6 @@ services:
       REDIS_URL: redis://redis:6379/0
       AI_SERVICE_URL: http://ai_openai:8100
     depends_on:
-      ai_openai:
-        condition: service_started
       postgres:
         condition: service_healthy
       redis:
@@ -97,8 +95,6 @@ services:
       WORKER_QUEUES: lead_ai
       AI_SERVICE_URL: http://ai_openai:8100
     depends_on:
-      ai_openai:
-        condition: service_started
       postgres:
         condition: service_healthy
       redis:
@@ -185,8 +181,6 @@ services:
       NEXT_PUBLIC_FASTAPI_BASE_URL: /api
     depends_on:
       fastapi:
-        condition: service_started
-      observability:
         condition: service_started
       postgres:
         condition: service_healthy

@@ -37,7 +37,7 @@ deploy_docker() {
   ensure_cmd docker
   sync_code
 
-  ./scripts/setup-install.sh
+  ./scripts/deploy-docker-core.sh
 }
 
 deploy_systemd() {

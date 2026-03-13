@@ -155,6 +155,17 @@ Add in repo settings: `Settings -> Secrets and variables -> Actions`
 - choose mode: `docker` or `systemd`
 - choose git ref/branch
 
+### Docker deploy behavior (optimized)
+
+GitHub docker deploy uses lightweight core startup (to reduce server pressure):
+
+- Build: `fastapi`, `storefront`
+- Run: `postgres`, `redis`, `fastapi`, `storefront`
+- Skipped in CI deploy by default: `n8n`, `ai_openai`, `observability`, `worker_*`
+
+The deploy script also enforces idle-output timeout during build/start.
+If no output appears for 120 seconds, command is terminated and workflow fails fast.
+
 ### Server prerequisites
 
 - For `docker` mode:
