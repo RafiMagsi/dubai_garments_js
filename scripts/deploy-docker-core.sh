@@ -12,9 +12,16 @@ FORCE_DOCKER_NETFIX="${FORCE_DOCKER_NETFIX:-false}"
 require_file() {
   file="$1"
   abs_path="$ROOT_DIR/$file"
+  test_file="${file}.test"
+  abs_test_path="$ROOT_DIR/$test_file"
   if [ ! -f "$file" ]; then
+    if [ -f "$test_file" ]; then
+      cp "$test_file" "$file"
+      echo "Created missing env file from template: $abs_path (source: $abs_test_path)"
+      return
+    fi
     echo "ERROR: required env file is missing: $abs_path"
-    echo "Create it on server first (do not rely on template in CI deploy)."
+    echo "Also missing template: $abs_test_path"
     exit 1
   fi
 }
