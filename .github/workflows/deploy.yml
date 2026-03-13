@@ -52,6 +52,9 @@ jobs:
           ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "mkdir -p '${{ secrets.DEPLOY_PATH }}'"
           rsync -az --delete --itemize-changes --human-readable --info=NAME,STATS2 \
             -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts" \
+            --filter "P apps/apps/" \
+            --filter "P apps/storefront-dubai_garments/apps/" \
+            --filter "P apps/storefront-dubai_garments/*.sql" \
             --exclude ".git/" \
             --exclude ".github/" \
             --exclude "**/node_modules/" \
