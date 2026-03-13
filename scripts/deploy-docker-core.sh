@@ -97,11 +97,31 @@ if [ -f ".env.docker.local" ]; then
 fi
 
 echo "==> Docker network preflight"
-docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1 || {
-  echo "ERROR: Docker connectivity check failed."
+if ! docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1; then
+  echo "Docker connectivity check failed. Attempting nft forwarding rule fix..."
   cat /tmp/dg_docker_ping.log || true
-  exit 1
-}
+
+  if command -v nft >/dev/null 2>&1; then
+    if sudo -n true >/dev/null 2>&1; then
+      sudo nft add rule inet forwarding forward counter accept || true
+    else
+      echo "ERROR: sudo passwordless access unavailable for nft fix."
+      echo "Run manually on server:"
+      echo "  sudo nft add rule inet forwarding forward counter accept"
+      exit 1
+    fi
+  else
+    echo "ERROR: nft command not found; cannot auto-apply forwarding rule."
+    exit 1
+  fi
+
+  if ! docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1; then
+    echo "ERROR: Docker connectivity still failing after nft rule."
+    cat /tmp/dg_docker_ping.log || true
+    exit 1
+  fi
+fi
+
 docker run --rm alpine nslookup pypi.org >/tmp/dg_docker_dns.log 2>&1 || {
   echo "ERROR: Docker DNS check failed."
   cat /tmp/dg_docker_dns.log || true
