@@ -20,8 +20,13 @@ function nextWithRequestHeaders(request: NextRequest) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isAdminLoginApi = pathname === '/api/admin/auth/login';
 
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    if (isAdminLoginApi) {
+      return withRequestId(request, nextWithRequestHeaders(request));
+    }
+
     const token = request.cookies.get(SESSION_COOKIE)?.value;
     const session = await getSessionFromCookie(token);
     const isAdmin = Boolean(session && session.role === 'admin');
