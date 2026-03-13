@@ -13,8 +13,13 @@ load_env_file() {
     key="${line%%=*}"
     value="${line#*=}"
     [ -z "$key" ] && continue
+    case "$key" in
+      [A-Za-z_][A-Za-z0-9_]*) ;;
+      *) continue ;;
+    esac
     # Keep explicit shell env values as highest priority.
-    if [ -z "${!key:-}" ]; then
+    current_value="$(printenv "$key" 2>/dev/null || true)"
+    if [ -z "$current_value" ]; then
       export "$key=$value"
     fi
   done <"$env_file"
