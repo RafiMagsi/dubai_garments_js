@@ -28,8 +28,58 @@ jobs:
     concurrency:
       group: production-deploy
       cancel-in-progress: false
+    env:
+      DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode || 'docker' }}
+      DEPLOY_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_ref || github.ref_name }}
     steps:
-      - name: Deploy over SSH
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload project files to server
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "mkdir -p '${{ secrets.DEPLOY_PATH }}'"
+          rsync -az --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude "**/node_modules/" \
+            --exclude "**/.next/" \
+            --exclude "**/.venv/" \
+            --exclude "**/__pycache__/" \
+            --exclude "**/.env.local" \
+            --exclude "**/.env.*.local" \
+            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
+      - name: Check server and docker status
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+            echo "Server: $(hostname)"
+            echo "Deploy ref: ${{ env.DEPLOY_REF }}"
+            docker --version
+            docker compose version
+            docker info >/dev/null
+            df -h .
+
+      - name: Run deployment on server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -39,40 +89,7 @@ jobs:
           command_timeout: 60m
           script: |
             set -euo pipefail
-
-            MODE="${{ github.event.inputs.deploy_mode }}"
-            REF="${{ github.event.inputs.deploy_ref }}"
-
-            if [ -z "$MODE" ]; then
-              MODE="docker"
-            fi
-            if [ -z "$REF" ]; then
-              REF="${{ github.ref_name }}"
-            fi
-
-            if [ ! -d "${{ secrets.DEPLOY_PATH }}/.git" ]; then
-              if [ -z "${{ secrets.DEPLOY_REPO }}" ]; then
-                echo "DEPLOY_PATH is not a git repo and DEPLOY_REPO secret is empty."
-                exit 1
-              fi
-
-              mkdir -p "${{ secrets.DEPLOY_PATH }}"
-
-              if [ -z "$(ls -A "${{ secrets.DEPLOY_PATH }}")" ]; then
-                git clone "${{ secrets.DEPLOY_REPO }}" "${{ secrets.DEPLOY_PATH }}"
-              else
-                echo "DEPLOY_PATH exists and is not a git repo; initializing git in-place."
-                cd "${{ secrets.DEPLOY_PATH }}"
-                git init
-                git remote remove origin || true
-                git remote add origin "${{ secrets.DEPLOY_REPO }}"
-                git fetch origin "$REF"
-                git checkout -B "$REF" "origin/$REF"
-              fi
-            fi
-
             cd "${{ secrets.DEPLOY_PATH }}"
             chmod +x scripts/*.sh || true
             chmod +x apps/storefront-dubai_garments/scripts/*.sh || true
-
-            ./scripts/github-deploy.sh "$MODE" "$REF"
+            SKIP_GIT_SYNC=true ./scripts/github-deploy.sh "${{ env.DEPLOY_MODE }}" "${{ env.DEPLOY_REF }}"

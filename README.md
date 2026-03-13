@@ -144,7 +144,6 @@ Add in repo settings: `Settings -> Secrets and variables -> Actions`
 - `DEPLOY_USER` (SSH user)
 - `DEPLOY_SSH_KEY` (private key content)
 - `DEPLOY_PATH` (absolute path on server, e.g. `/opt/dubai_garments`)
-- `DEPLOY_REPO` (git clone URL; only needed for first-time server bootstrap)
 
 ### Deploy trigger options
 
@@ -184,7 +183,6 @@ Add in repo settings: `Settings -> Secrets and variables -> Actions`
 - `DEPLOY_USER=<your-ssh-user>`
 - `DEPLOY_SSH_KEY=<private key content>`
 - `DEPLOY_PATH=/home/<your-ssh-user>/apps/dubai_garments`
-- `DEPLOY_REPO=<git clone URL>`
 
 ### First deploy
 

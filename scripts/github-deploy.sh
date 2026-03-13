@@ -3,6 +3,7 @@ set -euo pipefail
 
 MODE="${1:-docker}"
 REF="${2:-main}"
+SKIP_GIT_SYNC="${SKIP_GIT_SYNC:-false}"
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 STOREFRONT_DIR="$ROOT_DIR/apps/storefront-dubai_garments"
@@ -20,7 +21,12 @@ ensure_cmd() {
 }
 
 sync_code() {
+  if [ "$SKIP_GIT_SYNC" = "true" ]; then
+    log "Skipping git sync (SKIP_GIT_SYNC=true)"
+    return
+  fi
   log "Syncing code ($REF)"
+  ensure_cmd git
   git fetch origin "$REF"
   git checkout "$REF"
   git pull --ff-only origin "$REF"
@@ -29,7 +35,6 @@ sync_code() {
 deploy_docker() {
   log "Deploy mode: docker"
   ensure_cmd docker
-  ensure_cmd git
   sync_code
 
   ./scripts/setup-install.sh
@@ -37,7 +42,6 @@ deploy_docker() {
 
 deploy_systemd() {
   log "Deploy mode: systemd"
-  ensure_cmd git
   ensure_cmd node
   ensure_cmd npm
   ensure_cmd python3
