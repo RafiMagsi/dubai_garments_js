@@ -36,7 +36,14 @@ if [ -f ".env.docker.local" ]; then
 fi
 
 echo "==> Starting docker services (build + detached)..."
-docker compose up -d --build
+export DOCKER_BUILDKIT=1
+export BUILDKIT_PROGRESS=plain
+
+echo "==> Building docker images with verbose logs..."
+docker compose build --progress=plain
+
+echo "==> Starting docker services..."
+docker compose up -d
 
 echo "==> Waiting for storefront to become reachable..."
 ATTEMPTS=90
