@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 type InstallStatus = {
@@ -110,7 +110,7 @@ const STEPS = [
   'Automation Settings',
 ];
 
-export default function InstallPage() {
+function InstallPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [stepIndex, setStepIndex] = useState(0);
@@ -722,5 +722,27 @@ export default function InstallPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function InstallPageFallback() {
+  return (
+    <main className="dg-main">
+      <section className="dg-section">
+        <div className="dg-container">
+          <div className="dg-card dg-info-card">
+            <p className="dg-section-copy">Loading installation wizard...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+export default function InstallPage() {
+  return (
+    <Suspense fallback={<InstallPageFallback />}>
+      <InstallPageInner />
+    </Suspense>
   );
 }

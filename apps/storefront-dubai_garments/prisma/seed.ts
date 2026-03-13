@@ -731,7 +731,7 @@ const products = [
       { sku: 'JK-RNP-ORG-L', variantName: 'Orange / L', size: 'L', color: 'Orange', unitPrice: '174.00', moq: 25 },
     ],
   },
-] as const;
+];
 
 async function main() {
   for (const product of products) {
