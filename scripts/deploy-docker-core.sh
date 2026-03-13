@@ -24,13 +24,14 @@ copy_if_missing() {
 
 validate_env_file() {
   file="$1"
+  abs_path="$ROOT_DIR/$file"
   if [ ! -f "$file" ]; then
-    echo "ERROR: missing env file: $file"
+    echo "ERROR: missing env file: $abs_path"
     exit 1
   fi
 
   if grep -Eq '(<[^>]+>|change_me|change_this_shared_secret|<long-random-secret>|<admin-|<DB_)' "$file"; then
-    echo "ERROR: placeholder values detected in $file"
+    echo "ERROR: placeholder values detected in $abs_path"
     echo "Set real server values before deploy."
     exit 1
   fi

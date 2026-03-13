@@ -42,11 +42,12 @@ is_placeholder() {
 
 check_file() {
   file="$1"
+  abs_path="$ROOT_DIR/$file"
   shift
   required_keys=("$@")
 
   echo ""
-  echo "==> Checking $file"
+  echo "==> Checking $abs_path"
 
   if [ ! -f "$file" ]; then
     echo "  [ERROR] File not found"
@@ -101,4 +102,3 @@ if [ "$STRICT" = "true" ]; then
   exit 1
 fi
 exit 0
-
