@@ -22,6 +22,20 @@ copy_if_missing() {
   fi
 }
 
+validate_env_file() {
+  file="$1"
+  if [ ! -f "$file" ]; then
+    echo "ERROR: missing env file: $file"
+    exit 1
+  fi
+
+  if grep -Eq '(<[^>]+>|change_me|change_this_shared_secret|<long-random-secret>|<admin-|<DB_)' "$file"; then
+    echo "ERROR: placeholder values detected in $file"
+    echo "Set real server values before deploy."
+    exit 1
+  fi
+}
+
 run_with_idle_timeout() {
   if ! command -v python3 >/dev/null 2>&1; then
     "$@"
@@ -89,6 +103,14 @@ echo "==> Dubai Garments core deploy (lightweight)"
 copy_if_missing ".env.docker.example" ".env.docker.local"
 copy_if_missing "apps/storefront-dubai_garments/.env.docker.example" "apps/storefront-dubai_garments/.env.docker.local"
 copy_if_missing "services/fastapi_quote_api/.env.docker.example" "services/fastapi_quote_api/.env.docker.local"
+
+validate_env_file ".env.docker.local"
+validate_env_file "apps/storefront-dubai_garments/.env.docker.local"
+validate_env_file "services/fastapi_quote_api/.env.docker.local"
+
+echo "==> Running env doctor"
+chmod +x ./scripts/env-doctor.sh || true
+./scripts/env-doctor.sh --strict
 
 if [ -f ".env.docker.local" ]; then
   set -a
@@ -188,7 +210,7 @@ echo "==> Running database migrations"
 MIGRATE_OK="false"
 for _ in $(seq 1 20); do
   if docker compose run --rm -T \
-    -e DATABASE_URL="postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/${POSTGRES_DB:-dubai_garments}" \
+    -e DATABASE_URL="postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}" \
     -v "$ROOT_DIR/apps/storefront-dubai_garments:/work" \
     -w /work \
     postgres sh ./scripts/db-migrate.sh >/tmp/dg_migrate.log 2>&1; then

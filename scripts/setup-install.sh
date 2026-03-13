@@ -102,7 +102,7 @@ MIGRATE_OK="false"
 j=1
 while [ "$j" -le 20 ]; do
   if docker compose run --rm -T \
-    -e DATABASE_URL="postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change_this_password}@postgres:5432/${POSTGRES_DB:-dubai_garments}" \
+    -e DATABASE_URL="postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}" \
     -v "$ROOT_DIR/apps/storefront-dubai_garments:/work" \
     -w /work \
     postgres sh ./scripts/db-migrate.sh >/tmp/dg_migrate.log 2>&1; then

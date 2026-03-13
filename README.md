@@ -144,6 +144,12 @@ Add in repo settings: `Settings -> Secrets and variables -> Actions`
 - `DEPLOY_USER` (SSH user)
 - `DEPLOY_SSH_KEY` (private key content)
 - `DEPLOY_PATH` (absolute path on server, e.g. `/opt/dubai_garments`)
+- `ROOT_ENV_DOCKER_LOCAL` (full content of root `.env.docker.local`)
+- `STOREFRONT_ENV_DOCKER_LOCAL` (full content of `apps/storefront-dubai_garments/.env.docker.local`)
+- `FASTAPI_ENV_DOCKER_LOCAL` (full content of `services/fastapi_quote_api/.env.docker.local`)
+
+The workflow writes these files on server before deploy.  
+`.env.local` is for your Mac/dev only and is never uploaded to server.
 
 ### Deploy trigger options
 
@@ -165,6 +171,17 @@ GitHub docker deploy uses lightweight core startup (to reduce server pressure):
 
 The deploy script also enforces idle-output timeout during build/start.
 If no output appears for 120 seconds, command is terminated and workflow fails fast.
+Before build/start, deploy runs env validation:
+
+```bash
+./scripts/env-doctor.sh --strict
+```
+
+Manual check (no hard fail):
+
+```bash
+./scripts/env-doctor.sh
+```
 
 ### Server prerequisites
 
@@ -194,6 +211,9 @@ If no output appears for 120 seconds, command is terminated and workflow fails f
 - `DEPLOY_USER=<your-ssh-user>`
 - `DEPLOY_SSH_KEY=<private key content>`
 - `DEPLOY_PATH=/home/<your-ssh-user>/apps/dubai_garments`
+- `ROOT_ENV_DOCKER_LOCAL=<paste full env file content>`
+- `STOREFRONT_ENV_DOCKER_LOCAL=<paste full env file content>`
+- `FASTAPI_ENV_DOCKER_LOCAL=<paste full env file content>`
 
 ### First deploy
 

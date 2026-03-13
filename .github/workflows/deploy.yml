@@ -29,6 +29,7 @@ jobs:
       group: production-deploy
       cancel-in-progress: false
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
       DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode || 'docker' }}
       DEPLOY_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_ref || github.ref_name }}
     steps:
@@ -85,15 +86,35 @@ jobs:
 
       - name: Run deployment on server
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          ROOT_ENV_DOCKER_LOCAL: ${{ secrets.ROOT_ENV_DOCKER_LOCAL }}
+          STOREFRONT_ENV_DOCKER_LOCAL: ${{ secrets.STOREFRONT_ENV_DOCKER_LOCAL }}
+          FASTAPI_ENV_DOCKER_LOCAL: ${{ secrets.FASTAPI_ENV_DOCKER_LOCAL }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script_stop: true
           command_timeout: 60m
+          envs: ROOT_ENV_DOCKER_LOCAL,STOREFRONT_ENV_DOCKER_LOCAL,FASTAPI_ENV_DOCKER_LOCAL
           script: |
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PATH }}"
             chmod +x scripts/*.sh || true
             chmod +x apps/storefront-dubai_garments/scripts/*.sh || true
+
+            # Write server env files from GitHub Secrets when provided.
+            if [ -n "${ROOT_ENV_DOCKER_LOCAL:-}" ]; then
+              printf '%s\n' "$ROOT_ENV_DOCKER_LOCAL" > .env.docker.local
+              chmod 600 .env.docker.local
+            fi
+            if [ -n "${STOREFRONT_ENV_DOCKER_LOCAL:-}" ]; then
+              printf '%s\n' "$STOREFRONT_ENV_DOCKER_LOCAL" > apps/storefront-dubai_garments/.env.docker.local
+              chmod 600 apps/storefront-dubai_garments/.env.docker.local
+            fi
+            if [ -n "${FASTAPI_ENV_DOCKER_LOCAL:-}" ]; then
+              printf '%s\n' "$FASTAPI_ENV_DOCKER_LOCAL" > services/fastapi_quote_api/.env.docker.local
+              chmod 600 services/fastapi_quote_api/.env.docker.local
+            fi
+
             SKIP_GIT_SYNC=true ./scripts/github-deploy.sh "${{ env.DEPLOY_MODE }}" "${{ env.DEPLOY_REF }}"
