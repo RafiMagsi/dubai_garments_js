@@ -111,7 +111,33 @@ if ! docker run --rm alpine ping -c 3 8.8.8.8 >/tmp/dg_docker_ping.log 2>&1; the
       exit 1
     fi
   else
-    echo "nft command not found; attempting iptables forwarding rule fallback..."
+    echo "nft command not found; attempting to install nftables..."
+    if sudo -n true >/dev/null 2>&1; then
+      if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update -y >/dev/null 2>&1 || true
+        sudo apt-get install -y nftables >/dev/null 2>&1 || true
+      elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y nftables >/dev/null 2>&1 || true
+      elif command -v yum >/dev/null 2>&1; then
+        sudo yum install -y nftables >/dev/null 2>&1 || true
+      elif command -v apk >/dev/null 2>&1; then
+        sudo apk add --no-cache nftables >/dev/null 2>&1 || true
+      fi
+    fi
+
+    if command -v nft >/dev/null 2>&1; then
+      if sudo -n true >/dev/null 2>&1; then
+        sudo nft add rule inet forwarding forward counter accept || true
+      else
+        echo "ERROR: sudo passwordless access unavailable for nft fix after install."
+        echo "Run manually on server:"
+        echo "  sudo nft add rule inet forwarding forward counter accept"
+        exit 1
+      fi
+    else
+      echo "nft install unavailable/failed; attempting iptables forwarding rule fallback..."
+    fi
+
     if command -v iptables >/dev/null 2>&1; then
       if sudo -n true >/dev/null 2>&1; then
         sudo iptables -C FORWARD -j ACCEPT >/dev/null 2>&1 || sudo iptables -I FORWARD -j ACCEPT
