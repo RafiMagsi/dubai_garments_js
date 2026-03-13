@@ -66,7 +66,6 @@ export async function POST(request: NextRequest) {
         payload: body.payload,
       });
       return NextResponse.json({
-        ok: true,
         message: 'Settings reconfigured successfully.',
         ...result,
       });
