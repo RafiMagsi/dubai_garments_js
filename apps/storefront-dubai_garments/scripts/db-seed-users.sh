@@ -58,6 +58,8 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
   -v customer_name="$CUSTOMER_NAME" \
   -v tenant_slug="$TENANT_SLUG" \
   -v tenant_name="$TENANT_NAME" <<'SQL'
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 INSERT INTO tenants (slug, name, is_active)
 VALUES (:'tenant_slug', :'tenant_name', TRUE)
 ON CONFLICT (slug)
