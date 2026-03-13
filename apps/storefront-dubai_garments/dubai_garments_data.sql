@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict dlZiibYme1PUSecCfzUzJthEcHCgFBbJJUACGDwbc8duwF1zxR0AQwLu2lZXaB7
+\restrict yC0tGgQcwvLNCS2MpBF9e3K2aecV9f0W2uOv58aj2qJdamysasR8rc0kBYLQKOv
 
 -- Dumped from database version 18.3 (Homebrew)
 -- Dumped by pg_dump version 18.3 (Homebrew)
@@ -263,5 +263,5 @@ INSERT INTO public.schema_migrations (name, applied_at) VALUES ('0011_quote_docu
 -- PostgreSQL database dump complete
 --
 
-\unrestrict dlZiibYme1PUSecCfzUzJthEcHCgFBbJJUACGDwbc8duwF1zxR0AQwLu2lZXaB7
+\unrestrict yC0tGgQcwvLNCS2MpBF9e3K2aecV9f0W2uOv58aj2qJdamysasR8rc0kBYLQKOv
 
