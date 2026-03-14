@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { isAxiosError } from 'axios';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
+import { PageShell, Panel, Toolbar } from '@/components/ui';
 import { DealStage, useDealById, useSendDealEmail, useUpdateDeal } from '@/features/admin/deals';
 import { useProducts } from '@/features/products';
 import { formatAed, getStartingUnitPriceAED } from '@/features/products/utils/product-pricing';
@@ -182,37 +183,38 @@ export default function AdminDealDetailsPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
+      <PageShell density="compact">
+      <Panel>
         <AdminPageHeader
           title={`Deal #${shortCode(dealId)}`}
           subtitle="Update stage, ownership, value, and generate related quotes."
           actions={
-            <>
-            <Link href="/admin/deals" className="dg-btn-secondary">
-              Back to Deals
-            </Link>
-            <Link href="/admin/quotes" className="dg-btn-secondary">
-              Quotes
-            </Link>
-            {deal?.lead_id ? (
-              <Link href={`/admin/leads/${deal.lead_id}`} className="dg-btn-secondary">
-                Lead
+            <Toolbar>
+              <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">
+                Back to Deals
               </Link>
-            ) : null}
-            </>
+              <Link href="/admin/quotes" className="ui-btn ui-btn-secondary ui-btn-md">
+                Quotes
+              </Link>
+              {deal?.lead_id ? (
+                <Link href={`/admin/leads/${deal.lead_id}`} className="ui-btn ui-btn-secondary ui-btn-md">
+                  Lead
+                </Link>
+              ) : null}
+            </Toolbar>
           }
         />
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
+      <Panel className="dg-deal-detail-page">
         {isLoading && (
-          <div className="dg-card dg-panel">
+          <div className="dg-card">
             <p className="dg-muted-sm">Loading deal details...</p>
           </div>
         )}
 
         {isError && (
-          <div className="dg-card dg-panel">
+          <div className="dg-card">
             <p className="dg-alert-error">
               {error instanceof Error ? error.message : 'Failed to load deal details.'}
             </p>
@@ -221,7 +223,7 @@ export default function AdminDealDetailsPage() {
 
         {deal && (
           <div className="dg-two-col-grid">
-            <div className="dg-card dg-panel">
+            <div className="dg-card">
               <h2 className="dg-title-sm">Deal Snapshot</h2>
               <div className="dg-detail-list">
                 <div className="dg-detail-item">
@@ -295,7 +297,7 @@ export default function AdminDealDetailsPage() {
                             {quote.status} • {quote.currency} {Number(quote.total_amount || 0).toFixed(2)}
                           </p>
                         </div>
-                        <Link href={`/admin/quotes/${quote.id}`} className="dg-btn-secondary">
+                        <Link href={`/admin/quotes/${quote.id}`} className="ui-btn ui-btn-secondary ui-btn-md">
                           Open
                         </Link>
                       </div>
@@ -308,7 +310,7 @@ export default function AdminDealDetailsPage() {
             </div>
 
             <div className="dg-side-stack">
-              <div className="dg-card dg-panel">
+              <div className="dg-card">
                 <h2 className="dg-title-sm">Update Deal</h2>
                 {dealSuccess ? <div className="dg-alert-success">{dealSuccess}</div> : null}
                 {dealError ? <div className="dg-alert-error">{dealError}</div> : null}
@@ -361,13 +363,13 @@ export default function AdminDealDetailsPage() {
                     </label>
                     <textarea id="notes" name="notes" className="dg-textarea" rows={5} defaultValue={deal.notes || ''} />
                   </div>
-                  <button type="submit" className="dg-btn-primary" disabled={updateDealMutation.isPending}>
+                  <button type="submit" className="ui-btn ui-btn-primary ui-btn-md" disabled={updateDealMutation.isPending}>
                     {updateDealMutation.isPending ? 'Saving...' : 'Save Deal'}
                   </button>
                 </form>
               </div>
 
-              <div className="dg-card dg-panel">
+              <div className="dg-card">
                 <h2 className="dg-title-sm">Create Quote</h2>
                 <p className="dg-muted-sm">Use product and quantity to generate an exact quote breakdown.</p>
                 {quoteSuccess ? <div className="dg-alert-success">{quoteSuccess}</div> : null}
@@ -444,13 +446,13 @@ export default function AdminDealDetailsPage() {
                     </label>
                     <textarea id="quote_notes" name="quote_notes" className="dg-textarea" rows={3} />
                   </div>
-                  <button type="submit" className="dg-btn-primary" disabled={createQuoteMutation.isPending}>
+                  <button type="submit" className="ui-btn ui-btn-primary ui-btn-md" disabled={createQuoteMutation.isPending}>
                     {createQuoteMutation.isPending ? 'Creating...' : 'Create Quote'}
                   </button>
                 </form>
               </div>
 
-              <div className="dg-card dg-panel">
+              <div className="dg-card">
                 <h2 className="dg-title-sm">Email Communication</h2>
                 {emailSuccess ? <div className="dg-alert-success">{emailSuccess}</div> : null}
                 {emailError ? <div className="dg-alert-error">{emailError}</div> : null}
@@ -493,13 +495,13 @@ export default function AdminDealDetailsPage() {
                       required
                     />
                   </div>
-                  <button type="submit" className="dg-btn-primary" disabled={sendDealEmailMutation.isPending}>
+                  <button type="submit" className="ui-btn ui-btn-primary ui-btn-md" disabled={sendDealEmailMutation.isPending}>
                     {sendDealEmailMutation.isPending ? 'Sending...' : 'Send Email'}
                   </button>
                 </form>
               </div>
 
-              <div className="dg-card dg-panel">
+              <div className="dg-card">
                 <h2 className="dg-title-sm">Recent Communications</h2>
                 {communications.length > 0 ? (
                   <div className="dg-list">
@@ -522,7 +524,8 @@ export default function AdminDealDetailsPage() {
             </div>
           </div>
         )}
-      </section>
+      </Panel>
+      </PageShell>
     </AdminShell>
   );
 }

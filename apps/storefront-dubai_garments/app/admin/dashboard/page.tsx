@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
+import { PageShell, Panel, StatusBadge, Toolbar } from '@/components/ui';
 import { FeatureGrid, MetricStrip } from '@/components/shared/sections';
 import { useDeals, usePipeline } from '@/features/admin/deals';
 import { useLeads } from '@/features/admin/leads';
@@ -64,83 +65,84 @@ export default function AdminDashboardPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
-        <AdminPageHeader
-          title="Dashboard Analytics"
-          subtitle="Performance overview for lead intake, pipeline progress, and quote conversion."
-          actions={
-            <>
-            <Link href="/admin/analytics" className="dg-btn-secondary">
-              Analytics Dashboard
-            </Link>
-            <Link href="/admin/leads" className="dg-btn-secondary">
-              Open Leads
-            </Link>
-            <Link href="/admin/deals" className="dg-btn-secondary">
-              Open Pipeline
-            </Link>
-            <Link href="/admin/quotes" className="dg-btn-secondary">
-              Open Quotes
-            </Link>
-            </>
-          }
-        />
+      <PageShell density="compact">
+        <Panel>
+          <AdminPageHeader
+            title="Dashboard Analytics"
+            subtitle="Performance overview for lead intake, pipeline progress, and quote conversion."
+            actions={
+              <Toolbar>
+                <Link href="/admin/analytics" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Analytics Dashboard
+                </Link>
+                <Link href="/admin/leads" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Open Leads
+                </Link>
+                <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Open Pipeline
+                </Link>
+                <Link href="/admin/quotes" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Open Quotes
+                </Link>
+              </Toolbar>
+            }
+          />
 
-        <MetricStrip
-          items={[
-            {
-              label: 'Total Leads',
-              value: isLoading ? '...' : totalLeads,
-              meta: isLoading ? '...' : `${hotLeads} hot leads (${hotLeadRate}%)`,
-            },
-            {
-              label: 'Total Deals',
-              value: isLoading ? '...' : totalDeals,
-              meta: isLoading ? '...' : `Win rate ${winRate}%`,
-            },
-            {
-              label: 'Total Quotes',
-              value: isLoading ? '...' : totalQuotes,
-              meta: isLoading ? '...' : `${sentQuotes} sent (${quoteSendRate}%)`,
-            },
-            {
-              label: 'Team Users',
-              value: isLoading ? '...' : teamUsers,
-              meta: 'Admin and sales accounts',
-            },
-          ]}
-        />
-      </section>
+          <MetricStrip
+            items={[
+              {
+                label: 'Total Leads',
+                value: isLoading ? '...' : totalLeads,
+                meta: isLoading ? '...' : `${hotLeads} hot leads (${hotLeadRate}%)`,
+              },
+              {
+                label: 'Total Deals',
+                value: isLoading ? '...' : totalDeals,
+                meta: isLoading ? '...' : `Win rate ${winRate}%`,
+              },
+              {
+                label: 'Total Quotes',
+                value: isLoading ? '...' : totalQuotes,
+                meta: isLoading ? '...' : `${sentQuotes} sent (${quoteSendRate}%)`,
+              },
+              {
+                label: 'Team Users',
+                value: isLoading ? '...' : teamUsers,
+                meta: 'Admin and sales accounts',
+              },
+            ]}
+          />
+        </Panel>
 
-      <section className="dg-admin-page">
-        <FeatureGrid
-          columns={3}
-          items={[
-            {
-              eyebrow: 'Sales Module',
-              title: 'Lead List',
-              description: 'Track new and qualified opportunities with quick drill-down.',
-              action: <Link href="/admin/leads" className="dg-btn-secondary">Open Lead List</Link>,
-            },
-            {
-              eyebrow: 'Sales Module',
-              title: 'Deal Pipeline',
-              description: 'Monitor stage movement from New to Won/Lost.',
-              action: <Link href="/admin/deals" className="dg-btn-secondary">Open Deal Pipeline</Link>,
-            },
-            {
-              eyebrow: 'Sales Module',
-              title: 'Quote Management',
-              description: 'Manage draft/sent/approved quotes with full lifecycle actions.',
-              action: <Link href="/admin/quotes" className="dg-btn-secondary">Open Quote Management</Link>,
-            },
-          ]}
-        />
-      </section>
+        <Panel>
+          <FeatureGrid
+            columns={3}
+            items={[
+              {
+                eyebrow: 'Sales Module',
+                title: 'Lead List',
+                description: 'Track new and qualified opportunities with quick drill-down.',
+                action: <Link href="/admin/leads" className="ui-btn ui-btn-secondary ui-btn-md">Open Lead List</Link>,
+              },
+              {
+                eyebrow: 'Sales Module',
+                title: 'Deal Pipeline',
+                description: 'Monitor stage movement from New to Won/Lost.',
+                action: <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">Open Deal Pipeline</Link>,
+              },
+              {
+                eyebrow: 'Sales Module',
+                title: 'Quote Management',
+                description: 'Manage draft/sent/approved quotes with full lifecycle actions.',
+                action: <Link href="/admin/quotes" className="ui-btn ui-btn-secondary ui-btn-md">Open Quote Management</Link>,
+              },
+            ]}
+          />
+        </Panel>
 
-      <section className="dg-admin-page">
-        <div className="dg-analytics-grid">
-          <article className="dg-card dg-chart-card">
+        <Panel>
+          <div className="dg-analytics-grid">
+          <article className="dg-chart-card">
             <h2 className="dg-title-sm">Lead Status Breakdown</h2>
             <div className="dg-stat-bars">
               {leadStatuses.map((status) => {
@@ -157,7 +159,7 @@ export default function AdminDashboardPage() {
             </div>
           </article>
 
-          <article className="dg-card dg-chart-card">
+          <article className="dg-chart-card">
             <h2 className="dg-title-sm">Deal Stage Breakdown</h2>
             <div className="dg-stat-bars">
               {dealStages.map((stage) => {
@@ -180,14 +182,14 @@ export default function AdminDashboardPage() {
               })}
             </div>
           </article>
-        </div>
-      </section>
+          </div>
+        </Panel>
 
-      <section className="dg-admin-page">
-        <div className="dg-analytics-grid">
-          <article className="dg-card dg-chart-card">
+        <Panel>
+          <div className="dg-analytics-grid">
+          <article className="dg-chart-card">
             <h2 className="dg-title-sm">Recent Leads</h2>
-            <div className="dg-list">
+            <div className="dg-list dg-list-density-compact">
               {recentLeads.length > 0 ? (
                 recentLeads.map((lead) => (
                   <div key={lead.id} className="dg-list-row">
@@ -199,7 +201,7 @@ export default function AdminDashboardPage() {
                         {titleCase(lead.status)} • {lead.ai_product || 'No product'}
                       </p>
                     </div>
-                    <Link href={`/admin/leads/${lead.id}`} className="dg-btn-secondary">
+                    <Link href={`/admin/leads/${lead.id}`} className="ui-btn ui-btn-secondary ui-btn-md">
                       Open
                     </Link>
                   </div>
@@ -210,9 +212,9 @@ export default function AdminDashboardPage() {
             </div>
           </article>
 
-          <article className="dg-card dg-chart-card">
+          <article className="dg-chart-card">
             <h2 className="dg-title-sm">Recent Deals</h2>
-            <div className="dg-list">
+            <div className="dg-list dg-list-density-compact">
               {recentDeals.length > 0 ? (
                 recentDeals.map((deal) => (
                   <div key={deal.id} className="dg-list-row">
@@ -222,7 +224,7 @@ export default function AdminDashboardPage() {
                       </p>
                       <p className="dg-list-meta">{titleCase(deal.stage)} • Pipeline item</p>
                     </div>
-                    <Link href="/admin/deals" className="dg-btn-secondary">
+                    <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">
                       Open
                     </Link>
                   </div>
@@ -232,19 +234,19 @@ export default function AdminDashboardPage() {
               )}
             </div>
           </article>
-        </div>
-      </section>
+          </div>
+        </Panel>
 
-      <section className="dg-admin-page">
-        <article className="dg-card dg-chart-card">
+        <Panel>
+          <article className="dg-chart-card">
           <div className="dg-admin-head">
             <h2 className="dg-title-sm">Recent Quotes</h2>
-            <Link href="/admin/quotes" className="dg-btn-secondary">
+            <Link href="/admin/quotes" className="ui-btn ui-btn-secondary ui-btn-md">
               View All
             </Link>
           </div>
-          <div className="dg-table-wrap">
-            <table className="dg-table">
+          <div className="ui-table-wrap">
+            <table className="ui-table ui-table-density-compact">
               <thead>
                 <tr>
                   <th>Quote</th>
@@ -261,13 +263,13 @@ export default function AdminDashboardPage() {
                       <td>{quote.quote_number || `#${shortCode(quote.id)}`}</td>
                       <td>{quote.customer_company_name || '-'}</td>
                       <td>
-                        <span className="dg-status-pill">{quote.status}</span>
+                        <StatusBadge status={quote.status}>{quote.status}</StatusBadge>
                       </td>
                       <td>
                         {quote.currency} {Number(quote.total_amount || 0).toFixed(2)}
                       </td>
                       <td>
-                        <Link href={`/admin/quotes/${quote.id}`} className="dg-btn-secondary">
+                        <Link href={`/admin/quotes/${quote.id}`} className="ui-btn ui-btn-secondary ui-btn-md">
                           Open
                         </Link>
                       </td>
@@ -281,8 +283,9 @@ export default function AdminDashboardPage() {
               </tbody>
             </table>
           </div>
-        </article>
-      </section>
+          </article>
+        </Panel>
+      </PageShell>
     </AdminShell>
   );
 }

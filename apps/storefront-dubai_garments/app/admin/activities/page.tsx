@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
+import { PageShell, Panel, Toolbar } from '@/components/ui';
 import { ActivityType, useActivities } from '@/features/admin/activities';
 import { formatDateTime, titleCase } from '@/features/admin/shared/view-format';
 
@@ -28,25 +29,25 @@ export default function AdminActivitiesPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
-        <AdminPageHeader
-          title="Activity Log System"
-          subtitle="Track system-generated actions across leads, deals, quotes, follow-ups, and customer communication."
-          actions={
-            <>
-              <Link href="/admin/dashboard" className="dg-btn-secondary">
-                Dashboard
-              </Link>
-              <Link href="/admin/automations" className="dg-btn-secondary">
-                Automations
-              </Link>
-            </>
-          }
-        />
-      </section>
+      <PageShell density="compact">
+        <Panel>
+          <AdminPageHeader
+            title="Activity Log System"
+            subtitle="Track system-generated actions across leads, deals, quotes, follow-ups, and customer communication."
+            actions={
+              <Toolbar>
+                <Link href="/admin/dashboard" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Dashboard
+                </Link>
+                <Link href="/admin/automations" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Automations
+                </Link>
+              </Toolbar>
+            }
+          />
+        </Panel>
 
-      <section className="dg-admin-page">
-        <article className="dg-card dg-panel">
+        <Panel>
           <div className="dg-admin-head">
             <div>
               <h2 className="dg-title-sm">Event Stream</h2>
@@ -96,8 +97,8 @@ export default function AdminActivitiesPage() {
               {activities.length === 0 && <p className="dg-muted-sm">No activity records found.</p>}
             </div>
           )}
-        </article>
-      </section>
+        </Panel>
+      </PageShell>
     </AdminShell>
   );
 }

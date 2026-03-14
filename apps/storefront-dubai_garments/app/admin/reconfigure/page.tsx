@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
+import { PageShell, Panel, Toolbar } from '@/components/ui';
 
 type WizardData = {
   database: { databaseUrl: string };
@@ -172,10 +173,18 @@ export default function AdminReconfigurePage() {
 
   return (
     <AdminShell>
-      <div className="dg-admin-page">
+      <PageShell density="compact">
+      <Panel>
         <AdminPageHeader
           title="Reconfigure Wizard"
           subtitle="Use a structured step-based flow to update installed system settings."
+          actions={
+            <Toolbar>
+              <button type="button" className="ui-btn ui-btn-secondary ui-btn-md" onClick={() => void loadStatus()} disabled={isSaving}>
+                Refresh Status
+              </button>
+            </Toolbar>
+          }
         />
 
         <div className="dg-kpi-grid">
@@ -192,23 +201,24 @@ export default function AdminReconfigurePage() {
             <p className="dg-kpi-meta">Enable mode before applying wizard changes.</p>
           </div>
         </div>
+      </Panel>
 
-        <div className="dg-card dg-panel" style={{ marginTop: '1rem' }}>
+      <Panel>
           <div className="dg-form-row">
             <label className="dg-field">
               <span className="dg-label">TTL Minutes</span>
               <input className="dg-input" value={ttlMinutes} onChange={(event) => setTtlMinutes(event.target.value)} />
             </label>
-            <button type="button" className="dg-btn-primary" onClick={() => void handleToggle(true)} disabled={isSaving}>
+            <button type="button" className="ui-btn ui-btn-primary ui-btn-md" onClick={() => void handleToggle(true)} disabled={isSaving}>
               Enable Mode
             </button>
-            <button type="button" className="dg-btn-secondary" onClick={() => void handleToggle(false)} disabled={isSaving}>
+            <button type="button" className="ui-btn ui-btn-secondary ui-btn-md" onClick={() => void handleToggle(false)} disabled={isSaving}>
               Disable Mode
             </button>
           </div>
-        </div>
+      </Panel>
 
-        <div className="dg-card dg-panel" style={{ marginTop: '1rem' }}>
+      <Panel>
           <div className="dg-chip-cloud" style={{ marginBottom: '1rem' }}>
             {STEPS.map((step, index) => (
               <span key={step} className={`dg-chip ${index === stepIndex ? 'dg-chip-active' : ''}`}>
@@ -424,7 +434,7 @@ export default function AdminReconfigurePage() {
           <div className="dg-hero-actions" style={{ marginTop: '1rem' }}>
             <button
               type="button"
-              className="dg-btn-secondary"
+              className="ui-btn ui-btn-secondary ui-btn-md"
               onClick={() => setStepIndex((prev) => Math.max(0, prev - 1))}
               disabled={stepIndex === 0 || isSaving}
             >
@@ -433,7 +443,7 @@ export default function AdminReconfigurePage() {
             {stepIndex < STEPS.length - 1 ? (
               <button
                 type="button"
-                className="dg-btn-primary"
+                className="ui-btn ui-btn-primary ui-btn-md"
                 onClick={() => setStepIndex((prev) => Math.min(STEPS.length - 1, prev + 1))}
                 disabled={!canProceed || isSaving}
               >
@@ -442,7 +452,7 @@ export default function AdminReconfigurePage() {
             ) : (
               <button
                 type="button"
-                className="dg-btn-primary"
+                className="ui-btn ui-btn-primary ui-btn-md"
                 onClick={() => void handleApply()}
                 disabled={!status.enabled || isSaving}
               >
@@ -450,9 +460,10 @@ export default function AdminReconfigurePage() {
               </button>
             )}
           </div>
-        </div>
+      </Panel>
 
-        {message ? (
+      {message ? (
+        <Panel>
           <div
             className={
               message.toLowerCase().includes('fail') || message.toLowerCase().includes('invalid')
@@ -462,8 +473,9 @@ export default function AdminReconfigurePage() {
           >
             {message}
           </div>
-        ) : null}
-      </div>
+        </Panel>
+      ) : null}
+      </PageShell>
     </AdminShell>
   );
 }

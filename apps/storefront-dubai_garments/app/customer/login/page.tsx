@@ -3,7 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import StorefrontShell from '@/components/layout/storefront-shell';
-import { Button, Card, FieldLabel, TextField } from '@/components/ui';
+import { Button, Card, FieldError, FieldGroup, FieldHint, FieldLabel, TextField } from '@/components/ui';
 
 export default function CustomerLoginPage() {
   const router = useRouter();
@@ -55,21 +55,19 @@ export default function CustomerLoginPage() {
                 Login to access your customer dashboard.
               </p>
 
-              {error && (
-                <div className="mt-4 rounded-xl border border-red-200 bg-[var(--color-danger-bg)] p-3 text-sm text-[var(--color-danger-text)]">
-                  {error}
-                </div>
-              )}
+              {error ? <FieldError className="dg-alert-error">{error}</FieldError> : null}
 
               <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
-                <div>
+                <FieldGroup>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <TextField id="email" name="email" type="email" autoComplete="email" />
-                </div>
-                <div>
+                  <FieldHint>Use your registered customer email.</FieldHint>
+                </FieldGroup>
+                <FieldGroup>
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                   <TextField id="password" name="password" type="password" autoComplete="current-password" />
-                </div>
+                  <FieldHint>Enter your customer portal password.</FieldHint>
+                </FieldGroup>
                 <Button type="submit" size="lg" disabled={isSubmitting}>
                   {isSubmitting ? 'Signing in...' : 'Sign In'}
                 </Button>

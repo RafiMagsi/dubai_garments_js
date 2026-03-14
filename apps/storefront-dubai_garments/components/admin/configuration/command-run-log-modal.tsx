@@ -19,14 +19,14 @@ type CommandRunLogModalProps = {
 export default function CommandRunLogModal({ state, onClose }: CommandRunLogModalProps) {
   return (
     <Modal open={state.open} onClose={onClose}>
-      <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-slate-600">Execution Log</p>
-            <h3 className="text-lg font-bold text-slate-900">{state.scriptName}</h3>
-            <p className="mt-1 text-xs text-slate-500">Command/Workflow: {state.command}</p>
+      <div className="ui-modal-card ui-modal-size-lg">
+        <div className="ui-modal-head">
+          <div className="ui-modal-title-block">
+            <p className="ui-modal-kicker">Execution Log</p>
+            <h3 className="ui-modal-title">{state.scriptName}</h3>
+            <p className="ui-modal-meta">Command/Workflow: {state.command}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="ui-modal-actions">
             <span
               className={
                 state.status === 'success'
@@ -38,12 +38,12 @@ export default function CommandRunLogModal({ state, onClose }: CommandRunLogModa
             >
               {titleCase(state.status)}
             </span>
-            <button type="button" className="dg-btn-secondary" onClick={onClose}>
+            <button type="button" className="ui-btn ui-btn-secondary ui-btn-md" onClick={onClose}>
               Close
             </button>
           </div>
         </div>
-        <pre className="max-h-[65vh] overflow-auto rounded-xl bg-slate-950 p-3 text-xs text-slate-100">
+        <pre className="ui-command-surface ui-command-surface-dark">
           {state.output || 'No output yet.'}
         </pre>
       </div>

@@ -29,14 +29,14 @@ export default function ServiceChecksPanel({
           <span className={statusBadgeClass(overallOk ? 'success' : 'failed')}>
             {overallOk ? 'Healthy' : 'Degraded'}
           </span>
-          <button type="button" className="dg-btn-secondary" onClick={onRefresh} disabled={isRefreshing}>
+          <button type="button" className="ui-btn ui-btn-secondary ui-btn-md" onClick={onRefresh} disabled={isRefreshing}>
             {isRefreshing ? 'Refreshing...' : 'Refresh Checks'}
           </button>
         </div>
       </div>
 
-      <div className="dg-table-wrap mt-3">
-        <table className="dg-table">
+      <div className="ui-table-wrap mt-3">
+        <table className="ui-table">
           <thead>
             <tr>
               <th>Target</th>

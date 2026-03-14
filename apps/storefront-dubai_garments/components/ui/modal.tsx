@@ -2,11 +2,13 @@
 
 import { ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import clsx from 'clsx';
 
 type ModalProps = {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
+  className?: string;
 };
 
 function getFocusableElements(container: HTMLElement) {
@@ -17,7 +19,7 @@ function getFocusableElements(container: HTMLElement) {
   ).filter((element) => !element.hasAttribute('disabled'));
 }
 
-export default function Modal({ open, onClose, children }: ModalProps) {
+export default function Modal({ open, onClose, children, className }: ModalProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef(onClose);
 
@@ -28,9 +30,18 @@ export default function Modal({ open, onClose, children }: ModalProps) {
   useEffect(() => {
     if (!open) return;
 
-    const previousOverflow = document.body.style.overflow;
+    const body = document.body;
+    const currentLocks = Number(body.dataset.uiOverlayLocks || '0');
+    const nextLocks = currentLocks + 1;
+    body.dataset.uiOverlayLocks = String(nextLocks);
+
+    if (nextLocks === 1) {
+      body.dataset.uiOverlayPrevOverflow = body.style.overflow || '';
+      body.style.overflow = 'hidden';
+      body.classList.add('ui-overlay-lock');
+    }
+
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    document.body.style.overflow = 'hidden';
 
     const panel = panelRef.current;
     if (panel) {
@@ -69,7 +80,15 @@ export default function Modal({ open, onClose, children }: ModalProps) {
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      const remainingLocks = Math.max(0, Number(body.dataset.uiOverlayLocks || '1') - 1);
+      body.dataset.uiOverlayLocks = String(remainingLocks);
+
+      if (remainingLocks === 0) {
+        body.style.overflow = body.dataset.uiOverlayPrevOverflow || '';
+        delete body.dataset.uiOverlayPrevOverflow;
+        body.classList.remove('ui-overlay-lock');
+      }
+
       previouslyFocused?.focus();
     };
   }, [open]);
@@ -80,7 +99,7 @@ export default function Modal({ open, onClose, children }: ModalProps) {
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4"
+      className="ui-overlay ui-overlay-center"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           closeRef.current();
@@ -90,7 +109,7 @@ export default function Modal({ open, onClose, children }: ModalProps) {
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="w-full outline-none"
+        className={clsx('ui-modal-shell', className)}
         role="dialog"
         aria-modal="true"
       >

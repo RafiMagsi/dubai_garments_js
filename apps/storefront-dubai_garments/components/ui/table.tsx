@@ -1,10 +1,22 @@
 import { HTMLAttributes, TableHTMLAttributes, ThHTMLAttributes, TdHTMLAttributes } from 'react';
 import clsx from 'clsx';
 
-export function DataTable({ className, ...props }: TableHTMLAttributes<HTMLTableElement>) {
+type DataTableProps = TableHTMLAttributes<HTMLTableElement> & {
+  density?: 'compact' | 'comfortable';
+};
+
+export function DataTable({ className, density, ...props }: DataTableProps) {
   return (
     <div className="ui-table-wrap">
-      <table className={clsx('ui-table', className)} {...props} />
+      <table
+        className={clsx(
+          'ui-table',
+          density === 'compact' && 'ui-table-density-compact',
+          density === 'comfortable' && 'ui-table-density-comfortable',
+          className
+        )}
+        {...props}
+      />
     </div>
   );
 }

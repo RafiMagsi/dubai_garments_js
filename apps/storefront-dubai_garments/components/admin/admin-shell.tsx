@@ -60,8 +60,18 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     }
   }
 
+  function isNavItemActive(href: string) {
+    if (href === '/admin') {
+      return pathname === href;
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
   return (
     <div className="dg-admin-shell">
+      <a href="#admin-main-content" className="dg-skip-link">
+        Skip to main content
+      </a>
       <aside className="dg-admin-sidebar">
         <div className="dg-admin-brand">
           <p className="dg-brand-subtitle">Dubai Garments</p>
@@ -76,11 +86,12 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               {adminNavItems
                 .filter((item) => item.section === section)
                 .map((item) => {
-                  const isActive = pathname.startsWith(item.href);
+                  const isActive = isNavItemActive(item.href);
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
+                      aria-current={isActive ? 'page' : undefined}
                       className={`dg-admin-link ${isActive ? 'is-active' : ''}`}
                     >
                       <span>{item.label}</span>
@@ -93,12 +104,12 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="dg-admin-footer">
-          <Link href="/" className="dg-btn-secondary">
+          <Link href="/" className="ui-btn ui-btn-secondary ui-btn-md">
             Open Storefront
           </Link>
           <button
             type="button"
-            className="dg-btn-secondary dg-btn-block"
+            className="ui-btn ui-btn-secondary ui-btn-md dg-btn-block"
             onClick={handleLogout}
             disabled={isLoggingOut}
           >
@@ -107,7 +118,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="dg-admin-main">
+      <main id="admin-main-content" className="dg-admin-main" tabIndex={-1}>
         <header className="dg-admin-topbar">
           <div>
             <p className="dg-admin-topbar-label">Sales Console</p>

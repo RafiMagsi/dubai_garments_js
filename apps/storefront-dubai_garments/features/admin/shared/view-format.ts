@@ -1,3 +1,5 @@
+import { statusBadgeClass as sharedStatusBadgeClass } from '@/lib/ui/status-badge';
+
 export function titleCase(value: string) {
   if (!value) return '';
   return value
@@ -25,10 +27,5 @@ export function shortCode(value?: string | null, size = 6) {
 }
 
 export function statusBadgeClass(status?: string | null) {
-  if (!status) return 'dg-status-pill';
-  if (status === 'success') return 'dg-status-pill';
-  if (status === 'failed') return 'dg-status-pill dg-status-pill-LOST';
-  if (status === 'running') return 'dg-status-pill dg-status-pill-NEW';
-  if (status === 'queued') return 'dg-status-pill dg-status-pill-QUALIFIED';
-  return 'dg-status-pill';
+  return sharedStatusBadgeClass(status);
 }

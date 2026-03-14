@@ -8,6 +8,7 @@ import ExecutionAuditTable from '@/components/admin/configuration/execution-audi
 import ExecutionOutputModal, {
   ExecutionOutputModalState,
 } from '@/components/admin/configuration/execution-output-modal';
+import { PageShell, Panel, Toolbar } from '@/components/ui';
 import {
   ConfigExecutionAuditItem,
   useConfigurationAudit,
@@ -39,18 +40,20 @@ export default function AdminConfigurationAuditPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
+      <PageShell density="compact">
+      <Panel>
         <AdminPageHeader
           title="Command Execution Audit"
           subtitle="Full command execution history for Configuration scripts and terminal actions."
           actions={
-            <Link href="/admin/configuration" className="dg-btn-secondary">
-              Back To Configuration
-            </Link>
+            <Toolbar>
+              <Link href="/admin/configuration" className="ui-btn ui-btn-secondary ui-btn-md">
+                Back To Configuration
+              </Link>
+            </Toolbar>
           }
         />
 
-        <article className="dg-card dg-panel">
           {auditQuery.isLoading && <p className="dg-muted-sm">Loading execution audit...</p>}
           {auditQuery.isError && (
             <p className="dg-alert-error">
@@ -66,12 +69,12 @@ export default function AdminConfigurationAuditPage() {
               onViewOutput={openOutputModal}
             />
           )}
-        </article>
-      </section>
+      </Panel>
       <ExecutionOutputModal
         state={outputModal}
         onClose={() => setOutputModal((prev) => ({ ...prev, open: false }))}
       />
+      </PageShell>
     </AdminShell>
   );
 }

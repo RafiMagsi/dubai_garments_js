@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/admin-shell';
-import { Card, FieldLabel, TextAreaField } from '@/components/ui';
+import AdminPageHeader from '@/components/admin/common/page-header';
+import { Card, FieldLabel, PageShell, Panel, TextAreaField, Toolbar } from '@/components/ui';
 import {
   useGenerateQuotePdf,
   useQuoteById,
@@ -47,47 +48,46 @@ export default function AdminQuoteDetailPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
-        <div className="dg-admin-page-head">
-          <div>
-            <h1 className="dg-page-title">
-              {quote ? `Quote ${quote.quote_number}` : 'Quote Details'}
-            </h1>
-            <p className="dg-page-subtitle">Update quote status, review pricing breakdown, and close outcome.</p>
-          </div>
-          <div className="dg-admin-toolbar">
-            <Link href="/admin/quotes" className="dg-btn-secondary">
-              Back to Quotes
-            </Link>
-            <Link href="/admin/deals" className="dg-btn-secondary">
-              Deals
-            </Link>
-          </div>
-        </div>
-      </section>
+      <PageShell density="compact">
+      <Panel>
+        <AdminPageHeader
+          title={quote ? `Quote ${quote.quote_number}` : 'Quote Details'}
+          subtitle="Update quote status, review pricing breakdown, and close outcome."
+          actions={
+            <Toolbar>
+              <Link href="/admin/quotes" className="ui-btn ui-btn-secondary ui-btn-md">
+                Back to Quotes
+              </Link>
+              <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">
+                Deals
+              </Link>
+            </Toolbar>
+          }
+        />
+      </Panel>
 
       {isLoading && (
-        <section className="dg-admin-page">
-          <Card className="dg-panel">
+        <Panel>
+          <Card>
             <p className="text-sm text-[var(--color-text-muted)]">Loading quote...</p>
           </Card>
-        </section>
+        </Panel>
       )}
 
       {isError && (
-        <section className="dg-admin-page">
-          <Card className="dg-panel">
+        <Panel>
+          <Card>
             <p className="text-sm text-[var(--color-danger-text)]">
               {error instanceof Error ? error.message : 'Failed to load quote.'}
             </p>
           </Card>
-        </section>
+        </Panel>
       )}
 
       {quote && !isLoading && !isError && (
-        <section className="dg-admin-page">
+        <Panel>
           <div className="dg-two-col-grid">
-            <Card className="dg-panel">
+            <Card>
               <h2 className="dg-title-sm">Quote Summary</h2>
               <div className="dg-detail-list">
                 <div className="dg-detail-item">
@@ -137,7 +137,7 @@ export default function AdminQuoteDetailPage() {
                     <button
                       key={status}
                       type="button"
-                      className="dg-btn-secondary"
+                      className="ui-btn ui-btn-secondary ui-btn-md"
                       disabled={updateStatusMutation.isPending || status === quote.status}
                       onClick={() => handleStatusChange(status)}
                     >
@@ -164,7 +164,7 @@ export default function AdminQuoteDetailPage() {
                 <div className="dg-hero-actions">
                   <button
                     type="button"
-                    className="dg-btn-primary"
+                    className="ui-btn ui-btn-primary ui-btn-md"
                     disabled={generatePdfMutation.isPending}
                     onClick={handleGeneratePdf}
                   >
@@ -173,7 +173,7 @@ export default function AdminQuoteDetailPage() {
                   {pdfStatus?.status === 'generated' ? (
                     <a
                       href={`/api/admin/quotes/${quote.id}/pdf/download`}
-                      className="dg-btn-secondary"
+                      className="ui-btn ui-btn-secondary ui-btn-md"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -190,10 +190,10 @@ export default function AdminQuoteDetailPage() {
               </Card>
             </Card>
 
-            <Card className="dg-panel">
+            <Card>
               <h2 className="dg-title-sm">Quote Items</h2>
-              <div className="dg-table-wrap">
-                <table className="dg-table">
+              <div className="ui-table-wrap">
+                <table className="ui-table">
                   <thead>
                     <tr>
                       <th>Item</th>
@@ -231,8 +231,9 @@ export default function AdminQuoteDetailPage() {
               </div>
             </Card>
           </div>
-        </section>
+        </Panel>
       )}
+      </PageShell>
     </AdminShell>
   );
 }

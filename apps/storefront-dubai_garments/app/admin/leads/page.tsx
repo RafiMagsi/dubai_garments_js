@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
+import { PageShell, Panel, StatusBadge, Toolbar } from '@/components/ui';
 import { LeadStatus, useLeads } from '@/features/admin/leads';
 import {
   formatDateTime,
@@ -19,10 +20,6 @@ const statusOptions: Array<{ label: string; value: LeadStatus | 'all' }> = [
   { label: 'Won', value: 'won' },
   { label: 'Lost', value: 'lost' },
 ];
-
-function statusPillClass(status: LeadStatus) {
-  return `dg-status-pill dg-status-pill-${status.toUpperCase()}`;
-}
 
 export default function AdminLeadsPage() {
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
@@ -50,52 +47,60 @@ export default function AdminLeadsPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
-        <AdminPageHeader
-          title="Lead List"
-          subtitle="Review incoming requests, qualify opportunities, and move leads into deals."
-          actions={
-            <>
-            <Link href="/admin/dashboard" className="dg-btn-secondary">
-              Dashboard
-            </Link>
-            <Link href="/admin/deals" className="dg-btn-secondary">
-              Deals
-            </Link>
-            </>
-          }
-        />
+      <PageShell density="compact">
+        <Panel>
+          <AdminPageHeader
+            title="Lead List"
+            subtitle="Review incoming requests, qualify opportunities, and move leads into deals."
+            actions={
+              <Toolbar>
+                <Link href="/admin/dashboard" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Dashboard
+                </Link>
+                <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Deals
+                </Link>
+              </Toolbar>
+            }
+          />
 
-        <div className="dg-card dg-panel">
           <form onSubmit={handleApplyFilters} className="dg-form-row">
-            <input
-              name="search"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search by name, company, email, tracking code..."
-              className="dg-input dg-col-fill"
-            />
-            <select
-              name="status"
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as LeadStatus | 'all')}
-              className="dg-select dg-select-md"
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <button type="submit" className="dg-btn-primary">
+            <div className="dg-field dg-col-fill">
+              <label className="dg-label" htmlFor="leads-search">Search</label>
+              <input
+                id="leads-search"
+                name="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search by name, company, email, tracking code..."
+                className="dg-input"
+              />
+              <p className="dg-help">Leave empty to view all leads.</p>
+            </div>
+            <div className="dg-field">
+              <label className="dg-label" htmlFor="leads-status">Status</label>
+              <select
+                id="leads-status"
+                name="status"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as LeadStatus | 'all')}
+                className="dg-select dg-select-md"
+              >
+                {statusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="dg-help">Filter lead pipeline by status.</p>
+            </div>
+            <button type="submit" className="ui-btn ui-btn-primary ui-btn-md">
               Apply
             </button>
           </form>
-        </div>
-      </section>
+        </Panel>
 
-      <section className="dg-admin-page">
-        <div className="dg-card dg-panel">
+        <Panel>
           <div className="dg-admin-head">
             <h2 className="dg-title-sm">Leads</h2>
             <span className="dg-badge">{leads.length} Total</span>
@@ -107,8 +112,8 @@ export default function AdminLeadsPage() {
           )}
 
           {!isLoading && !isError && (
-            <div className="dg-table-wrap">
-              <table className="dg-table">
+            <div className="ui-table-wrap">
+              <table className="ui-table ui-table-density-compact">
                 <thead>
                   <tr>
                     <th>Lead</th>
@@ -136,11 +141,13 @@ export default function AdminLeadsPage() {
                         <td>{lead.ai_product || '-'}</td>
                         <td>{lead.requested_qty ? `${lead.requested_qty} pcs` : '-'}</td>
                         <td>
-                          <span className={statusPillClass(lead.status)}>{titleCase(lead.status)}</span>
+                          <StatusBadge status={lead.status}>
+                            {titleCase(lead.status)}
+                          </StatusBadge>
                         </td>
                         <td>{formatDateTime(lead.created_at)}</td>
                         <td>
-                          <Link href={`/admin/leads/${lead.id}`} className="dg-btn-secondary">
+                          <Link href={`/admin/leads/${lead.id}`} className="ui-btn ui-btn-secondary ui-btn-md">
                             View
                           </Link>
                         </td>
@@ -151,8 +158,8 @@ export default function AdminLeadsPage() {
               </table>
             </div>
           )}
-        </div>
-      </section>
+        </Panel>
+      </PageShell>
     </AdminShell>
   );
 }

@@ -1,5 +1,5 @@
 export type ThemeOption = {
-  id: 'neo' | 'sunset' | 'graphite' | 'custom';
+  id: 'neo' | 'sunset' | 'graphite' | 'twenty' | 'custom';
   name: string;
   description: string;
   preview: {
@@ -106,6 +106,16 @@ export const THEME_OPTIONS: ThemeOption[] = [
       brand: '#0f766e',
       accent: '#14b8a6',
       surface: '#eff7f6',
+    },
+  },
+  {
+    id: 'twenty',
+    name: 'Twenty Violet',
+    description: 'Twenty-inspired CRM palette with violet primary and clean neutrals.',
+    preview: {
+      brand: '#7b61ff',
+      accent: '#22c55e',
+      surface: '#f7f6ff',
     },
   },
   {

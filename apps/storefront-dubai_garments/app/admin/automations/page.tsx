@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
+import { PageShell, Panel, Toolbar } from '@/components/ui';
 import { useAutomationRuns, useRetryAutomationRun } from '@/features/admin/automation-runs';
 import {
   formatDateTime,
@@ -63,19 +64,20 @@ export default function AdminAutomationsPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
+      <PageShell density="compact">
+      <Panel>
         <AdminPageHeader
           title="Automation Monitoring"
           subtitle="Track workflow history, inspect failed jobs, and trigger retry actions."
           actions={
-            <>
-            <Link href="/admin/activities" className="dg-btn-secondary">
-              Activities
-            </Link>
-            <Link href="/admin/dashboard" className="dg-btn-secondary">
-              Dashboard
-            </Link>
-            </>
+            <Toolbar>
+              <Link href="/admin/activities" className="ui-btn ui-btn-secondary ui-btn-md">
+                Activities
+              </Link>
+              <Link href="/admin/dashboard" className="ui-btn ui-btn-secondary ui-btn-md">
+                Dashboard
+              </Link>
+            </Toolbar>
           }
         />
 
@@ -101,10 +103,9 @@ export default function AdminAutomationsPage() {
             <p className="dg-kpi-meta">Active automation jobs</p>
           </article>
         </div>
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
-        <div className="dg-card dg-panel">
+      <Panel>
           <form onSubmit={handleApply} className="dg-form-row">
             <input
               value={searchInput}
@@ -137,15 +138,13 @@ export default function AdminAutomationsPage() {
               />
               Failed only
             </label>
-            <button type="submit" className="dg-btn-primary">
+            <button type="submit" className="ui-btn ui-btn-primary ui-btn-md">
               Apply
             </button>
           </form>
-        </div>
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
-        <div className="dg-card dg-panel">
+      <Panel>
           <div className="dg-admin-head">
             <h2 className="dg-title-sm">Automation Runs</h2>
             <span className="dg-badge">{runs.length} Total</span>
@@ -159,8 +158,8 @@ export default function AdminAutomationsPage() {
           )}
 
           {!runsQuery.isLoading && !runsQuery.isError && (
-            <div className="dg-table-wrap">
-              <table className="dg-table">
+            <div className="ui-table-wrap">
+              <table className="ui-table">
                 <thead>
                   <tr>
                     <th>Workflow</th>
@@ -192,7 +191,7 @@ export default function AdminAutomationsPage() {
                         <td>
                           <button
                             type="button"
-                            className="dg-btn-secondary"
+                            className="ui-btn ui-btn-secondary ui-btn-md"
                             disabled={!run.retryable || retryMutation.isPending}
                             onClick={() => handleRetry(run.id)}
                           >
@@ -210,8 +209,8 @@ export default function AdminAutomationsPage() {
               </table>
             </div>
           )}
-        </div>
-      </section>
+      </Panel>
+      </PageShell>
     </AdminShell>
   );
 }

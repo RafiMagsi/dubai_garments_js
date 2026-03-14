@@ -1,9 +1,9 @@
 'use client';
 
 import { ConfigExecutionAuditItem } from '@/features/admin/configuration';
+import { StatusBadge } from '@/components/ui';
 import {
   formatDate,
-  statusBadgeClass,
   titleCase,
 } from '@/features/admin/configuration/utils/view-format';
 
@@ -19,8 +19,8 @@ export default function ExecutionAuditTable({
   onViewOutput,
 }: ExecutionAuditTableProps) {
   return (
-    <div className="dg-table-wrap">
-      <table className="dg-table">
+    <div className="ui-table-wrap">
+      <table className="ui-table ui-table-density-compact">
         <thead>
           <tr>
             <th>When</th>
@@ -56,7 +56,7 @@ export default function ExecutionAuditTable({
                   <p className="dg-list-meta">{item.command_key}</p>
                 </td>
                 <td>
-                  <span className={statusBadgeClass(item.status)}>{titleCase(item.status)}</span>
+                  <StatusBadge status={item.status}>{titleCase(item.status)}</StatusBadge>
                 </td>
                 <td className="max-w-72">
                   <pre className="whitespace-pre-wrap break-words text-xs text-slate-600">
@@ -67,7 +67,7 @@ export default function ExecutionAuditTable({
                 </td>
                 <td>
                   {item.error_message || item.output_log ? (
-                    <button type="button" className="dg-btn-secondary" onClick={() => onViewOutput(item)}>
+                    <button type="button" className="ui-btn ui-btn-secondary ui-btn-md" onClick={() => onViewOutput(item)}>
                       View Output
                     </button>
                   ) : (

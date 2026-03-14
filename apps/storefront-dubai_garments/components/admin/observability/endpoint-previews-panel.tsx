@@ -40,12 +40,12 @@ export default function EndpointPreviewsPanel({
                   <p className="dg-list-meta">{target.url}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <a href={target.url} target="_blank" rel="noreferrer" className="dg-btn-secondary">
+                  <a href={target.url} target="_blank" rel="noreferrer" className="ui-btn ui-btn-secondary ui-btn-md">
                     Open
                   </a>
                   <button
                     type="button"
-                    className="dg-btn-primary"
+                    className="ui-btn ui-btn-primary ui-btn-md"
                     onClick={() => onFetch(target.key)}
                     disabled={Boolean(activeTarget)}
                   >

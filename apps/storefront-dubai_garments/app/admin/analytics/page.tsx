@@ -18,13 +18,20 @@ import {
 } from 'recharts';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
+import { PageShell, Panel, Toolbar } from '@/components/ui';
 import { useDeals } from '@/features/admin/deals';
 import { useLeads } from '@/features/admin/leads';
 import { useQuotes } from '@/features/admin/quotes';
 import { titleCase } from '@/features/admin/shared/view-format';
 
 const STAGE_ORDER = ['new', 'qualified', 'quoted', 'negotiation', 'won', 'lost'] as const;
-const STATUS_COLORS = ['#c2410c', '#f59e0b', '#10b981', '#64748b', '#334155'];
+const STATUS_COLORS = [
+  'var(--color-brand-500)',
+  'var(--color-warning)',
+  'var(--color-success)',
+  'var(--color-brand-600)',
+  'var(--color-ink-700)',
+];
 
 function monthLabel(date: Date) {
   return date.toLocaleString('en-US', { month: 'short' });
@@ -107,30 +114,31 @@ export default function AdminAnalyticsPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
+      <PageShell density="compact">
+      <Panel>
         <AdminPageHeader
           title="Analytics Dashboard"
           subtitle="Business intelligence view for lead volume, conversion, hot leads, and quote acceptance."
           actions={
-            <>
-            <Link href="/admin/dashboard" className="dg-btn-secondary">
-              Back to Dashboard
-            </Link>
-            <Link href="/admin/leads" className="dg-btn-secondary">
-              Lead List
-            </Link>
-            <Link href="/admin/deals" className="dg-btn-secondary">
-              Deal Pipeline
-            </Link>
-            <Link href="/admin/quotes" className="dg-btn-secondary">
-              Quote Management
-            </Link>
-            </>
+            <Toolbar>
+              <Link href="/admin/dashboard" className="ui-btn ui-btn-secondary ui-btn-md">
+                Back to Dashboard
+              </Link>
+              <Link href="/admin/leads" className="ui-btn ui-btn-secondary ui-btn-md">
+                Lead List
+              </Link>
+              <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">
+                Deal Pipeline
+              </Link>
+              <Link href="/admin/quotes" className="ui-btn ui-btn-secondary ui-btn-md">
+                Quote Management
+              </Link>
+            </Toolbar>
           }
         />
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
+      <Panel>
         <div className="dg-kpi-grid">
           <article className="dg-card dg-kpi-card">
             <p className="dg-kpi-label">Lead Volume</p>
@@ -153,21 +161,19 @@ export default function AdminAnalyticsPage() {
             <p className="dg-kpi-meta">Approved out of decided quotes</p>
           </article>
         </div>
-      </section>
+      </Panel>
 
       {hasError && (
-        <section className="dg-admin-page">
-          <article className="dg-card dg-panel">
+        <Panel>
             <p className="dg-alert-error">
               Failed to load analytics data. Check leads, deals, and quotes API responses.
             </p>
-          </article>
-        </section>
+        </Panel>
       )}
 
       {!hasError && (
         <>
-          <section className="dg-admin-page">
+          <Panel>
             <div className="dg-analytics-grid">
               <article className="dg-card dg-chart-card">
                 <h2 className="dg-title-sm">Lead Volume Trend (6 Months)</h2>
@@ -182,7 +188,7 @@ export default function AdminAnalyticsPage() {
                       <Line
                         type="monotone"
                         dataKey="leads"
-                        stroke="#c2410c"
+                        stroke="var(--color-brand-500)"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                         name="Leads"
@@ -190,7 +196,7 @@ export default function AdminAnalyticsPage() {
                       <Line
                         type="monotone"
                         dataKey="deals"
-                        stroke="#0f766e"
+                        stroke="var(--color-accent-500)"
                         strokeWidth={2}
                         dot={{ r: 3 }}
                         name="Deals"
@@ -225,9 +231,9 @@ export default function AdminAnalyticsPage() {
                 </div>
               </article>
             </div>
-          </section>
+          </Panel>
 
-          <section className="dg-admin-page">
+          <Panel>
             <div className="dg-analytics-grid">
               <article className="dg-card dg-chart-card">
                 <h2 className="dg-title-sm">Quote Outcome Breakdown</h2>
@@ -238,7 +244,7 @@ export default function AdminAnalyticsPage() {
                       <XAxis dataKey="name" />
                       <YAxis allowDecimals={false} />
                       <Tooltip />
-                      <Bar dataKey="count" fill="#c2410c" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey="count" fill="var(--color-brand-500)" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -253,15 +259,16 @@ export default function AdminAnalyticsPage() {
                       <XAxis dataKey="stage" />
                       <YAxis allowDecimals={false} />
                       <Tooltip />
-                      <Bar dataKey="count" fill="#0f766e" radius={[8, 8, 0, 0]} />
+                      <Bar dataKey="count" fill="var(--color-accent-500)" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </article>
             </div>
-          </section>
+          </Panel>
         </>
       )}
+      </PageShell>
     </AdminShell>
   );
 }

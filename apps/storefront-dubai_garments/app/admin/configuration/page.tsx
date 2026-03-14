@@ -12,6 +12,7 @@ import ExecutionAuditTable from '@/components/admin/configuration/execution-audi
 import ExecutionOutputModal, {
   ExecutionOutputModalState,
 } from '@/components/admin/configuration/execution-output-modal';
+import { PageShell, Panel, Toolbar } from '@/components/ui';
 import {
   ConfigExecutionAuditItem,
   useConfigurationEnv,
@@ -325,10 +326,18 @@ export default function AdminConfigurationPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
+      <PageShell density="compact">
+      <Panel>
         <AdminPageHeader
           title="Configuration Center"
           subtitle="Run operational scripts, scheduler tasks, and data jobs from one controlled admin interface."
+          actions={
+            <Toolbar>
+              <Link href="/admin/observability" className="ui-btn ui-btn-secondary ui-btn-md">
+                Observability
+              </Link>
+            </Toolbar>
+          }
         />
 
         <div className="dg-kpi-grid">
@@ -357,10 +366,9 @@ export default function AdminConfigurationPage() {
             <p className="dg-kpi-meta">Executed from admin server runtime</p>
           </article>
         </div>
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
-        <article className="dg-card dg-panel">
+      <Panel>
           <div className="dg-admin-head">
             <h2 className="dg-title-sm">Environment Variables</h2>
             <span className="dg-badge">{envItems.length} keys</span>
@@ -379,13 +387,13 @@ export default function AdminConfigurationPage() {
           {!envQuery.isLoading && !envQuery.isError && (
             <div className="dg-side-stack">
               {Object.entries(envByTarget).map(([target, items]) => (
-                <article key={target} className="dg-card dg-panel">
+                <article key={target} className="dg-card">
                   <div className="dg-admin-head">
                     <h3 className="dg-title-sm">{titleCase(target)} Environment</h3>
                     <span className="dg-badge">{items.length}</span>
                   </div>
-                  <div className="dg-table-wrap">
-                    <table className="dg-table">
+                  <div className="ui-table-wrap">
+                    <table className="ui-table">
                       <thead>
                         <tr>
                           <th>Key</th>
@@ -423,7 +431,7 @@ export default function AdminConfigurationPage() {
                               <td>
                                 <button
                                   type="button"
-                                  className="dg-btn-primary"
+                                  className="ui-btn ui-btn-primary ui-btn-md"
                                   onClick={() => handleSaveEnv(item)}
                                   disabled={saveEnvMutation.isPending}
                                 >
@@ -443,11 +451,9 @@ export default function AdminConfigurationPage() {
               ))}
             </div>
           )}
-        </article>
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
-        <article className="dg-card dg-panel">
+      <Panel>
           <div className="dg-admin-head">
             <h2 className="dg-title-sm">Terminal</h2>
             <span className="dg-badge">Restricted</span>
@@ -473,7 +479,7 @@ export default function AdminConfigurationPage() {
             </select>
             <button
               type="button"
-              className="dg-btn-primary"
+              className="ui-btn ui-btn-primary ui-btn-md"
               onClick={handleRunTerminalCommand}
               disabled={isTerminalRunning || !terminalCommand}
             >
@@ -481,24 +487,21 @@ export default function AdminConfigurationPage() {
             </button>
           </div>
           {terminalMessage ? <p className="dg-list-meta mt-2">{terminalMessage}</p> : null}
-        </article>
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
-        <article className="dg-card dg-panel">
+      <Panel>
           <div className="dg-admin-head">
             <div>
               <h2 className="dg-title-sm">Observability Workspace</h2>
               <p className="dg-muted-sm">Use the dedicated observability page for service health and metric probes.</p>
             </div>
-            <Link href="/admin/observability" className="dg-btn-primary">
+            <Link href="/admin/observability" className="ui-btn ui-btn-primary ui-btn-md">
               Open Observability
             </Link>
           </div>
-        </article>
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
+      <Panel>
         {scriptsQuery.isLoading && <p className="dg-muted-sm">Loading script registry...</p>}
         {scriptsQuery.isError && (
           <p className="dg-alert-error">
@@ -511,13 +514,13 @@ export default function AdminConfigurationPage() {
         {!scriptsQuery.isLoading && !scriptsQuery.isError && (
           <div className="dg-side-stack">
             {Object.entries(scriptsByCategory).map(([categoryName, categoryScripts]) => (
-              <article key={categoryName} className="dg-card dg-panel">
+              <article key={categoryName} className="dg-card">
                 <div className="dg-admin-head">
                   <h2 className="dg-title-sm">{categoryName} Scripts</h2>
                   <span className="dg-badge">{categoryScripts.length}</span>
                 </div>
-                <div className="dg-table-wrap">
-                  <table className="dg-table">
+                <div className="ui-table-wrap">
+                  <table className="ui-table">
                     <thead>
                       <tr>
                         <th>Script</th>
@@ -579,7 +582,7 @@ export default function AdminConfigurationPage() {
                           <td>
                             <button
                               type="button"
-                              className="dg-btn-primary"
+                              className="ui-btn ui-btn-primary ui-btn-md"
                               onClick={() => handleRun(script)}
                               disabled={Boolean(activeScriptKey)}
                             >
@@ -600,14 +603,13 @@ export default function AdminConfigurationPage() {
             ))}
           </div>
         )}
-      </section>
-      <section className="dg-admin-page">
-        <article className="dg-card dg-panel">
+      </Panel>
+      <Panel>
           <div className="dg-admin-head">
             <h2 className="dg-title-sm">Command Execution Audit</h2>
             <div className="flex items-center gap-2">
               <span className="dg-badge">{auditItems.length} recent runs</span>
-              <Link href="/admin/configuration/audit" className="dg-btn-secondary">
+              <Link href="/admin/configuration/audit" className="ui-btn ui-btn-secondary ui-btn-md">
                 View All
               </Link>
             </div>
@@ -630,8 +632,7 @@ export default function AdminConfigurationPage() {
               onViewOutput={openAuditOutputModal}
             />
           )}
-        </article>
-      </section>
+      </Panel>
       <ExecutionOutputModal
         state={auditOutputModal}
         onClose={() => setAuditOutputModal((prev) => ({ ...prev, open: false }))}
@@ -640,6 +641,7 @@ export default function AdminConfigurationPage() {
         state={runLogModal}
         onClose={() => setRunLogModal((prev) => ({ ...prev, open: false }))}
       />
+      </PageShell>
     </AdminShell>
   );
 }

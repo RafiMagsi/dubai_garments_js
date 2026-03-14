@@ -6,6 +6,7 @@ import AdminPageHeader from '@/components/admin/common/page-header';
 import EndpointPreviewsPanel from '@/components/admin/observability/endpoint-previews-panel';
 import LiveGoldenSignalsPanel from '@/components/admin/observability/live-golden-signals-panel';
 import ServiceChecksPanel from '@/components/admin/observability/service-checks-panel';
+import { PageShell, Panel, Toolbar } from '@/components/ui';
 import {
   useObservabilityChecks,
   useObservabilityHistory,
@@ -112,10 +113,21 @@ export default function AdminObservabilityPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
+      <PageShell density="compact">
+      <Panel>
         <AdminPageHeader
           title="Observability Control Center"
           subtitle="Unified health, metrics, and persistent live history for storefront, FastAPI, AI service, workers, database, and Redis."
+          actions={
+            <Toolbar>
+              <button type="button" className="ui-btn ui-btn-secondary ui-btn-md" onClick={() => void checksQuery.refetch()}>
+                Refresh Checks
+              </button>
+              <button type="button" className="ui-btn ui-btn-secondary ui-btn-md" onClick={() => void historyQuery.refetch()}>
+                Refresh History
+              </button>
+            </Toolbar>
+          }
         />
 
         <div className="dg-kpi-grid">
@@ -126,7 +138,7 @@ export default function AdminObservabilityPage() {
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className="dg-btn-secondary"
+                className="ui-btn ui-btn-secondary ui-btn-md"
                 onClick={() => setLiveEnabled((value) => !value)}
               >
                 {liveEnabled ? 'Pause Live' : 'Resume Live'}
@@ -165,9 +177,9 @@ export default function AdminObservabilityPage() {
             <p className="dg-kpi-meta">Metrics and health endpoints</p>
           </article>
         </div>
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
+      <Panel>
         {historyQuery.isError ? (
           <p className="dg-alert-error">
             {historyQuery.error instanceof Error
@@ -191,9 +203,9 @@ export default function AdminObservabilityPage() {
             availabilityTrend={availabilityTrend}
           />
         )}
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
+      <Panel>
         {checksQuery.isError ? (
           <p className="dg-alert-error">
             {checksQuery.error instanceof Error
@@ -209,9 +221,9 @@ export default function AdminObservabilityPage() {
             onRefresh={() => void checksQuery.refetch()}
           />
         )}
-      </section>
+      </Panel>
 
-      <section className="dg-admin-page">
+      <Panel>
         {targetsQuery.isError ? (
           <p className="dg-alert-error">
             {targetsQuery.error instanceof Error
@@ -226,7 +238,8 @@ export default function AdminObservabilityPage() {
             onFetch={(target) => void handleFetchPreview(target)}
           />
         )}
-      </section>
+      </Panel>
+      </PageShell>
     </AdminShell>
   );
 }

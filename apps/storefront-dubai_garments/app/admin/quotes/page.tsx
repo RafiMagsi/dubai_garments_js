@@ -4,7 +4,16 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
-import { Button, Card, FieldLabel, TextField } from '@/components/ui';
+import {
+  FieldGroup,
+  FieldHint,
+  FieldLabel,
+  PageShell,
+  Panel,
+  StatusBadge,
+  TextField,
+  Toolbar,
+} from '@/components/ui';
 import { useQuotes, useUpdateQuoteStatus } from '@/features/admin/quotes';
 import { formatDate, titleCase } from '@/features/admin/shared/view-format';
 
@@ -33,25 +42,25 @@ export default function AdminQuotesPage() {
 
   return (
     <AdminShell>
-      <section className="dg-admin-page">
-        <AdminPageHeader
-          title="Quote Management"
-          subtitle="Manage draft, sent, approved, rejected, and expired quotations across all deals."
-          actions={
-            <>
-            <Link href="/admin/dashboard" className="dg-btn-secondary">
-              Dashboard
-            </Link>
-            <Link href="/admin/deals" className="dg-btn-secondary">
-              Deals
-            </Link>
-            </>
-          }
-        />
+      <PageShell density="compact">
+        <Panel>
+          <AdminPageHeader
+            title="Quote Management"
+            subtitle="Manage draft, sent, approved, rejected, and expired quotations across all deals."
+            actions={
+              <Toolbar>
+                <Link href="/admin/dashboard" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Dashboard
+                </Link>
+                <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">
+                  Deals
+                </Link>
+              </Toolbar>
+            }
+          />
 
-        <Card className="dg-panel">
           <div className="dg-form-row">
-            <div className="dg-col-fill">
+            <FieldGroup className="dg-col-fill">
               <FieldLabel htmlFor="quoteSearch">Search Quotes</FieldLabel>
               <TextField
                 id="quoteSearch"
@@ -59,8 +68,9 @@ export default function AdminQuotesPage() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search by quote number, customer, company, notes..."
               />
-            </div>
-            <div>
+              <FieldHint>Search by quote number, company, or notes.</FieldHint>
+            </FieldGroup>
+            <FieldGroup>
               <FieldLabel htmlFor="quoteStatus">Status</FieldLabel>
               <select
                 id="quoteStatus"
@@ -75,16 +85,15 @@ export default function AdminQuotesPage() {
                 <option value="rejected">rejected</option>
                 <option value="expired">expired</option>
               </select>
-            </div>
-            <Button type="button" size="sm">
+              <FieldHint>Leave as All Statuses for full visibility.</FieldHint>
+            </FieldGroup>
+            <button type="button" className="ui-btn ui-btn-primary ui-btn-md">
               Apply
-            </Button>
+            </button>
           </div>
-        </Card>
-      </section>
+        </Panel>
 
-      <section className="dg-admin-page">
-        <Card className="dg-panel">
+        <Panel>
           <div className="dg-admin-head">
             <h2 className="dg-title-sm">Quotes</h2>
             <span className="dg-badge">{quotes.length} Total</span>
@@ -98,8 +107,8 @@ export default function AdminQuotesPage() {
           )}
 
           {!isLoading && !isError && (
-            <div className="dg-table-wrap">
-              <table className="dg-table">
+            <div className="ui-table-wrap">
+              <table className="ui-table ui-table-density-compact">
                 <thead>
                   <tr>
                     <th>Quote #</th>
@@ -118,22 +127,20 @@ export default function AdminQuotesPage() {
                       <td>{quote.deal_id ? `#${quote.deal_id}` : '-'}</td>
                       <td>{quote.customer_company_name || quote.customer_id || '-'}</td>
                       <td>
-                        <span className={`dg-status-pill dg-status-pill-${quote.status.toUpperCase()}`}>
-                          {titleCase(quote.status)}
-                        </span>
+                        <StatusBadge status={quote.status}>{titleCase(quote.status)}</StatusBadge>
                       </td>
                       <td>
                         {quote.currency} {quote.total_amount.toFixed(2)}
                       </td>
                       <td>{formatDate(quote.valid_until)}</td>
                       <td className="dg-form-row">
-                        <Link href={`/admin/quotes/${quote.id}`} className="dg-btn-secondary">
+                        <Link href={`/admin/quotes/${quote.id}`} className="ui-btn ui-btn-secondary ui-btn-md">
                           Open
                         </Link>
                         {quote.status === 'draft' && (
                           <button
                             type="button"
-                            className="dg-btn-secondary"
+                            className="ui-btn ui-btn-secondary ui-btn-md"
                             disabled={updateStatusMutation.isPending}
                             onClick={() => handleQuickStatus(quote.id, 'sent')}
                           >
@@ -144,7 +151,7 @@ export default function AdminQuotesPage() {
                           <>
                             <button
                               type="button"
-                              className="dg-btn-secondary"
+                              className="ui-btn ui-btn-secondary ui-btn-md"
                               disabled={updateStatusMutation.isPending}
                               onClick={() => handleQuickStatus(quote.id, 'approved')}
                             >
@@ -152,7 +159,7 @@ export default function AdminQuotesPage() {
                             </button>
                             <button
                               type="button"
-                              className="dg-btn-secondary"
+                              className="ui-btn ui-btn-secondary ui-btn-md"
                               disabled={updateStatusMutation.isPending}
                               onClick={() => handleQuickStatus(quote.id, 'rejected')}
                             >
@@ -172,8 +179,8 @@ export default function AdminQuotesPage() {
               </table>
             </div>
           )}
-        </Card>
-      </section>
+        </Panel>
+      </PageShell>
     </AdminShell>
   );
 }
