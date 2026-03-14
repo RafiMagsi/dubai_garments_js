@@ -56,7 +56,7 @@ Core MVP outcomes:
 
 3. `M09` Products + Quote Builder Completeness
 - Done: product APIs and storefront product flows
-- Partial gap: dedicated admin products management page (full CRUD UX)
+- Done: dedicated admin products management page (`/admin/products`) with create/edit/archive flows
 
 4. `M10` Activity Timeline Completeness
 - Done: activities APIs + activities page

@@ -11,6 +11,7 @@ type RoleRule = {
 
 const BACKOFFICE_ALL: BackofficeRole[] = ['admin', 'sales_manager', 'sales_rep', 'ops'];
 const ADMIN_AND_OPS: BackofficeRole[] = ['admin', 'ops'];
+const ADMIN_AND_SALES_MANAGER: BackofficeRole[] = ['admin', 'sales_manager'];
 const ADMIN_ONLY: BackofficeRole[] = ['admin'];
 
 // Explicit page-by-page matrix for admin area access.
@@ -21,6 +22,7 @@ export const ADMIN_PAGE_ROLE_MATRIX: RoleRule[] = [
   { pattern: '/admin/leads*', roles: BACKOFFICE_ALL },
   { pattern: '/admin/deals*', roles: BACKOFFICE_ALL },
   { pattern: '/admin/quotes*', roles: BACKOFFICE_ALL },
+  { pattern: '/admin/products', roles: ADMIN_AND_SALES_MANAGER },
   { pattern: '/admin/pipeline', roles: BACKOFFICE_ALL },
   { pattern: '/admin/activities', roles: BACKOFFICE_ALL },
   { pattern: '/admin/automations', roles: ADMIN_AND_OPS },
@@ -39,6 +41,7 @@ export const ADMIN_API_ROLE_MATRIX: RoleRule[] = [
   { pattern: '/api/admin/leads*', roles: BACKOFFICE_ALL },
   { pattern: '/api/admin/deals*', roles: BACKOFFICE_ALL },
   { pattern: '/api/admin/quotes*', roles: BACKOFFICE_ALL },
+  { pattern: '/api/admin/products*', roles: ADMIN_AND_SALES_MANAGER },
   { pattern: '/api/admin/pipeline', roles: BACKOFFICE_ALL },
   { pattern: '/api/admin/automation-runs*', roles: ADMIN_AND_OPS },
   { pattern: '/api/admin/observability', roles: ADMIN_AND_OPS },

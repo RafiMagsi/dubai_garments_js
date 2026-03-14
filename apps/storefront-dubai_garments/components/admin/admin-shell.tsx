@@ -13,6 +13,7 @@ const adminNavItems = [
   { href: '/admin/leads', label: 'Leads', hint: 'Qualification Queue', section: 'Sales Operations' },
   { href: '/admin/deals', label: 'Deals', hint: 'Pipeline Board', section: 'Sales Operations' },
   { href: '/admin/quotes', label: 'Quotes', hint: 'Pricing & Approvals', section: 'Sales Operations' },
+  { href: '/admin/products', label: 'Products', hint: 'Catalog Management', section: 'Sales Operations' },
   { href: '/admin/pipeline', label: 'Pipeline', hint: 'Stage View', section: 'Sales Operations' },
   { href: '/admin/activities', label: 'Activities', hint: 'System Timeline', section: 'Sales Operations' },
   { href: '/admin/automations', label: 'Automations', hint: 'Workflow Monitoring', section: 'Platform Control' },
