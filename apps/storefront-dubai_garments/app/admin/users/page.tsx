@@ -81,6 +81,10 @@ export default function AdminUsersPage() {
   const [createIsActive, setCreateIsActive] = useState(true);
   const [createError, setCreateError] = useState('');
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
 
   const filteredUsers = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -152,22 +156,38 @@ export default function AdminUsersPage() {
     }
   }
 
-  async function deleteUser(user: AdminUser) {
-    const confirmed = window.confirm(`Delete user "${user.full_name}" (${user.email})?`);
-    if (!confirmed) return;
+  function openDeleteModal(user: AdminUser) {
+    setDeleteTarget(user);
+    setDeleteError('');
+    setDeleteModalOpen(true);
+  }
 
+  function closeDeleteModal() {
+    if (isDeletingUser) return;
+    setDeleteModalOpen(false);
+    setDeleteTarget(null);
+    setDeleteError('');
+  }
+
+  async function confirmDeleteUser() {
+    if (!deleteTarget) return;
+    setIsDeletingUser(true);
+    setDeleteError('');
     try {
-      const response = await fetch(`/api/admin/users/${user.id}`, {
+      const response = await fetch(`/api/admin/users/${deleteTarget.id}`, {
         method: 'DELETE',
       });
       const payload = await readResponsePayload(response);
       if (!response.ok) {
         throw new Error(String(payload?.message || `Failed to delete user (${response.status}).`));
       }
-      setUsers((previous) => previous.filter((item) => item.id !== user.id));
+      setUsers((previous) => previous.filter((item) => item.id !== deleteTarget.id));
       setActionMessage('User deleted successfully.');
+      closeDeleteModal();
     } catch (deleteError) {
-      setActionMessage(deleteError instanceof Error ? deleteError.message : 'Failed to delete user.');
+      setDeleteError(deleteError instanceof Error ? deleteError.message : 'Failed to delete user.');
+    } finally {
+      setIsDeletingUser(false);
     }
   }
 
@@ -474,7 +494,7 @@ export default function AdminUsersPage() {
                                 <button
                                   type="button"
                                   className="ui-btn ui-btn-secondary ui-btn-md"
-                                  onClick={() => void deleteUser(user)}
+                                  onClick={() => openDeleteModal(user)}
                                 >
                                   Delete
                                 </button>
@@ -653,6 +673,40 @@ export default function AdminUsersPage() {
               className="ui-btn ui-btn-secondary ui-btn-md"
               onClick={closeCreateModal}
               disabled={isCreatingUser}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+      <Modal open={deleteModalOpen} onClose={closeDeleteModal}>
+        <div className="dg-card p-5 sm:p-6">
+          <div className="dg-admin-head">
+            <h2 className="dg-title-sm">Delete User</h2>
+            <span className="dg-badge">Admin Only</span>
+          </div>
+          <p className="dg-help mt-2 mb-4">
+            {deleteTarget
+              ? `Delete "${deleteTarget.full_name}" (${deleteTarget.email})? This action cannot be undone.`
+              : 'Delete this user account?'}
+          </p>
+
+          {deleteError ? <p className="dg-alert-error">{deleteError}</p> : null}
+
+          <div className="dg-form-row mt-4 pt-2 border-t border-[var(--color-border)]">
+            <button
+              type="button"
+              className="ui-btn ui-btn-primary ui-btn-md"
+              onClick={() => void confirmDeleteUser()}
+              disabled={isDeletingUser}
+            >
+              {isDeletingUser ? 'Deleting...' : 'Delete User'}
+            </button>
+            <button
+              type="button"
+              className="ui-btn ui-btn-secondary ui-btn-md"
+              onClick={closeDeleteModal}
+              disabled={isDeletingUser}
             >
               Cancel
             </button>

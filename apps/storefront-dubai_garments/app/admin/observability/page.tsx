@@ -130,7 +130,7 @@ export default function AdminObservabilityPage() {
           }
         />
 
-        <div className="dg-kpi-grid">
+        <div className="dg-kpi-grid dg-kpi-grid-compact">
           <article className="dg-card dg-kpi-card">
             <p className="dg-kpi-label">Live Stats</p>
             <p className="dg-kpi-value">{liveEnabled ? 'ON' : 'OFF'}</p>
@@ -156,17 +156,17 @@ export default function AdminObservabilityPage() {
               </select>
             </div>
           </article>
-          <article className="dg-card dg-kpi-card">
+          <article className="dg-card dg-kpi-card dg-kpi-card-compact">
             <p className="dg-kpi-label">History Samples</p>
             <p className="dg-kpi-value">{historyQuery.isLoading ? '...' : historyDesc.length}</p>
             <p className="dg-kpi-meta">Persisted in background worker</p>
           </article>
-          <article className="dg-card dg-kpi-card">
+          <article className="dg-card dg-kpi-card dg-kpi-card-compact">
             <p className="dg-kpi-label">Healthy Checks</p>
             <p className="dg-kpi-value">{checksQuery.isLoading ? '...' : stats.healthy}</p>
             <p className="dg-kpi-meta">Services currently passing checks</p>
           </article>
-          <article className="dg-card dg-kpi-card">
+          <article className="dg-card dg-kpi-card dg-kpi-card-compact">
             <p className="dg-kpi-label">Failed Checks</p>
             <p className="dg-kpi-value">{checksQuery.isLoading ? '...' : stats.failed}</p>
             <p className="dg-kpi-meta">Services requiring intervention</p>

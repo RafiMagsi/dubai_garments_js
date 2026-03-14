@@ -1834,6 +1834,8 @@
         padding: 0.85rem;
         display: grid;
         gap: 0.62rem;
+        align-content: start;
+        align-items: start;
         border: 1px solid color-mix(in srgb, var(--color-border) 92%, white);
         border-radius: 0.62rem;
         background: #ffffff;
@@ -1994,7 +1996,7 @@
     .dg-admin-main .dg-pipeline-cards,
     .dg-admin-main .dg-two-col-grid,
     .dg-admin-main .dg-record-detail-grid {
-        align-items: start !important;
+        align-items: stretch !important;
     }
 
     .dg-admin-main .dg-kpi-grid > *,
@@ -2004,8 +2006,22 @@
     .dg-admin-main .dg-pipeline-cards > *,
     .dg-admin-main .dg-two-col-grid > *,
     .dg-admin-main .dg-record-detail-grid > * {
+        align-self: stretch !important;
+        height: 100%;
+    }
+
+    /* Explicit opt-out for cards that must stay compact inside otherwise equal-height grids */
+    .dg-admin-main .dg-kpi-grid.dg-kpi-grid-compact {
+        align-items: start !important;
+        grid-auto-rows: min-content;
+    }
+
+    .dg-admin-main .dg-kpi-grid.dg-kpi-grid-compact > .dg-kpi-card-compact {
         align-self: start !important;
-        height: fit-content;
+        justify-self: stretch !important;
+        width: 100%;
+        height: auto !important;
+        min-height: 0 !important;
     }
 
     .dg-admin-main .dg-kpi-label {
