@@ -55,6 +55,7 @@ Docker Compose and Docker Desktop setup is documented here:
 - [Operations Command Playbook](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/operations-command-playbook.md)
 - [Architecture Overview](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/architecture-overview.md)
 - [Project Architecture and AI Roadmap](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/project-architecture-and-ai-roadmap.md)
+- [Twenty-Inspired Agentic CRM Implementation Plan](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/twenty-inspired-agentic-crm-implementation-plan.md)
 - [n8n Follow-up Automation](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-followup-automation.md)
 - [n8n Scheduler Cron](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-scheduler-cron.md)
 - [n8n SendGrid Inbound Test](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/n8n-sendgrid-inbound-test.md)
