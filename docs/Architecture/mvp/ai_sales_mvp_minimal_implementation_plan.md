@@ -48,7 +48,7 @@ Core MVP outcomes:
 ## Partially Done (Center - Close These Next)
 1. `M07` CRM Shell UX Completeness
 - Done: sidebar/header/dashboard/leads/deals/quotes/pipeline/activities pages
-- Partial gap: real global search / quick command input
+- Done: real global search page (`/admin/search`) + topbar quick command input (`Cmd/Ctrl+K`)
 
 2. `M08` Deals/Pipeline UX Completeness
 - Done: deals pages + pipeline stage operations
@@ -76,23 +76,19 @@ Core MVP outcomes:
 - Build admin products list/create/edit/delete screens
 - Add product variant management UX
 
-2. `N02` Global Search / Quick Command Input
-- Add searchable global input in admin shell
-- Support quick navigation to leads/deals/quotes
-
-3. `N03` Dedicated AI Logs Layer
+2. `N03` Dedicated AI Logs Layer
 - Add `ai_logs` DB table + migration
 - Write AI execution traces to `ai_logs`
 - Build admin AI logs page/detail view
 
-4. `N04` AI Draft Actions in UX
+3. `N04` AI Draft Actions in UX
 - Add “draft reply” / “draft quote email” actions in admin UI
 - Add clear loading/error/fallback UX for these actions
 
-5. `N05` Timeline Consistency Pass
+4. `N05` Timeline Consistency Pass
 - Ensure lead/deal/quote detail pages all show complete timeline entries
 
-6. `N06` Demo Seed + Demo Script Hardening
+5. `N06` Demo Seed + Demo Script Hardening
 - One-command demo seed/reset script
 - Scripted end-to-end demo path for sales walkthrough
 
@@ -125,13 +121,12 @@ Core MVP outcomes:
 | `/api/admin/config*`, `/reconfigure` | ✅ | ❌ | ❌ | ❌ |
 
 ## 2. CRM Shell UI
-- Status: `Done with Minor Gap`
+- Status: `Done`
 - Verified done:
 1. Admin shell with sidebar + top header
 2. Dashboard, leads, deals, quotes, pipeline, activities pages
 3. Consistent admin visual system is present
-- Remaining:
-1. Real global search/quick command input (not fully implemented)
+4. Real global search and quick command input implemented
 
 ## 3. Leads Module
 - Status: `Done`
@@ -215,10 +210,9 @@ Core MVP outcomes:
 
 ### Must Finish to Close MVP
 1. Add dedicated admin products management screen
-2. Add explicit global search/quick search input in admin shell
-3. Add dedicated `ai_logs` table + minimal admin AI logs view
-4. Add explicit AI draft-reply/quote-email action in admin UX
-5. Tighten demo seed flow and scripted demo path
+2. Add dedicated `ai_logs` table + minimal admin AI logs view
+3. Add explicit AI draft-reply/quote-email action in admin UX
+4. Tighten demo seed flow and scripted demo path
 
 ## Updated MVP Definition of Done
 MVP is complete when all are true:
@@ -233,9 +227,8 @@ MVP is complete when all are true:
 
 ## Sprint M1 (MVP Closure Core)
 1. Build admin products CRUD page
-2. Add global search input in admin shell
-3. Add `ai_logs` table + backend write path
-4. Add AI logs admin list/detail view
+2. Add `ai_logs` table + backend write path
+3. Add AI logs admin list/detail view
 
 ## Sprint M2 (Demo Hardening)
 1. Add explicit AI draft reply/quote email action in UI

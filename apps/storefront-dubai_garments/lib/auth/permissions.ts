@@ -27,6 +27,7 @@ export const ADMIN_PAGE_ROLE_MATRIX: RoleRule[] = [
   { pattern: '/admin/observability', roles: ADMIN_AND_OPS },
   { pattern: '/admin/configuration*', roles: ADMIN_ONLY },
   { pattern: '/admin/reconfigure', roles: ADMIN_ONLY },
+  { pattern: '/admin/search', roles: BACKOFFICE_ALL },
   { pattern: '/admin/design-system', roles: ADMIN_ONLY },
   { pattern: '/admin/users', roles: ADMIN_ONLY },
   { pattern: '/admin/rbac-matrix', roles: ADMIN_ONLY },
