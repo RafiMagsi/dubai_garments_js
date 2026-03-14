@@ -14,7 +14,7 @@ import {
   useQuotePdfStatus,
   useUpdateQuoteStatus,
 } from '@/features/admin/quotes';
-import { titleCase } from '@/features/admin/shared/view-format';
+import { shortCode, titleCase } from '@/features/admin/shared/view-format';
 
 const statusOptions: Array<'draft' | 'sent' | 'approved' | 'rejected' | 'expired'> = [
   'draft',
@@ -74,6 +74,38 @@ export default function AdminQuoteDetailPage() {
             meta: null,
           },
           {
+            id: `system:quote-items:${quote.id}`,
+            occurredAt: quote.updated_at,
+            title: 'Quote Items Updated',
+            details: `${items.length} item(s) in this quote. Total ${quote.currency} ${quote.total_amount.toFixed(2)}.`,
+            type: 'quote_updated',
+            meta: null,
+          },
+          ...(quote.deal_id
+            ? [
+                {
+                  id: `system:quote-linked-deal:${quote.id}`,
+                  occurredAt: quote.updated_at,
+                  title: 'Linked Deal',
+                  details: `Linked to deal ${shortCode(quote.deal_id)}.`,
+                  type: 'deal_created',
+                  meta: null,
+                } as RecordTimelineEvent,
+              ]
+            : []),
+          ...(quote.lead_id
+            ? [
+                {
+                  id: `system:quote-linked-lead:${quote.id}`,
+                  occurredAt: quote.updated_at,
+                  title: 'Linked Lead',
+                  details: `Linked to lead ${shortCode(quote.lead_id)}.`,
+                  type: 'lead_created',
+                  meta: null,
+                } as RecordTimelineEvent,
+              ]
+            : []),
+          {
             id: `system:quote-pdf:${quote.id}`,
             occurredAt: quote.updated_at,
             title: 'PDF Status',
@@ -85,7 +117,7 @@ export default function AdminQuoteDetailPage() {
       : [];
 
     return [...activityEvents, ...systemEvents];
-  }, [activitiesQuery.data?.items, pdfStatus?.status, quote]);
+  }, [activitiesQuery.data?.items, items.length, pdfStatus?.status, quote]);
 
   useEffect(() => {
     if (!quote) return;

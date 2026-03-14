@@ -71,8 +71,39 @@ export default function AdminDealDetailsPage() {
       meta: `${deal?.lead_email || '-'} • ${titleCase(communication.channel)}`,
     }));
 
-    return [...activityEvents, ...communicationEvents];
-  }, [activitiesQuery.data?.items, communications, deal?.lead_email]);
+    const quoteEvents = quotes.map((quote) => ({
+      id: `quote:${quote.id}`,
+      occurredAt: deal?.updated_at || deal?.created_at || new Date().toISOString(),
+      title: `Quote ${quote.quote_number}`,
+      details: `${titleCase(quote.status)} • ${quote.currency} ${Number(quote.total_amount || 0).toFixed(2)}`,
+      type: 'quote_created',
+      meta: null,
+    }));
+
+    const systemEvents: RecordTimelineEvent[] = [];
+    if (deal?.created_at) {
+      systemEvents.push({
+        id: `system:deal-created:${deal.id}`,
+        occurredAt: deal.created_at,
+        title: 'Deal Created',
+        details: `Deal ${shortCode(deal.id)} entered the pipeline.`,
+        type: 'deal_created',
+        meta: deal.title || null,
+      });
+    }
+    if (deal?.updated_at) {
+      systemEvents.push({
+        id: `system:deal-updated:${deal.id}`,
+        occurredAt: deal.updated_at,
+        title: 'Deal Updated',
+        details: `Current stage: ${titleCase(deal.stage)}.`,
+        type: 'deal_stage_changed',
+        meta: null,
+      });
+    }
+
+    return [...activityEvents, ...communicationEvents, ...quoteEvents, ...systemEvents];
+  }, [activitiesQuery.data?.items, communications, deal, quotes]);
 
   useEffect(() => {
     if (!deal) return;

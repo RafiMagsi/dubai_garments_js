@@ -61,8 +61,40 @@ export default function AdminLeadDetailsPage() {
       meta: `${lead?.email || '-'} • ${titleCase(communication.channel)}`,
     }));
 
-    return [...activityEvents, ...communicationEvents];
-  }, [communications, data?.activities, lead?.email]);
+    const systemEvents: RecordTimelineEvent[] = [];
+    if (lead?.created_at) {
+      systemEvents.push({
+        id: `system:lead-created:${lead.id}`,
+        occurredAt: lead.created_at,
+        title: 'Lead Created',
+        details: `Lead ${shortCode(lead.id)} was created from ${lead.source || 'unknown source'}.`,
+        type: 'lead_created',
+        meta: lead.company_name || lead.contact_name || null,
+      });
+    }
+    if (lead?.updated_at) {
+      systemEvents.push({
+        id: `system:lead-updated:${lead.id}`,
+        occurredAt: lead.updated_at,
+        title: 'Lead Updated',
+        details: `Current status: ${titleCase(lead.status)}.`,
+        type: 'lead_updated',
+        meta: null,
+      });
+    }
+    if (deal?.id) {
+      systemEvents.push({
+        id: `system:lead-linked-deal:${lead?.id}:${deal.id}`,
+        occurredAt: deal.created_at || lead?.updated_at || lead?.created_at || new Date().toISOString(),
+        title: 'Deal Linked',
+        details: `Converted/linked to deal ${shortCode(deal.id)} (${titleCase(deal.stage || 'new')}).`,
+        type: 'deal_created',
+        meta: deal.title || null,
+      });
+    }
+
+    return [...activityEvents, ...communicationEvents, ...systemEvents];
+  }, [communications, data?.activities, deal?.created_at, deal?.id, deal?.stage, deal?.title, lead]);
 
   useEffect(() => {
     if (!lead) return;
