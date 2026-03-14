@@ -49,6 +49,7 @@ export default function AdminDealDetailsPage() {
   const [emailMessage, setEmailMessage] = useState('');
   const [sessionUserId, setSessionUserId] = useState<string>('');
   const [ownerDraft, setOwnerDraft] = useState('');
+  const [ownerMode, setOwnerMode] = useState<'self' | 'unassigned' | 'custom'>('unassigned');
 
   const deal = data?.item;
   const quotes = useMemo(() => data?.quotes ?? [], [data?.quotes]);
@@ -138,8 +139,24 @@ export default function AdminDealDetailsPage() {
 
   useEffect(() => {
     if (!deal) return;
-    setOwnerDraft(deal.owner_user_id || '');
-  }, [deal]);
+    if (deal.owner_user_id) {
+      if (sessionUserId && deal.owner_user_id === sessionUserId) {
+        setOwnerMode('self');
+        setOwnerDraft(sessionUserId);
+      } else {
+        setOwnerMode('custom');
+        setOwnerDraft(deal.owner_user_id);
+      }
+      return;
+    }
+    if (sessionUserId) {
+      setOwnerMode('self');
+      setOwnerDraft(sessionUserId);
+      return;
+    }
+    setOwnerMode('unassigned');
+    setOwnerDraft('');
+  }, [deal, sessionUserId]);
 
   async function handleUpdateDeal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,14 +169,22 @@ export default function AdminDealDetailsPage() {
     const valueEstimate = Number(formData.get('value_estimate') || 0);
     const probability = Number(formData.get('probability_pct') || 0);
     const ownerUserIdRaw = String(formData.get('owner_user_id') || '').trim();
+    const ownerModeRaw = String(formData.get('owner_mode') || ownerMode);
     const notes = String(formData.get('notes') || '').trim();
+
+    const ownerUserId =
+      ownerModeRaw === 'self'
+        ? sessionUserId || ownerUserIdRaw || undefined
+        : ownerModeRaw === 'unassigned'
+          ? undefined
+          : ownerUserIdRaw || undefined;
 
     try {
       await updateDealMutation.mutateAsync({
         dealId: deal.id,
         payload: {
           stage,
-          owner_user_id: ownerUserIdRaw || undefined,
+          owner_user_id: ownerUserId,
           expected_value: Number.isNaN(valueEstimate) ? undefined : valueEstimate,
           probability_pct: Number.isNaN(probability) ? undefined : probability,
           notes: notes || undefined,
@@ -509,8 +534,36 @@ export default function AdminDealDetailsPage() {
                       />
                     </div>
                     <div className="dg-field">
+                      <label htmlFor="owner_mode" className="dg-label">
+                        Owner Assignment
+                      </label>
+                      <select
+                        id="owner_mode"
+                        name="owner_mode"
+                        className="dg-select"
+                        value={ownerMode}
+                        onChange={(event) => {
+                          const nextMode = event.target.value as 'self' | 'unassigned' | 'custom';
+                          setOwnerMode(nextMode);
+                          if (nextMode === 'self') {
+                            setOwnerDraft(sessionUserId);
+                          }
+                          if (nextMode === 'unassigned') {
+                            setOwnerDraft('');
+                          }
+                        }}
+                      >
+                        <option value="self">Assign to me (recommended)</option>
+                        <option value="unassigned">Leave unassigned</option>
+                        <option value="custom">Assign by user ID</option>
+                      </select>
+                      <p className="dg-help">
+                        Sales default keeps deal ownership on current signed-in user.
+                      </p>
+                    </div>
+                    <div className="dg-field">
                       <label htmlFor="owner_user_id" className="dg-label">
-                        Owner User ID
+                        Owner User ID (for custom assignment)
                       </label>
                       <input
                         id="owner_user_id"
@@ -519,13 +572,17 @@ export default function AdminDealDetailsPage() {
                         className="dg-input"
                         value={ownerDraft}
                         onChange={(event) => setOwnerDraft(event.target.value)}
-                        placeholder="Assign deal owner UUID"
+                        placeholder="Enter owner user UUID"
+                        disabled={ownerMode !== 'custom'}
                       />
                       <div className="dg-form-row mt-2">
                         <button
                           type="button"
                           className="ui-btn ui-btn-secondary ui-btn-sm"
-                          onClick={() => setOwnerDraft(sessionUserId)}
+                          onClick={() => {
+                            setOwnerMode('self');
+                            setOwnerDraft(sessionUserId);
+                          }}
                           disabled={!sessionUserId}
                         >
                           Assign to me
@@ -533,7 +590,10 @@ export default function AdminDealDetailsPage() {
                         <button
                           type="button"
                           className="ui-btn ui-btn-secondary ui-btn-sm"
-                          onClick={() => setOwnerDraft('')}
+                          onClick={() => {
+                            setOwnerMode('unassigned');
+                            setOwnerDraft('');
+                          }}
                         >
                           Unassign
                         </button>
@@ -702,6 +762,14 @@ export default function AdminDealDetailsPage() {
                 title="Deal Timeline"
                 events={timelineEvents}
                 emptyText="No activities or communications yet for this deal."
+                isLoading={activitiesQuery.isLoading}
+                errorText={
+                  activitiesQuery.isError
+                    ? activitiesQuery.error instanceof Error
+                      ? activitiesQuery.error.message
+                      : 'Failed to load deal timeline.'
+                    : null
+                }
               />
             </div>
           </div>

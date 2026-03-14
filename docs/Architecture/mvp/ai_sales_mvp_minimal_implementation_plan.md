@@ -71,19 +71,18 @@ Core MVP outcomes:
 - Done: dedicated `ai_logs` trace table + admin AI log viewer
 - Done: explicit AI draft-reply/quote-email action in admin UX (lead/deal/quote admin flows)
 
-## Needs To Be Done (Bottom - Focus Work Queue)
-1. `N08` Sales Workflow Polish
-- Tighten owner assignment UX and sales-team defaults
-- Add clearer empty/loading/error states in CRM record detail panels
-
-2. `N09` Pilot Readiness
-- Add basic backup/restore runbook for pilot environments
-- Finalize rollout/rollback notes for deployment handoff
-
 ## Recently Closed
 1. `N07` Demo QA Freeze Checklist — `Done`
 - Final smoke checklist added: `docs/qa/mvp-demo-freeze-checklist.md`
 - Reproducible pass/fail sign-off template added: `docs/qa/mvp-demo-signoff-template.md`
+
+2. `N09` Pilot Readiness — `Done`
+- Backup/restore runbook added: `docs/ops/pilot-backup-restore-runbook.md`
+- Rollout/rollback handoff added: `docs/ops/pilot-rollout-rollback-handoff.md`
+
+3. `N08` Sales Workflow Polish — `Done`
+- Owner assignment UX tightened on deal detail with explicit owner mode defaults (`Assign to me`, `Unassigned`, `Custom`)
+- Timeline panels now include clearer loading/error/empty states across lead/deal/quote details
 
 ## Status Snapshot (As of March 14, 2026)
 
@@ -204,7 +203,7 @@ Core MVP outcomes:
 
 ### Must Finish to Close MVP
 1. Execute demo QA freeze checklist and capture sign-off report
-2. Complete pilot rollout/rollback runbook hardening
+2. Pilot rehearsal pass and release sign-off
 
 ## Updated MVP Definition of Done
 MVP is complete when all are true:
@@ -222,8 +221,8 @@ MVP is complete when all are true:
 2. Sales workflow polish (owner/default/edge-state improvements)
 
 ## Sprint M2 (Demo Hardening)
-1. Pilot readiness docs (backup/restore + rollback)
-2. Run smoke + demo rehearsal checklist and freeze MVP
+1. Run smoke + demo rehearsal checklist and freeze MVP
+2. Publish final pilot sign-off evidence
 
 ## Final Note
 Current project is beyond “idea stage” and already near MVP-complete. Remaining work is mostly productization and demo-hardening, not foundational architecture.

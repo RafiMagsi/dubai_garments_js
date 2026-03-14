@@ -480,6 +480,14 @@ export default function AdminQuoteDetailPage() {
               title="Quote Timeline"
               events={timelineEvents}
               emptyText="No activity timeline available for this quote yet."
+              isLoading={activitiesQuery.isLoading}
+              errorText={
+                activitiesQuery.isError
+                  ? activitiesQuery.error instanceof Error
+                    ? activitiesQuery.error.message
+                    : 'Failed to load quote timeline.'
+                  : null
+              }
             />
           </div>
         </Panel>

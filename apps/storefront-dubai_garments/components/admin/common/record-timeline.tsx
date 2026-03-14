@@ -16,6 +16,8 @@ type RecordTimelineProps = {
   title?: string;
   events: RecordTimelineEvent[];
   emptyText?: string;
+  isLoading?: boolean;
+  errorText?: string | null;
 };
 
 function statusFromType(type: string): 'info' | 'warning' | 'success' | 'danger' | 'neutral' {
@@ -31,6 +33,8 @@ export default function RecordTimeline({
   title = 'Timeline',
   events,
   emptyText = 'No timeline events yet.',
+  isLoading = false,
+  errorText = null,
 }: RecordTimelineProps) {
   const sortedEvents = [...events].sort((a, b) => {
     return new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime();
@@ -39,7 +43,11 @@ export default function RecordTimeline({
   return (
     <div className="dg-card">
       <h2 className="dg-title-sm">{title}</h2>
-      {sortedEvents.length > 0 ? (
+      {isLoading ? (
+        <p className="dg-muted-sm">Loading timeline...</p>
+      ) : errorText ? (
+        <p className="dg-alert-error">{errorText}</p>
+      ) : sortedEvents.length > 0 ? (
         <div className="dg-list dg-list-density-compact">
           {sortedEvents.map((event) => (
             <div key={event.id} className="dg-list-row">

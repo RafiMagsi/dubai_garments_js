@@ -381,6 +381,8 @@ export default function AdminLeadDetailsPage() {
                 title="Lead Timeline"
                 events={timelineEvents}
                 emptyText="No activities or communications yet for this lead."
+                isLoading={isLoading}
+                errorText={isError ? (error instanceof Error ? error.message : 'Failed to load lead timeline.') : null}
               />
             </div>
 
