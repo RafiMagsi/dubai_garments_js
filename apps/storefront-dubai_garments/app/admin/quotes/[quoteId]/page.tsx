@@ -1,17 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
+import RecordTimeline, { RecordTimelineEvent } from '@/components/admin/common/record-timeline';
 import { Card, FieldLabel, PageShell, Panel, TextAreaField, Toolbar } from '@/components/ui';
+import { useActivities } from '@/features/admin/activities';
 import {
   useGenerateQuotePdf,
   useQuoteById,
   useQuotePdfStatus,
   useUpdateQuoteStatus,
 } from '@/features/admin/quotes';
+import { titleCase } from '@/features/admin/shared/view-format';
 
 const statusOptions: Array<'draft' | 'sent' | 'approved' | 'rejected' | 'expired'> = [
   'draft',
@@ -25,6 +28,7 @@ export default function AdminQuoteDetailPage() {
   const params = useParams<{ quoteId: string }>();
   const quoteId = params?.quoteId;
   const { data, isLoading, isError, error } = useQuoteById(quoteId);
+  const activitiesQuery = useActivities({ quote_id: quoteId });
   const { data: pdfStatus } = useQuotePdfStatus(quoteId);
   const updateStatusMutation = useUpdateQuoteStatus();
   const generatePdfMutation = useGenerateQuotePdf();
@@ -32,6 +36,48 @@ export default function AdminQuoteDetailPage() {
 
   const quote = data?.item;
   const items = data?.items ?? [];
+  const timelineEvents = useMemo<RecordTimelineEvent[]>(() => {
+    const activityEvents =
+      activitiesQuery.data?.items?.map((activity) => ({
+        id: `activity:${activity.id}`,
+        occurredAt: activity.occurred_at || activity.created_at,
+        title: activity.title || titleCase(activity.activity_type),
+        details: activity.details || null,
+        type: activity.activity_type,
+        meta: null,
+      })) ?? [];
+
+    const systemEvents: RecordTimelineEvent[] = quote
+      ? [
+          {
+            id: `system:quote-created:${quote.id}`,
+            occurredAt: quote.created_at,
+            title: 'Quote Created',
+            details: `Quote ${quote.quote_number} was created.`,
+            type: 'quote_created',
+            meta: null,
+          },
+          {
+            id: `system:quote-updated:${quote.id}`,
+            occurredAt: quote.updated_at,
+            title: 'Quote Updated',
+            details: `Status is currently ${quote.status}.`,
+            type: 'quote_updated',
+            meta: null,
+          },
+          {
+            id: `system:quote-pdf:${quote.id}`,
+            occurredAt: quote.updated_at,
+            title: 'PDF Status',
+            details: `Proposal PDF is ${pdfStatus?.status || 'not_generated'}.`,
+            type: 'quote_pdf_status',
+            meta: null,
+          },
+        ]
+      : [];
+
+    return [...activityEvents, ...systemEvents];
+  }, [activitiesQuery.data?.items, pdfStatus?.status, quote]);
 
   async function handleStatusChange(status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired') {
     if (!quoteId) return;
@@ -230,6 +276,12 @@ export default function AdminQuoteDetailPage() {
                 </table>
               </div>
             </Card>
+
+            <RecordTimeline
+              title="Quote Timeline"
+              events={timelineEvents}
+              emptyText="No activity timeline available for this quote yet."
+            />
           </div>
         </Panel>
       )}

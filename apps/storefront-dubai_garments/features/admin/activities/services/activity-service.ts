@@ -9,6 +9,7 @@ export async function getActivities(filters?: {
   activity_type?: ActivityType | 'all';
   lead_id?: string;
   deal_id?: string;
+  quote_id?: string;
 }): Promise<ActivitiesResponse> {
   const response = await apiClient.get<ActivitiesResponse>('/admin/activities', {
     params: {
@@ -18,6 +19,7 @@ export async function getActivities(filters?: {
           : undefined,
       lead_id: filters?.lead_id || undefined,
       deal_id: filters?.deal_id || undefined,
+      quote_id: filters?.quote_id || undefined,
     },
   });
   return response.data;

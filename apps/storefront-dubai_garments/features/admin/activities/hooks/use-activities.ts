@@ -6,6 +6,7 @@ export function useActivities(filters?: {
   activity_type?: ActivityType | 'all';
   lead_id?: string;
   deal_id?: string;
+  quote_id?: string;
 }) {
   return useQuery({
     queryKey: ['activities', filters],

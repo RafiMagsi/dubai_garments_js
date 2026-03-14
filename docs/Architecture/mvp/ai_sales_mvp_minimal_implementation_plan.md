@@ -60,7 +60,7 @@ Core MVP outcomes:
 
 4. `M10` Activity Timeline Completeness
 - Done: activities APIs + activities page
-- Partial gap: consistent per-record timeline parity across detail pages
+- Done: consistent per-record timeline parity across lead/deal/quote detail pages
 
 5. `M11` Settings/Configuration Completeness
 - Done: configuration panel + DB-backed system settings + env/runtime controls

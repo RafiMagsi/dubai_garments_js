@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import AdminPageHeader from '@/components/admin/common/page-header';
+import RecordTimeline, { RecordTimelineEvent } from '@/components/admin/common/record-timeline';
 import AdminShell from '@/components/admin/admin-shell';
 import { PageShell, Panel, StatusBadge, Toolbar } from '@/components/ui';
 import { useConvertLeadToDeal } from '@/features/admin/deals/hooks/use-deals';
@@ -34,6 +35,28 @@ export default function AdminLeadDetailsPage() {
   const lead = data?.item;
   const deal = data?.deal;
   const communications = useMemo(() => data?.communications ?? [], [data?.communications]);
+  const timelineEvents = useMemo<RecordTimelineEvent[]>(() => {
+    const activityEvents =
+      data?.activities?.map((activity) => ({
+        id: `activity:${activity.id}`,
+        occurredAt: activity.occurred_at || activity.created_at,
+        title: activity.title || titleCase(activity.activity_type),
+        details: activity.details || null,
+        type: activity.activity_type,
+        meta: null,
+      })) ?? [];
+
+    const communicationEvents = communications.map((communication) => ({
+      id: `comm:${communication.id}`,
+      occurredAt: communication.sent_at || communication.created_at,
+      title: communication.subject || 'Email Sent',
+      details: communication.message_text || null,
+      type: 'email_sent',
+      meta: `${lead?.email || '-'} • ${titleCase(communication.channel)}`,
+    }));
+
+    return [...activityEvents, ...communicationEvents];
+  }, [communications, data?.activities, lead?.email]);
 
   async function handleStatusUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -208,25 +231,11 @@ export default function AdminLeadDetailsPage() {
                 <p className="dg-section-copy">{lead.notes || 'No message submitted.'}</p>
               </div>
 
-              <div className="dg-card">
-                <h2 className="dg-title-sm">Recent Communications</h2>
-                {communications.length > 0 ? (
-                  <div className="dg-list dg-list-density-compact">
-                    {communications.map((communication) => (
-                      <div key={communication.id} className="dg-list-row">
-                        <div className="dg-list-main">
-                          <p className="dg-list-title">{communication.subject || 'No subject'}</p>
-                          <p className="dg-list-meta">
-                            {lead.email || '-'} • SENT • {formatDateTime(communication.sent_at || communication.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="dg-muted-sm">No communication logs yet.</p>
-                )}
-              </div>
+              <RecordTimeline
+                title="Lead Timeline"
+                events={timelineEvents}
+                emptyText="No activities or communications yet for this lead."
+              />
             </div>
 
             <div className="dg-side-stack dg-record-rail">

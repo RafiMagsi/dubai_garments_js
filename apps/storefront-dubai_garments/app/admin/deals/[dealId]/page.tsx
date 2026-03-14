@@ -5,8 +5,10 @@ import { FormEvent, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { isAxiosError } from 'axios';
 import AdminPageHeader from '@/components/admin/common/page-header';
+import RecordTimeline, { RecordTimelineEvent } from '@/components/admin/common/record-timeline';
 import AdminShell from '@/components/admin/admin-shell';
 import { PageShell, Panel, StatusBadge, Toolbar } from '@/components/ui';
+import { useActivities } from '@/features/admin/activities';
 import { DealStage, useDealById, useSendDealEmail, useUpdateDeal } from '@/features/admin/deals';
 import { useProducts } from '@/features/products';
 import { formatAed, getStartingUnitPriceAED } from '@/features/products/utils/product-pricing';
@@ -28,6 +30,7 @@ export default function AdminDealDetailsPage() {
   const dealId = typeof params.dealId === 'string' ? params.dealId : '';
 
   const { data, isLoading, isError, error } = useDealById(dealId);
+  const activitiesQuery = useActivities({ deal_id: dealId || undefined });
   const { data: products = [] } = useProducts();
   const updateDealMutation = useUpdateDeal();
   const sendDealEmailMutation = useSendDealEmail();
@@ -43,6 +46,28 @@ export default function AdminDealDetailsPage() {
   const deal = data?.item;
   const quotes = useMemo(() => data?.quotes ?? [], [data?.quotes]);
   const communications = useMemo(() => data?.communications ?? [], [data?.communications]);
+  const timelineEvents = useMemo<RecordTimelineEvent[]>(() => {
+    const activityEvents =
+      activitiesQuery.data?.items?.map((activity) => ({
+        id: `activity:${activity.id}`,
+        occurredAt: activity.occurred_at || activity.created_at,
+        title: activity.title || titleCase(activity.activity_type),
+        details: activity.details || null,
+        type: activity.activity_type,
+        meta: null,
+      })) ?? [];
+
+    const communicationEvents = communications.map((communication) => ({
+      id: `comm:${communication.id}`,
+      occurredAt: communication.sent_at || communication.created_at,
+      title: communication.subject || 'Email Sent',
+      details: communication.message_text || null,
+      type: 'email_sent',
+      meta: `${deal?.lead_email || '-'} • ${titleCase(communication.channel)}`,
+    }));
+
+    return [...activityEvents, ...communicationEvents];
+  }, [activitiesQuery.data?.items, communications, deal?.lead_email]);
 
   async function handleUpdateDeal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -504,26 +529,11 @@ export default function AdminDealDetailsPage() {
                 </form>
               </div>
 
-              <div className="dg-card">
-                <h2 className="dg-title-sm">Recent Communications</h2>
-                {communications.length > 0 ? (
-                  <div className="dg-list">
-                    {communications.map((communication) => (
-                      <div key={communication.id} className="dg-list-row">
-                        <div className="dg-list-main">
-                          <p className="dg-list-title">{communication.subject || 'No subject'}</p>
-                          <p className="dg-list-meta">
-                            {deal.lead_email || '-'} • SENT •{' '}
-                            {formatDateTime(communication.sent_at || communication.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="dg-muted-sm">No communication logs yet.</p>
-                )}
-              </div>
+              <RecordTimeline
+                title="Deal Timeline"
+                events={timelineEvents}
+                emptyText="No activities or communications yet for this deal."
+              />
             </div>
           </div>
         )}
