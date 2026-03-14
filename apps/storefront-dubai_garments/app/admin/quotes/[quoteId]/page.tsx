@@ -41,6 +41,8 @@ export default function AdminQuoteDetailPage() {
   const [quoteEmailSuccess, setQuoteEmailSuccess] = useState<string | null>(null);
   const [quoteEmailError, setQuoteEmailError] = useState<string | null>(null);
   const [quoteEmailDraftMeta, setQuoteEmailDraftMeta] = useState<string | null>(null);
+  const [statusActionSuccess, setStatusActionSuccess] = useState<string | null>(null);
+  const [statusActionError, setStatusActionError] = useState<string | null>(null);
 
   const quote = data?.item;
   const items = data?.items ?? [];
@@ -132,10 +134,17 @@ export default function AdminQuoteDetailPage() {
 
   async function handleStatusChange(status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired') {
     if (!quoteId) return;
-    await updateStatusMutation.mutateAsync({
-      quoteId,
-      payload: { status, notes: notes || undefined },
-    });
+    setStatusActionSuccess(null);
+    setStatusActionError(null);
+    try {
+      await updateStatusMutation.mutateAsync({
+        quoteId,
+        payload: { status, notes: notes || undefined },
+      });
+      setStatusActionSuccess(`Quote status updated to ${status}.`);
+    } catch (error) {
+      setStatusActionError(error instanceof Error ? error.message : 'Failed to update quote status.');
+    }
   }
 
   async function handleGeneratePdf() {
@@ -249,6 +258,16 @@ export default function AdminQuoteDetailPage() {
         </Panel>
       )}
 
+      {!isLoading && !isError && !quote ? (
+        <Panel>
+          <Card>
+            <p className="dg-alert-error">
+              Quote not found or you do not have access to this record.
+            </p>
+          </Card>
+        </Panel>
+      ) : null}
+
       {quote && !isLoading && !isError && (
         <Panel>
           <div className="dg-two-col-grid">
@@ -297,6 +316,8 @@ export default function AdminQuoteDetailPage() {
 
               <Card className="dg-summary-card">
                 <h3 className="dg-title-sm">Status Actions</h3>
+                {statusActionSuccess ? <div className="dg-alert-success">{statusActionSuccess}</div> : null}
+                {statusActionError ? <div className="dg-alert-error">{statusActionError}</div> : null}
                 <div className="dg-form-row">
                   {statusOptions.map((status) => (
                     <button
@@ -445,7 +466,9 @@ export default function AdminQuoteDetailPage() {
                     ))}
                     {items.length === 0 && (
                       <tr>
-                        <td colSpan={5}>No quote items found.</td>
+                        <td colSpan={5}>
+                          No quote items found. Create/rebuild quote items from deal detail to continue.
+                        </td>
                       </tr>
                     )}
                   </tbody>

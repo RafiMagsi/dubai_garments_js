@@ -47,6 +47,8 @@ export default function AdminDealDetailsPage() {
   const [emailRecipient, setEmailRecipient] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
+  const [sessionUserId, setSessionUserId] = useState<string>('');
+  const [ownerDraft, setOwnerDraft] = useState('');
 
   const deal = data?.item;
   const quotes = useMemo(() => data?.quotes ?? [], [data?.quotes]);
@@ -117,6 +119,28 @@ export default function AdminDealDetailsPage() {
     setEmailDraftMeta(null);
   }, [deal]);
 
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const response = await fetch('/api/auth/session', { cache: 'no-store' });
+        const payload = (await response.json()) as { authenticated?: boolean; user?: { id?: string } };
+        if (!isMounted || !payload?.authenticated || !payload?.user?.id) return;
+        setSessionUserId(payload.user.id);
+      } catch {
+        // no-op
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!deal) return;
+    setOwnerDraft(deal.owner_user_id || '');
+  }, [deal]);
+
   async function handleUpdateDeal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!deal) return;
@@ -127,6 +151,7 @@ export default function AdminDealDetailsPage() {
     const stage = String(formData.get('stage') || '').toLowerCase() as DealStage;
     const valueEstimate = Number(formData.get('value_estimate') || 0);
     const probability = Number(formData.get('probability_pct') || 0);
+    const ownerUserIdRaw = String(formData.get('owner_user_id') || '').trim();
     const notes = String(formData.get('notes') || '').trim();
 
     try {
@@ -134,6 +159,7 @@ export default function AdminDealDetailsPage() {
         dealId: deal.id,
         payload: {
           stage,
+          owner_user_id: ownerUserIdRaw || undefined,
           expected_value: Number.isNaN(valueEstimate) ? undefined : valueEstimate,
           probability_pct: Number.isNaN(probability) ? undefined : probability,
           notes: notes || undefined,
@@ -332,6 +358,14 @@ export default function AdminDealDetailsPage() {
           </div>
         )}
 
+        {!isLoading && !isError && !deal ? (
+          <div className="dg-card">
+            <p className="dg-alert-error">
+              Deal not found or you do not have access to this record.
+            </p>
+          </div>
+        ) : null}
+
         {deal && (
           <div className="dg-two-col-grid">
             <div className="dg-side-stack">
@@ -473,6 +507,37 @@ export default function AdminDealDetailsPage() {
                         className="dg-input"
                         defaultValue={deal.expected_value}
                       />
+                    </div>
+                    <div className="dg-field">
+                      <label htmlFor="owner_user_id" className="dg-label">
+                        Owner User ID
+                      </label>
+                      <input
+                        id="owner_user_id"
+                        name="owner_user_id"
+                        type="text"
+                        className="dg-input"
+                        value={ownerDraft}
+                        onChange={(event) => setOwnerDraft(event.target.value)}
+                        placeholder="Assign deal owner UUID"
+                      />
+                      <div className="dg-form-row mt-2">
+                        <button
+                          type="button"
+                          className="ui-btn ui-btn-secondary ui-btn-sm"
+                          onClick={() => setOwnerDraft(sessionUserId)}
+                          disabled={!sessionUserId}
+                        >
+                          Assign to me
+                        </button>
+                        <button
+                          type="button"
+                          className="ui-btn ui-btn-secondary ui-btn-sm"
+                          onClick={() => setOwnerDraft('')}
+                        >
+                          Unassign
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="dg-field">

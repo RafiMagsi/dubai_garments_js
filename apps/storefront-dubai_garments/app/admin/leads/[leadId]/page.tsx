@@ -37,6 +37,10 @@ export default function AdminLeadDetailsPage() {
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
   const [dealSuccess, setDealSuccess] = useState<string | null>(null);
+  const [dealError, setDealError] = useState<string | null>(null);
+  const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<string>('');
 
   const lead = data?.item;
   const deal = data?.deal;
@@ -108,39 +112,77 @@ export default function AdminLeadDetailsPage() {
     setEmailDraftMeta(null);
   }, [lead]);
 
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const response = await fetch('/api/auth/session', { cache: 'no-store' });
+        const payload = (await response.json()) as { authenticated?: boolean; user?: { id?: string } };
+        if (!isMounted || !payload?.authenticated || !payload?.user?.id) return;
+        setSessionUserId(payload.user.id);
+      } catch {
+        // Keep silent; owner assignment will fall back to unassigned.
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   async function handleStatusUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!lead) return;
+    setStatusSuccess(null);
+    setStatusError(null);
     const formData = new FormData(event.currentTarget);
     const status = String(formData.get('status') || '').toLowerCase() as LeadStatus;
-    await updateStatusMutation.mutateAsync({
-      leadId: lead.id,
-      payload: { status },
-    });
+    try {
+      await updateStatusMutation.mutateAsync({
+        leadId: lead.id,
+        payload: { status },
+      });
+      setStatusSuccess(`Lead status updated to ${titleCase(status)}.`);
+    } catch (error) {
+      setStatusError(error instanceof Error ? error.message : 'Failed to update lead status.');
+    }
   }
 
   async function handleCreateDeal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!lead) return;
+    setDealSuccess(null);
+    setDealError(null);
 
     const formData = new FormData(event.currentTarget);
     const priority = String(formData.get('priority') || 'medium');
+    const ownerMode = String(formData.get('owner_mode') || 'self');
     const valueEstimateRaw = String(formData.get('value_estimate') || '');
     const notes = String(formData.get('notes') || '').trim();
     const probability =
       priority === 'high' ? 75 : priority === 'low' ? 30 : 50;
+    const ownerUserId =
+      ownerMode === 'self'
+        ? sessionUserId || undefined
+        : ownerMode === 'unassigned'
+          ? undefined
+          : undefined;
 
-    const result = await convertToDealMutation.mutateAsync({
-      leadId: lead.id,
-      payload: {
-        title: `${lead.company_name || lead.contact_name || 'Company'} Opportunity`,
-        expected_value: valueEstimateRaw ? Number(valueEstimateRaw) : 0,
-        probability_pct: probability,
-        notes: notes || undefined,
-      },
-    });
+    try {
+      const result = await convertToDealMutation.mutateAsync({
+        leadId: lead.id,
+        payload: {
+          title: `${lead.company_name || lead.contact_name || 'Company'} Opportunity`,
+          owner_user_id: ownerUserId,
+          expected_value: valueEstimateRaw ? Number(valueEstimateRaw) : 0,
+          probability_pct: probability,
+          notes: notes || undefined,
+        },
+      });
 
-    setDealSuccess(`Deal created successfully: #${shortCode(result.id)}`);
+      setDealSuccess(`Deal created successfully: #${shortCode(result.id)}`);
+    } catch (error) {
+      setDealError(error instanceof Error ? error.message : 'Failed to create deal.');
+    }
   }
 
   async function handleSendEmail(event: FormEvent<HTMLFormElement>) {
@@ -240,6 +282,14 @@ export default function AdminLeadDetailsPage() {
           </div>
         )}
 
+        {!isLoading && !isError && !lead ? (
+          <div className="dg-card">
+            <p className="dg-alert-error">
+              Lead not found or you do not have access to this record.
+            </p>
+          </div>
+        ) : null}
+
         {lead && (
           <div className="dg-record-detail-grid">
             <div className="dg-side-stack">
@@ -337,6 +387,8 @@ export default function AdminLeadDetailsPage() {
             <div className="dg-side-stack dg-record-rail">
               <div className="dg-card">
                 <h2 className="dg-title-sm">Update Lead Status</h2>
+                {statusSuccess ? <div className="dg-alert-success">{statusSuccess}</div> : null}
+                {statusError ? <div className="dg-alert-error">{statusError}</div> : null}
                 <form className="dg-config-form" onSubmit={handleStatusUpdate}>
                   <div className="dg-field">
                     <label htmlFor="status" className="dg-label">
@@ -389,6 +441,7 @@ export default function AdminLeadDetailsPage() {
                   <>
                     <p className="dg-muted-sm">No deal exists for this lead yet.</p>
                     {dealSuccess ? <div className="dg-alert-success">{dealSuccess}</div> : null}
+                    {dealError ? <div className="dg-alert-error">{dealError}</div> : null}
                     <form className="dg-config-form" onSubmit={handleCreateDeal}>
                       <div className="dg-config-grid">
                         <div className="dg-field">
@@ -400,6 +453,18 @@ export default function AdminLeadDetailsPage() {
                             <option value="high">high</option>
                             <option value="low">low</option>
                           </select>
+                        </div>
+                        <div className="dg-field">
+                          <label htmlFor="owner_mode" className="dg-label">
+                            Owner Assignment
+                          </label>
+                          <select id="owner_mode" name="owner_mode" className="dg-select" defaultValue="self">
+                            <option value="self">Assign to me (recommended)</option>
+                            <option value="unassigned">Leave unassigned</option>
+                          </select>
+                          <p className="dg-help">
+                            Defaults for sales workflow: assign the new deal to current signed-in user.
+                          </p>
                         </div>
                         <div className="dg-field">
                           <label htmlFor="value_estimate" className="dg-label">

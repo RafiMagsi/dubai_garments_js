@@ -525,7 +525,7 @@ def update_deal(deal_id: str, payload: DealUpdateRequest) -> Dict[str, object]:
                 track_deal_activity(
                     connection,
                     deal_id,
-                    "deal_updated",
+                    "deal_stage_changed",
                     "Deal updated",
                     lead_id=updated.get("lead_id"),
                     details="Deal details were updated from admin.",
