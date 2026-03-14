@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromCookie, SESSION_COOKIE } from '@/lib/auth/http';
+import { canAccessPath, canAccessAdminArea } from '@/lib/auth/permissions';
 
 function withRequestId(request: NextRequest, response: NextResponse) {
   const requestId = request.headers.get('x-request-id') || crypto.randomUUID();
@@ -29,27 +30,40 @@ export async function proxy(request: NextRequest) {
 
     const token = request.cookies.get(SESSION_COOKIE)?.value;
     const session = await getSessionFromCookie(token);
-    const isAdmin = Boolean(session && session.role === 'admin');
+    const userRole = session?.role;
+    const hasBackofficeAccess = canAccessAdminArea(userRole);
 
     if (pathname.startsWith('/admin')) {
       if (pathname === '/admin/login') {
-        if (isAdmin) {
+        if (hasBackofficeAccess) {
           const redirectUrl = new URL('/admin/dashboard', request.url);
           return withRequestId(request, NextResponse.redirect(redirectUrl));
         }
         return withRequestId(request, nextWithRequestHeaders(request));
       }
 
-      if (!isAdmin) {
+      if (!hasBackofficeAccess) {
         const redirectUrl = new URL('/admin/login', request.url);
+        return withRequestId(request, NextResponse.redirect(redirectUrl));
+      }
+
+      if (!canAccessPath(userRole, pathname)) {
+        const redirectUrl = new URL('/admin/dashboard', request.url);
         return withRequestId(request, NextResponse.redirect(redirectUrl));
       }
     }
 
-    if (pathname.startsWith('/api/admin') && !isAdmin) {
+    if (pathname.startsWith('/api/admin') && !hasBackofficeAccess) {
       return withRequestId(
         request,
         NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+      );
+    }
+
+    if (pathname.startsWith('/api/admin') && !canAccessPath(userRole, pathname)) {
+      return withRequestId(
+        request,
+        NextResponse.json({ message: 'Forbidden' }, { status: 403 })
       );
     }
   }

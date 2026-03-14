@@ -99,14 +99,30 @@ Core MVP outcomes:
 ## Status Snapshot (As of March 14, 2026)
 
 ## 1. Workspace and Auth Foundation
-- Status: `Mostly Done`
+- Status: `Done`
 - Verified done:
 1. Tenant foundation + tenant isolation migrations exist (`0015`, `0016`)
 2. Admin auth APIs + protected admin routes exist
 3. `proxy.ts` and server-side `requireAdminSession` checks are in place
 4. `/install` and `/admin/reconfigure` flows exist
-- Remaining:
-1. Explicit `sales` role UX/permission mapping (currently mostly admin/customer oriented)
+5. Explicit backoffice role mapping for `admin`, `sales_manager`, `sales_rep`, `ops` is implemented in session typing, login flow, proxy gating, and admin navigation visibility
+
+### Backoffice Role Matrix (Enforced)
+
+| Area | admin | sales_manager | sales_rep | ops |
+|---|---|---|---|---|
+| `/admin/dashboard`, `/admin/analytics` | ✅ | ✅ | ✅ | ✅ |
+| `/admin/leads*`, `/admin/deals*`, `/admin/quotes*`, `/admin/pipeline`, `/admin/activities` | ✅ | ✅ | ✅ | ✅ |
+| `/admin/automations`, `/admin/observability` | ✅ | ❌ | ❌ | ✅ |
+| `/admin/configuration*`, `/admin/reconfigure`, `/admin/design-system` | ✅ | ❌ | ❌ | ❌ |
+
+### Admin API Matrix (Second Layer)
+
+| API group | admin | sales_manager | sales_rep | ops |
+|---|---|---|---|---|
+| `/api/admin/leads*`, `/deals*`, `/quotes*`, `/pipeline`, `/activities*` | ✅ | ✅ | ✅ | ✅ |
+| `/api/admin/automation-runs*`, `/observability` | ✅ | ❌ | ❌ | ✅ |
+| `/api/admin/config*`, `/reconfigure` | ✅ | ❌ | ❌ | ❌ |
 
 ## 2. CRM Shell UI
 - Status: `Done with Minor Gap`

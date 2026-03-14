@@ -46,9 +46,9 @@ export default function AdminLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-8">
       <Card className="w-full max-w-md">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">Admin Login</h1>
+        <h1 className="text-2xl font-bold text-[var(--color-text)]">Backoffice Login</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-          Access the private admin dashboard.
+          Access the private admin and sales workspace.
         </p>
 
         {error ? <FieldError className="dg-alert-error">{error}</FieldError> : null}
@@ -57,7 +57,7 @@ export default function AdminLoginPage() {
           <FieldGroup>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <TextField id="email" name="email" type="email" autoComplete="email" />
-            <FieldHint>Use your admin account email.</FieldHint>
+            <FieldHint>Use your admin or sales account email.</FieldHint>
           </FieldGroup>
           <FieldGroup>
             <FieldLabel htmlFor="password">Password</FieldLabel>

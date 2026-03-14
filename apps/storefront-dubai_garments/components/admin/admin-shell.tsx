@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { ReactNode, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { AppRole } from '@/lib/auth/session';
+import { canAccessAdminPage } from '@/lib/auth/permissions';
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Dashboard', hint: 'Revenue Snapshot', section: 'Workspace' },
@@ -15,11 +17,11 @@ const adminNavItems = [
   { href: '/admin/automations', label: 'Automations', hint: 'Workflow Monitoring', section: 'Platform Control' },
   { href: '/admin/observability', label: 'Observability', hint: 'Health & Metrics', section: 'Platform Control' },
   { href: '/admin/configuration', label: 'Configuration', hint: 'Scripts & Runtime', section: 'Platform Control' },
+  { href: '/admin/users', label: 'Users', hint: 'User Access Control', section: 'Platform Control' },
   { href: '/admin/reconfigure', label: 'Reconfigure', hint: 'Install Settings', section: 'Platform Control' },
   { href: '/admin/design-system', label: 'Design System', hint: 'Tokens & UI Kit', section: 'Platform Control' },
+  { href: '/admin/rbac-matrix', label: 'RBAC Matrix', hint: 'Role Access Rules', section: 'Platform Control' },
 ];
-
-const navSections = Array.from(new Set(adminNavItems.map((item) => item.section)));
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -27,6 +29,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [adminName, setAdminName] = useState('Admin');
   const [adminEmail, setAdminEmail] = useState('');
+  const [role, setRole] = useState<AppRole>('admin');
 
   useEffect(() => {
     let mounted = true;
@@ -35,9 +38,10 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         const response = await fetch('/api/auth/session', { cache: 'no-store' });
         const payload = await response.json();
         if (!mounted) return;
-        if (payload?.authenticated && payload?.user?.role === 'admin') {
+        if (payload?.authenticated && payload?.user?.role) {
           setAdminName(payload.user.displayName || 'Admin');
           setAdminEmail(payload.user.email || '');
+          setRole(payload.user.role as AppRole);
         }
       } catch {
         if (!mounted) return;
@@ -67,6 +71,16 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
+  function formatRoleLabel(value: AppRole) {
+    return value
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
+  const visibleNavItems = adminNavItems.filter((item) => canAccessAdminPage(role, item.href));
+  const navSections = Array.from(new Set(visibleNavItems.map((item) => item.section)));
+
   return (
     <div className="dg-admin-shell">
       <a href="#admin-main-content" className="dg-skip-link">
@@ -83,7 +97,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           {navSections.map((section) => (
             <div key={section} className="dg-admin-nav-group">
               <p className="dg-admin-nav-heading">{section}</p>
-              {adminNavItems
+              {visibleNavItems
                 .filter((item) => item.section === section)
                 .map((item) => {
                   const isActive = isNavItemActive(item.href);
@@ -128,7 +142,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             <span className="dg-admin-user-avatar">{(adminName || 'A').slice(0, 1).toUpperCase()}</span>
             <div>
               <p>{adminName}</p>
-              <small>{adminEmail || 'admin session'}</small>
+              <small>{adminEmail || `${formatRoleLabel(role)} session`}</small>
             </div>
           </div>
         </header>

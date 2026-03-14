@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildLoginResponse } from '@/lib/auth/http';
-import { findUserByCredentials } from '@/lib/auth/users';
+import { findBackofficeUserByCredentials } from '@/lib/auth/users';
 import { resolveTenantContext } from '@/lib/tenant/fastapi-proxy';
 
 export async function POST(request: NextRequest) {
@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Email and password are required.' }, { status: 422 });
   }
 
-  const user = await findUserByCredentials('admin', email, password, tenant.tenantSlug);
+  const user = await findBackofficeUserByCredentials(email, password, tenant.tenantSlug);
   if (!user) {
-    return NextResponse.json({ message: 'Invalid admin credentials.' }, { status: 401 });
+    return NextResponse.json({ message: 'Invalid backoffice credentials.' }, { status: 401 });
   }
 
   return buildLoginResponse({

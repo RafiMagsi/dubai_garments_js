@@ -1,7 +1,7 @@
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-export type AppRole = 'admin' | 'customer';
+export type AppRole = 'admin' | 'sales_manager' | 'sales_rep' | 'ops' | 'customer';
 
 export type SessionPayload = {
   sub: string;
@@ -87,7 +87,13 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     if (!payload.exp || payload.exp <= now) {
       return null;
     }
-    if (payload.role !== 'admin' && payload.role !== 'customer') {
+    if (
+      payload.role !== 'admin' &&
+      payload.role !== 'sales_manager' &&
+      payload.role !== 'sales_rep' &&
+      payload.role !== 'ops' &&
+      payload.role !== 'customer'
+    ) {
       return null;
     }
     if (!payload.sub || !payload.email || !payload.displayName) {

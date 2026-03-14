@@ -1,4 +1,5 @@
 import { getSessionFromCookie, SESSION_COOKIE } from '@/lib/auth/http';
+import { canAccessAdminApiPath, canAccessAdminArea } from '@/lib/auth/permissions';
 
 export type TenantContext = {
   tenantId?: string;
@@ -58,6 +59,23 @@ export async function buildFastApiTenantHeaders(
 }
 
 export async function fastApiFetch(request: Request, input: string, init?: RequestInit) {
+  const pathname = new URL(request.url).pathname;
+  const isAdminApiPath = pathname.startsWith('/api/admin');
+  const isAdminLoginApi = pathname === '/api/admin/auth/login';
+
+  if (isAdminApiPath && !isAdminLoginApi) {
+    const sessionToken = parseCookieValue(request.headers.get('cookie'), SESSION_COOKIE);
+    const session = await getSessionFromCookie(sessionToken);
+
+    if (!session || !canAccessAdminArea(session.role)) {
+      return Response.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!canAccessAdminApiPath(session.role, pathname)) {
+      return Response.json({ message: 'Forbidden' }, { status: 403 });
+    }
+  }
+
   const headers = await buildFastApiTenantHeaders(request, init?.headers);
   return fetch(input, {
     ...init,
