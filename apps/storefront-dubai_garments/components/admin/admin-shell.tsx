@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import Link from 'next/link';
 import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
@@ -33,6 +34,11 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const [adminName, setAdminName] = useState('Admin');
   const [adminEmail, setAdminEmail] = useState('');
   const [role, setRole] = useState<AppRole>('admin');
+  const [branding, setBranding] = useState({
+    brandName: 'Dubai Garments',
+    brandTagline: 'Revenue OS',
+    logoUrl: '',
+  });
   const [quickInput, setQuickInput] = useState('');
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
@@ -54,6 +60,32 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       }
     }
     void loadSession();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadBranding() {
+      try {
+        const response = await fetch('/api/branding', { cache: 'no-store' });
+        const payload = (await response.json()) as {
+          brandName?: string;
+          brandTagline?: string;
+          logoUrl?: string;
+        };
+        if (!mounted) return;
+        setBranding({
+          brandName: payload.brandName || 'Dubai Garments',
+          brandTagline: payload.brandTagline || 'Revenue OS',
+          logoUrl: payload.logoUrl || '',
+        });
+      } catch {
+        if (!mounted) return;
+      }
+    }
+    void loadBranding();
     return () => {
       mounted = false;
     };
@@ -218,8 +250,15 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       </a>
       <aside className="dg-admin-sidebar">
         <div className="dg-admin-brand">
-          <p className="dg-brand-subtitle">Dubai Garments</p>
-          <p className="dg-brand-title">Revenue OS</p>
+          {branding.logoUrl ? (
+            <img
+              src={branding.logoUrl}
+              alt={`${branding.brandName} logo`}
+              className="mb-2 h-10 w-auto rounded border border-[var(--color-border)] bg-white p-1"
+            />
+          ) : null}
+          <p className="dg-brand-subtitle">{branding.brandName}</p>
+          <p className="dg-brand-title">{branding.brandTagline}</p>
           <p className="dg-admin-brand-copy">Plug-and-play AI sales operations for leads, deals, quotes, and automations.</p>
         </div>
 
@@ -266,7 +305,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         <header className="dg-admin-topbar">
           <div>
             <p className="dg-admin-topbar-label">Sales Console</p>
-            <p className="dg-admin-topbar-title">Dubai Garments Revenue Workspace</p>
+            <p className="dg-admin-topbar-title">{branding.brandName} Revenue Workspace</p>
           </div>
           <form onSubmit={submitQuickInput} className="dg-col-fill max-w-xl">
             <div className="dg-form-row">

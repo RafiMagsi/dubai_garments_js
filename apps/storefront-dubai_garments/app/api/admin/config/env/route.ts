@@ -23,6 +23,10 @@ const ENV_DEFS: EnvDef[] = [
   { key: 'DATABASE_URL', target: 'storefront', description: 'PostgreSQL connection string for Next.js/Prisma', secret: true },
   { key: 'FASTAPI_BASE_URL', target: 'storefront', description: 'Server-side FastAPI base URL for admin APIs', secret: false },
   { key: 'AUTOMATION_SHARED_SECRET', target: 'storefront', description: 'Shared automation token used by scheduler/followup endpoints', secret: true },
+  { key: 'BRAND_NAME', target: 'storefront', description: 'Brand display name used in storefront/admin branding surfaces', secret: false },
+  { key: 'BRAND_TAGLINE', target: 'storefront', description: 'Brand tagline/subtitle used in header and admin shell', secret: false },
+  { key: 'BRAND_LOGO_URL', target: 'storefront', description: 'Public URL for uploaded logo asset (for example /branding-assets/logo-*.png)', secret: false },
+  { key: 'BRAND_FAVICON_URL', target: 'storefront', description: 'Public URL for uploaded favicon asset', secret: false },
 
   { key: 'DATABASE_URL', target: 'fastapi', description: 'PostgreSQL connection string for FastAPI backend', secret: true },
   { key: 'OPENAI_API_KEY', target: 'fastapi', description: 'OpenAI API key for lead AI processing/scoring', secret: true },

@@ -64,7 +64,7 @@ Core MVP outcomes:
 
 5. `M11` Settings/Configuration Completeness
 - Done: configuration panel + DB-backed system settings + env/runtime controls
-- Partial gap: logo upload and branding asset workflow polish
+- Done: logo upload + branding asset workflow polish (admin upload API, branding settings persistence, storefront/admin branding read API)
 
 6. `M12` AI Layer Completeness
 - Done: lead summarize/score/classify, provider fallback behavior
@@ -184,13 +184,12 @@ Core MVP outcomes:
 1. Keep only 2-3 automation stories in demo to avoid complexity
 
 ## 9. Settings / Configuration
-- Status: `Mostly Done`
+- Status: `Done`
 - Verified done:
 1. Configuration UI + env/runtime setting endpoints
 2. `system_settings` DB support exists
 3. Observability/metrics surfaces available (`/metrics`, `/api/metrics`, observability service)
-- Remaining:
-1. Logo upload + true branding asset flow (if required for MVP demo package)
+4. Branding workflow complete: admin upload for logo/favicon + saved branding keys + runtime storefront/admin render path
 
 ## MVP Scope Adjustments (Outdated Items Fixed)
 1. Remove “skip tenants for MVP” guidance: tenant foundation already exists and should stay.

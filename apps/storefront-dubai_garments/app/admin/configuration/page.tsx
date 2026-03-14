@@ -1,7 +1,8 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
@@ -47,7 +48,15 @@ export default function AdminConfigurationPage() {
   const runMutation = useRunConfigurationScript();
 
   const scripts = scriptsQuery.data?.items ?? [];
-  const envItems = envQuery.data?.items ?? [];
+  const envItems = useMemo(() => envQuery.data?.items ?? [], [envQuery.data?.items]);
+  const storefrontEnvMap = useMemo(() => {
+    const map = new Map<string, string>();
+    envItems.forEach((item) => {
+      if (item.target !== 'storefront') return;
+      map.set(item.key, item.value || '');
+    });
+    return map;
+  }, [envItems]);
   const auditItems = auditQuery.data?.items ?? [];
   const [inputsByScript, setInputsByScript] = useState<Record<string, Record<string, string>>>({});
   const [lastResultByScript, setLastResultByScript] = useState<Record<string, string>>({});
@@ -58,6 +67,18 @@ export default function AdminConfigurationPage() {
   const [allowedCommands, setAllowedCommands] = useState<string[]>([]);
   const [terminalCommand, setTerminalCommand] = useState('npm run db:tables');
   const [terminalMessage, setTerminalMessage] = useState('');
+  const [brandingDraft, setBrandingDraft] = useState({
+    brandName: '',
+    brandTagline: '',
+    logoUrl: '',
+    faviconUrl: '',
+  });
+  const [brandingMessage, setBrandingMessage] = useState('');
+  const [isSavingBranding, setIsSavingBranding] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingFavicon, setIsUploadingFavicon] = useState(false);
   const [auditOutputModal, setAuditOutputModal] = useState<ExecutionOutputModalState>({
     open: false,
     command: '',
@@ -95,6 +116,16 @@ export default function AdminConfigurationPage() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    setBrandingDraft((prev) => ({
+      ...prev,
+      brandName: storefrontEnvMap.get('BRAND_NAME') || '',
+      brandTagline: storefrontEnvMap.get('BRAND_TAGLINE') || '',
+      logoUrl: storefrontEnvMap.get('BRAND_LOGO_URL') || '',
+      faviconUrl: storefrontEnvMap.get('BRAND_FAVICON_URL') || '',
+    }));
+  }, [storefrontEnvMap]);
 
 
   const categories = scripts.reduce<Record<string, number>>((acc, script) => {
@@ -323,6 +354,70 @@ export default function AdminConfigurationPage() {
     }
   }
 
+  async function handleUploadBrandAsset(kind: 'logo' | 'favicon') {
+    const file = kind === 'logo' ? logoFile : faviconFile;
+    if (!file) {
+      setBrandingMessage(`Select a ${kind} file first.`);
+      return;
+    }
+
+    if (kind === 'logo') setIsUploadingLogo(true);
+    if (kind === 'favicon') setIsUploadingFavicon(true);
+    setBrandingMessage('');
+
+    try {
+      const formData = new FormData();
+      formData.append('kind', kind);
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/config/branding/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const payload = (await response.json()) as { message?: string; url?: string };
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.message || `Failed to upload ${kind}.`);
+      }
+
+      setBrandingDraft((prev) => ({
+        ...prev,
+        ...(kind === 'logo' ? { logoUrl: payload.url || '' } : { faviconUrl: payload.url || '' }),
+      }));
+      setBrandingMessage(`${titleCase(kind)} uploaded. Save branding to persist settings.`);
+    } catch (error) {
+      setBrandingMessage(error instanceof Error ? error.message : `Failed to upload ${kind}.`);
+    } finally {
+      if (kind === 'logo') setIsUploadingLogo(false);
+      if (kind === 'favicon') setIsUploadingFavicon(false);
+    }
+  }
+
+  async function handleSaveBrandingSettings() {
+    const updates = [
+      { key: 'BRAND_NAME', value: brandingDraft.brandName.trim() },
+      { key: 'BRAND_TAGLINE', value: brandingDraft.brandTagline.trim() },
+      { key: 'BRAND_LOGO_URL', value: brandingDraft.logoUrl.trim() },
+      { key: 'BRAND_FAVICON_URL', value: brandingDraft.faviconUrl.trim() },
+    ];
+
+    setIsSavingBranding(true);
+    setBrandingMessage('');
+    try {
+      for (const update of updates) {
+        await saveEnvMutation.mutateAsync({
+          target: 'storefront',
+          key: update.key,
+          value: update.value,
+        });
+      }
+      setBrandingMessage('Branding settings saved successfully. Restart services to apply globally.');
+    } catch (error) {
+      setBrandingMessage(error instanceof Error ? error.message : 'Failed to save branding settings.');
+    } finally {
+      setIsSavingBranding(false);
+    }
+  }
+
 
   return (
     <AdminShell>
@@ -366,6 +461,137 @@ export default function AdminConfigurationPage() {
             <p className="dg-kpi-meta">Executed from admin server runtime</p>
           </article>
         </div>
+      </Panel>
+
+      <Panel>
+          <div className="dg-admin-head">
+            <h2 className="dg-title-sm">Branding Assets</h2>
+            <span className="dg-badge">Logo Workflow</span>
+          </div>
+          <p className="dg-muted-sm mb-3">
+            Upload logo/favicon assets and persist branding URLs + labels. These values power storefront and admin branding.
+          </p>
+
+          <div className="dg-config-grid">
+            <div className="dg-card">
+              <h3 className="dg-title-sm">Identity</h3>
+              <div className="dg-field">
+                <label className="dg-label" htmlFor="brand-name">Brand Name</label>
+                <input
+                  id="brand-name"
+                  className="dg-input"
+                  value={brandingDraft.brandName}
+                  onChange={(event) =>
+                    setBrandingDraft((prev) => ({ ...prev, brandName: event.target.value }))
+                  }
+                />
+              </div>
+              <div className="dg-field">
+                <label className="dg-label" htmlFor="brand-tagline">Tagline</label>
+                <input
+                  id="brand-tagline"
+                  className="dg-input"
+                  value={brandingDraft.brandTagline}
+                  onChange={(event) =>
+                    setBrandingDraft((prev) => ({ ...prev, brandTagline: event.target.value }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="dg-card">
+              <h3 className="dg-title-sm">Logo Upload</h3>
+              {brandingDraft.logoUrl ? (
+                <img
+                  src={brandingDraft.logoUrl}
+                  alt="Current brand logo"
+                  className="h-16 w-auto rounded border border-[var(--color-border)] bg-white p-2"
+                />
+              ) : (
+                <p className="dg-muted-sm">No logo uploaded yet.</p>
+              )}
+              <div className="dg-field">
+                <label className="dg-label" htmlFor="logo-file">Select Logo</label>
+                <input
+                  id="logo-file"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  onChange={(event) => setLogoFile(event.target.files?.[0] || null)}
+                />
+              </div>
+              <div className="dg-field">
+                <label className="dg-label" htmlFor="logo-url">Logo URL</label>
+                <input
+                  id="logo-url"
+                  className="dg-input"
+                  value={brandingDraft.logoUrl}
+                  onChange={(event) =>
+                    setBrandingDraft((prev) => ({ ...prev, logoUrl: event.target.value }))
+                  }
+                />
+              </div>
+              <button
+                type="button"
+                className="ui-btn ui-btn-secondary ui-btn-md"
+                disabled={isUploadingLogo}
+                onClick={() => void handleUploadBrandAsset('logo')}
+              >
+                {isUploadingLogo ? 'Uploading Logo...' : 'Upload Logo'}
+              </button>
+            </div>
+
+            <div className="dg-card">
+              <h3 className="dg-title-sm">Favicon Upload</h3>
+              {brandingDraft.faviconUrl ? (
+                <img
+                  src={brandingDraft.faviconUrl}
+                  alt="Current favicon"
+                  className="h-10 w-10 rounded border border-[var(--color-border)] bg-white p-1"
+                />
+              ) : (
+                <p className="dg-muted-sm">No favicon uploaded yet.</p>
+              )}
+              <div className="dg-field">
+                <label className="dg-label" htmlFor="favicon-file">Select Favicon</label>
+                <input
+                  id="favicon-file"
+                  type="file"
+                  accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml"
+                  onChange={(event) => setFaviconFile(event.target.files?.[0] || null)}
+                />
+              </div>
+              <div className="dg-field">
+                <label className="dg-label" htmlFor="favicon-url">Favicon URL</label>
+                <input
+                  id="favicon-url"
+                  className="dg-input"
+                  value={brandingDraft.faviconUrl}
+                  onChange={(event) =>
+                    setBrandingDraft((prev) => ({ ...prev, faviconUrl: event.target.value }))
+                  }
+                />
+              </div>
+              <button
+                type="button"
+                className="ui-btn ui-btn-secondary ui-btn-md"
+                disabled={isUploadingFavicon}
+                onClick={() => void handleUploadBrandAsset('favicon')}
+              >
+                {isUploadingFavicon ? 'Uploading Favicon...' : 'Upload Favicon'}
+              </button>
+            </div>
+          </div>
+          <div className="dg-form-row mt-3">
+            <button
+              type="button"
+              className="ui-btn ui-btn-primary ui-btn-md"
+              disabled={isSavingBranding || saveEnvMutation.isPending}
+              onClick={() => void handleSaveBrandingSettings()}
+            >
+              {isSavingBranding ? 'Saving Branding...' : 'Save Branding Settings'}
+            </button>
+            {brandingMessage ? <p className="dg-list-meta">{brandingMessage}</p> : null}
+          </div>
       </Panel>
 
       <Panel>

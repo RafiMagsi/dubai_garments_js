@@ -1,8 +1,9 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TextField } from '@/components/ui';
 
 const categories = [
@@ -15,6 +16,37 @@ const categories = [
 export default function Header() {
   const pathname = usePathname();
   const [search, setSearch] = useState('');
+  const [branding, setBranding] = useState({
+    brandName: 'Dubai Garments',
+    brandTagline: 'RevenueOS Storefront',
+    logoUrl: '',
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadBranding() {
+      try {
+        const response = await fetch('/api/branding', { cache: 'no-store' });
+        const payload = (await response.json()) as {
+          brandName?: string;
+          brandTagline?: string;
+          logoUrl?: string;
+        };
+        if (!mounted) return;
+        setBranding({
+          brandName: payload.brandName || 'Dubai Garments',
+          brandTagline: payload.brandTagline || 'RevenueOS Storefront',
+          logoUrl: payload.logoUrl || '',
+        });
+      } catch {
+        if (!mounted) return;
+      }
+    }
+    void loadBranding();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <>
@@ -29,9 +61,16 @@ export default function Header() {
         <div className="dg-container">
           <div className="dgx-header-shell">
             <div className="dgx-brand-wrap">
-              <p className="dgx-brand-kicker">Dubai Garments</p>
+              {branding.logoUrl ? (
+                <img
+                  src={branding.logoUrl}
+                  alt={`${branding.brandName} logo`}
+                  className="mb-1 h-9 w-auto rounded border border-[var(--color-border)] bg-white p-1"
+                />
+              ) : null}
+              <p className="dgx-brand-kicker">{branding.brandName}</p>
               <Link href="/" className="dgx-brand-title">
-                RevenueOS Storefront
+                {branding.brandTagline}
               </Link>
             </div>
 
