@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from urllib import request as urllib_request
@@ -19,6 +20,7 @@ from app.core.config import (
 from app.core.db import get_db_connection
 from app.core.observability import log_event
 from app.services.activities import create_activity
+from app.services.ai_logs import create_ai_log
 from app.services.leads import get_lead_by_id
 from app.services.slack import (
     notify_automation_error as notify_automation_error_slack,
@@ -68,6 +70,7 @@ class LeadAIService:
         self.api_key = OPENAI_API_KEY
 
     def analyze_lead(self, lead_id: str) -> Dict[str, Any]:
+        started_at = time.perf_counter()
         request_payload = {"leadId": lead_id, "model": self.model}
         _log_event("lead_ai_start", lead_id=lead_id, model=self.model)
 
@@ -95,6 +98,19 @@ class LeadAIService:
             )
             result = {**heuristic, "provider": "system", "fallback_used": True}
             self._persist_lead_result(lead_id, result)
+            create_ai_log(
+                workflow_name="lead_ai_processing",
+                status="cancelled",
+                provider="system",
+                model=self.model,
+                trigger_entity_type="lead",
+                trigger_entity_id=lead_id,
+                fallback_used=True,
+                input_payload=request_payload,
+                output_payload=result,
+                error_message="Lead AI processing is disabled. Heuristic system fallback used.",
+                latency_ms=int((time.perf_counter() - started_at) * 1000),
+            )
             return {"processed": True, "data": result}
 
         if not self.api_key and not AI_SERVICE_ENABLED:
@@ -118,6 +134,19 @@ class LeadAIService:
             )
             result = {**heuristic, "provider": "system", "fallback_used": True}
             self._persist_lead_result(lead_id, result)
+            create_ai_log(
+                workflow_name="lead_ai_processing",
+                status="cancelled",
+                provider="system",
+                model=self.model,
+                trigger_entity_type="lead",
+                trigger_entity_id=lead_id,
+                fallback_used=True,
+                input_payload=request_payload,
+                output_payload=result,
+                error_message="OPENAI_API_KEY is not configured and AI service is disabled. Heuristic system fallback used.",
+                latency_ms=int((time.perf_counter() - started_at) * 1000),
+            )
             return {"processed": True, "data": result}
 
         try:
@@ -171,6 +200,18 @@ class LeadAIService:
                     contact_name=str(lead.get("contact_name") or ""),
                     ai_score=result.get("ai_score"),
                 )
+            create_ai_log(
+                workflow_name="lead_ai_processing",
+                status="success",
+                provider=str(result.get("provider") or "openai"),
+                model=self.model,
+                trigger_entity_type="lead",
+                trigger_entity_id=lead_id,
+                fallback_used=bool(result.get("fallback_used", False)),
+                input_payload={**request_payload, "message": message},
+                output_payload=result,
+                latency_ms=int((time.perf_counter() - started_at) * 1000),
+            )
             return {"processed": True, "data": result}
         except Exception as error:
             result = {**heuristic, "provider": "system", "fallback_used": True}
@@ -188,6 +229,19 @@ class LeadAIService:
                 request_payload=request_payload,
                 response_payload=result,
                 error_message=str(error),
+            )
+            create_ai_log(
+                workflow_name="lead_ai_processing",
+                status="failed",
+                provider="system",
+                model=self.model,
+                trigger_entity_type="lead",
+                trigger_entity_id=lead_id,
+                fallback_used=True,
+                input_payload=request_payload,
+                output_payload=result,
+                error_message=str(error),
+                latency_ms=int((time.perf_counter() - started_at) * 1000),
             )
             return {"processed": True, "data": result, "error": str(error)}
 

@@ -18,6 +18,7 @@ const adminNavItems = [
   { href: '/admin/pipeline', label: 'Pipeline', hint: 'Stage View', section: 'Sales Operations' },
   { href: '/admin/activities', label: 'Activities', hint: 'System Timeline', section: 'Sales Operations' },
   { href: '/admin/automations', label: 'Automations', hint: 'Workflow Monitoring', section: 'Platform Control' },
+  { href: '/admin/ai-logs', label: 'AI Logs', hint: 'Model Trace Logs', section: 'Platform Control' },
   { href: '/admin/observability', label: 'Observability', hint: 'Health & Metrics', section: 'Platform Control' },
   { href: '/admin/configuration', label: 'Configuration', hint: 'Scripts & Runtime', section: 'Platform Control' },
   { href: '/admin/users', label: 'Users', hint: 'User Access Control', section: 'Platform Control' },

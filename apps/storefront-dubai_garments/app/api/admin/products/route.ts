@@ -38,26 +38,25 @@ function normalizeStringArray(value: unknown): string[] {
 
 function normalizePriceTiers(value: unknown): Array<{ minQty: number; maxQty?: number; unitPriceAED: number }> {
   if (!Array.isArray(value)) return [];
-  const parsed = value
-    .map((item) => {
-      if (!item || typeof item !== 'object') return null;
-      const candidate = item as Record<string, unknown>;
-      const minQty = Number(candidate.minQty ?? candidate.min_qty);
-      const maxQtyRaw = candidate.maxQty ?? candidate.max_qty;
-      const unitPriceAED = Number(
-        candidate.unitPriceAED ?? candidate.unit_price ?? candidate.unitPrice
-      );
-      if (!Number.isFinite(minQty) || !Number.isFinite(unitPriceAED)) return null;
-      const maxQty = Number(maxQtyRaw);
-      return {
-        minQty,
-        maxQty: Number.isFinite(maxQty) ? maxQty : undefined,
-        unitPriceAED,
-      };
-    })
-    .filter((item): item is { minQty: number; maxQty?: number; unitPriceAED: number } => item !== null);
+  return value.reduce<Array<{ minQty: number; maxQty?: number; unitPriceAED: number }>>((acc, item) => {
+    if (!item || typeof item !== 'object') return acc;
+    const candidate = item as Record<string, unknown>;
+    const minQty = Number(candidate.minQty ?? candidate.min_qty);
+    const maxQtyRaw = candidate.maxQty ?? candidate.max_qty;
+    const unitPriceAED = Number(
+      candidate.unitPriceAED ?? candidate.unit_price ?? candidate.unitPrice
+    );
 
-  return parsed;
+    if (!Number.isFinite(minQty) || !Number.isFinite(unitPriceAED)) return acc;
+
+    const maxQty = Number(maxQtyRaw);
+    acc.push({
+      minQty,
+      maxQty: Number.isFinite(maxQty) ? maxQty : undefined,
+      unitPriceAED,
+    });
+    return acc;
+  }, []);
 }
 
 export async function GET(request: NextRequest) {
