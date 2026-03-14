@@ -11,6 +11,91 @@ Core MVP outcomes:
 5. Use AI for lead summary/scoring/classification and practical assist actions
 6. Deliver a clean product-grade admin UX
 
+## Module Index (Priority Order)
+
+## Done (Top Priority Baseline Confirmed)
+1. `M01` Workspace/Tenant Foundation
+- Tenant foundation + tenant isolation migrations (`0015`, `0016`)
+- Tenant-aware session and route-level protections
+- Install and reconfigure foundations exist
+
+2. `M02` Admin Auth Protection
+- Admin login/logout APIs working
+- Protected admin APIs/routes with session checks
+- `proxy.ts` + server-side admin guard coverage in core paths
+
+3. `M03` Leads Core + AI Scoring Surface
+- Leads list/detail/status management
+- Lead conversion to deal endpoint
+- AI score/classification/reasoning visible on lead detail
+- Lead AI worker pipeline integrated
+
+4. `M04` Quotes Core + PDF
+- Quote list/detail/status flows
+- Quote PDF generation and download endpoints
+- Worker-based quote PDF processing
+
+5. `M05` Automation Visibility Baseline
+- `automation_runs` history available
+- Retry endpoints available for failed runs
+- Follow-up automation hooks present
+
+6. `M06` Observability Baseline
+- Storefront metrics endpoint available
+- FastAPI metrics available
+- Admin observability route/page exists
+
+## Partially Done (Center - Close These Next)
+1. `M07` CRM Shell UX Completeness
+- Done: sidebar/header/dashboard/leads/deals/quotes/pipeline/activities pages
+- Partial gap: real global search / quick command input
+
+2. `M08` Deals/Pipeline UX Completeness
+- Done: deals pages + pipeline stage operations
+- Partial gap: stronger kanban drag/drop UX polish for demos
+
+3. `M09` Products + Quote Builder Completeness
+- Done: product APIs and storefront product flows
+- Partial gap: dedicated admin products management page (full CRUD UX)
+
+4. `M10` Activity Timeline Completeness
+- Done: activities APIs + activities page
+- Partial gap: consistent per-record timeline parity across detail pages
+
+5. `M11` Settings/Configuration Completeness
+- Done: configuration panel + DB-backed system settings + env/runtime controls
+- Partial gap: logo upload and branding asset workflow polish
+
+6. `M12` AI Layer Completeness
+- Done: lead summarize/score/classify, provider fallback behavior
+- Partial gap: dedicated `ai_logs` trace table + admin AI log viewer
+- Partial gap: explicit AI draft-reply/quote-email action in admin UX
+
+## Needs To Be Done (Bottom - Focus Work Queue)
+1. `N01` Admin Products Management UI
+- Build admin products list/create/edit/delete screens
+- Add product variant management UX
+
+2. `N02` Global Search / Quick Command Input
+- Add searchable global input in admin shell
+- Support quick navigation to leads/deals/quotes
+
+3. `N03` Dedicated AI Logs Layer
+- Add `ai_logs` DB table + migration
+- Write AI execution traces to `ai_logs`
+- Build admin AI logs page/detail view
+
+4. `N04` AI Draft Actions in UX
+- Add “draft reply” / “draft quote email” actions in admin UI
+- Add clear loading/error/fallback UX for these actions
+
+5. `N05` Timeline Consistency Pass
+- Ensure lead/deal/quote detail pages all show complete timeline entries
+
+6. `N06` Demo Seed + Demo Script Hardening
+- One-command demo seed/reset script
+- Scripted end-to-end demo path for sales walkthrough
+
 ## Status Snapshot (As of March 14, 2026)
 
 ## 1. Workspace and Auth Foundation
