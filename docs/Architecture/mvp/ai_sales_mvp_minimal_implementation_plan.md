@@ -52,7 +52,7 @@ Core MVP outcomes:
 
 2. `M08` Deals/Pipeline UX Completeness
 - Done: deals pages + pipeline stage operations
-- Partial gap: stronger kanban drag/drop UX polish for demos
+- Done: stronger kanban drag/drop UX for demos (optimistic move, drop highlights, rollback on API failure)
 
 3. `M09` Products + Quote Builder Completeness
 - Done: product APIs and storefront product flows
