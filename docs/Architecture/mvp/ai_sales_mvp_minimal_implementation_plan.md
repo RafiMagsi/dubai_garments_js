@@ -72,16 +72,18 @@ Core MVP outcomes:
 - Done: explicit AI draft-reply/quote-email action in admin UX (lead/deal/quote admin flows)
 
 ## Needs To Be Done (Bottom - Focus Work Queue)
-1. `N01` Admin Products Management UI
-- Build admin products list/create/edit/delete screens
-- Add product variant management UX
+1. `N08` Sales Workflow Polish
+- Tighten owner assignment UX and sales-team defaults
+- Add clearer empty/loading/error states in CRM record detail panels
 
-2. `N05` Timeline Consistency Pass
-- Ensure lead/deal/quote detail pages all show complete timeline entries
+2. `N09` Pilot Readiness
+- Add basic backup/restore runbook for pilot environments
+- Finalize rollout/rollback notes for deployment handoff
 
-3. `N06` Demo Seed + Demo Script Hardening
-- One-command demo seed/reset script
-- Scripted end-to-end demo path for sales walkthrough
+## Recently Closed
+1. `N07` Demo QA Freeze Checklist — `Done`
+- Final smoke checklist added: `docs/qa/mvp-demo-freeze-checklist.md`
+- Reproducible pass/fail sign-off template added: `docs/qa/mvp-demo-signoff-template.md`
 
 ## Status Snapshot (As of March 14, 2026)
 
@@ -136,16 +138,16 @@ Core MVP outcomes:
 2. Pipeline views and stage update APIs
 3. Follow-up automation hooks on stage movement
 - Remaining:
-1. Drag-and-drop kanban interaction polish/strict behavior (if required for demo script)
+1. Optional polish only (non-blocking): additional drag/drop animation tuning if desired for demos
 
 ## 5. Products + Quote Builder
-- Status: `Mostly Done`
+- Status: `Done`
 - Verified done:
 1. Products APIs + storefront product pages
 2. Quote creation/list/detail/status flows
 3. Quote PDF generation/download APIs + worker
 - Remaining:
-1. Dedicated admin `Products` management page (full CRUD UX) for stronger demo completeness
+1. Optional polish only (non-blocking): richer product media/gallery management UX
 
 ## 6. AI Layer
 - Status: `Mostly Done`
@@ -160,12 +162,12 @@ Core MVP outcomes:
 1. None for MVP baseline
 
 ## 7. Activity Timeline
-- Status: `Mostly Done`
+- Status: `Done`
 - Verified done:
 1. Activities APIs and admin activities page exist
 2. Key lead/deal/quote/automation events are recorded
 - Remaining:
-1. Ensure per-record timeline parity across all detail pages for demo consistency
+1. Optional polish only (non-blocking): iconography/type labels normalization in timeline events
 
 ## 8. Basic Automation Layer
 - Status: `Done for MVP Scope`
@@ -201,8 +203,8 @@ Core MVP outcomes:
 7. Automation runs + observability endpoints
 
 ### Must Finish to Close MVP
-1. Add dedicated admin products management screen
-2. Tighten demo seed flow and scripted demo path
+1. Execute demo QA freeze checklist and capture sign-off report
+2. Complete pilot rollout/rollback runbook hardening
 
 ## Updated MVP Definition of Done
 MVP is complete when all are true:
@@ -216,11 +218,11 @@ MVP is complete when all are true:
 ## Recommended Next 2-Sprint Closure Plan
 
 ## Sprint M1 (MVP Closure Core)
-1. Build admin products CRUD page
-2. Finalize per-record activity timeline consistency
+1. Demo QA freeze checklist + scripted rehearsal report
+2. Sales workflow polish (owner/default/edge-state improvements)
 
 ## Sprint M2 (Demo Hardening)
-1. Add one-command demo seed/reset script
+1. Pilot readiness docs (backup/restore + rollback)
 2. Run smoke + demo rehearsal checklist and freeze MVP
 
 ## Final Note
