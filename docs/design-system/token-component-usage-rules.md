@@ -46,4 +46,4 @@
 3. `/admin/design-system` rendering
 4. related docs under `docs/design-system`
 5. Any breaking style behavior must include migration note in:
-6. `docs/Architecture/phases/phase-11-theme-migration-map.md`
+6. `docs/Architecture/phases/phase-11-twenty-inspired-theme-implementation.md` (Appendix A)
