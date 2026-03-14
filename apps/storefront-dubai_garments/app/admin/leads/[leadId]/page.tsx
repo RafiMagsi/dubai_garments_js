@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import RecordTimeline, { RecordTimelineEvent } from '@/components/admin/common/record-timeline';
@@ -30,6 +30,12 @@ export default function AdminLeadDetailsPage() {
   const sendLeadEmailMutation = useSendLeadEmail();
 
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailDraftMeta, setEmailDraftMeta] = useState<string | null>(null);
+  const [isDraftingEmail, setIsDraftingEmail] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
   const [dealSuccess, setDealSuccess] = useState<string | null>(null);
 
   const lead = data?.item;
@@ -57,6 +63,18 @@ export default function AdminLeadDetailsPage() {
 
     return [...activityEvents, ...communicationEvents];
   }, [communications, data?.activities, lead?.email]);
+
+  useEffect(() => {
+    if (!lead) return;
+    setEmailRecipient(lead.email || '');
+    setEmailSubject(`Regarding your quote request ${shortCode(lead.id)}`);
+    setEmailMessage(
+      `Hello ${lead.contact_name || 'Customer'},\n\nThank you for contacting Dubai Garments. We have received your request and our sales team will follow up shortly.\n\nRegards,\nDubai Garments Sales Team`
+    );
+    setEmailSuccess(null);
+    setEmailError(null);
+    setEmailDraftMeta(null);
+  }, [lead]);
 
   async function handleStatusUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,17 +114,63 @@ export default function AdminLeadDetailsPage() {
   async function handleSendEmail(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!lead) return;
+    setEmailSuccess(null);
+    setEmailError(null);
 
-    const formData = new FormData(event.currentTarget);
-    const recipient_email = String(formData.get('recipient_email') || '').trim();
-    const subject = String(formData.get('subject') || '').trim();
-    const message = String(formData.get('message') || '').trim();
+    try {
+      const response = await sendLeadEmailMutation.mutateAsync({
+        leadId: lead.id,
+        payload: {
+          recipient_email: emailRecipient.trim(),
+          subject: emailSubject.trim(),
+          message: emailMessage.trim(),
+        },
+      });
+      setEmailSuccess(response.message);
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to send email.');
+    }
+  }
 
-    const response = await sendLeadEmailMutation.mutateAsync({
-      leadId: lead.id,
-      payload: { recipient_email, subject, message },
-    });
-    setEmailSuccess(response.message);
+  async function handleDraftReply() {
+    if (!lead) return;
+    setIsDraftingEmail(true);
+    setEmailSuccess(null);
+    setEmailError(null);
+    setEmailDraftMeta(null);
+    try {
+      const response = await fetch(`/api/admin/leads/${lead.id}/draft-reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tone: 'professional' }),
+      });
+      const payload = (await response.json()) as {
+        draft?: {
+          recipient_email?: string;
+          subject?: string;
+          message?: string;
+          provider?: string;
+          fallback_used?: boolean;
+        };
+        detail?: string;
+        message?: string;
+      };
+      if (!response.ok || !payload.draft) {
+        throw new Error(payload.detail || payload.message || 'Failed to generate draft.');
+      }
+
+      if (payload.draft.recipient_email) setEmailRecipient(payload.draft.recipient_email);
+      if (payload.draft.subject) setEmailSubject(payload.draft.subject);
+      if (payload.draft.message) setEmailMessage(payload.draft.message);
+
+      setEmailDraftMeta(
+        `Draft generated via ${payload.draft.provider || 'system'}${payload.draft.fallback_used ? ' (fallback)' : ''}.`
+      );
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to generate AI draft.');
+    } finally {
+      setIsDraftingEmail(false);
+    }
   }
 
   return (
@@ -340,6 +404,8 @@ export default function AdminLeadDetailsPage() {
               <div className="dg-card">
                 <h2 className="dg-title-sm">Email Communication</h2>
                 {emailSuccess ? <div className="dg-alert-success">{emailSuccess}</div> : null}
+                {emailError ? <div className="dg-alert-error">{emailError}</div> : null}
+                {emailDraftMeta ? <p className="dg-help">{emailDraftMeta}</p> : null}
                 <form className="dg-config-form" onSubmit={handleSendEmail}>
                   <div className="dg-field">
                     <label htmlFor="recipient_email" className="dg-label">
@@ -350,7 +416,8 @@ export default function AdminLeadDetailsPage() {
                       name="recipient_email"
                       type="email"
                       className="dg-input"
-                      defaultValue={lead.email || ''}
+                      value={emailRecipient}
+                      onChange={(event) => setEmailRecipient(event.target.value)}
                       required
                     />
                   </div>
@@ -362,7 +429,8 @@ export default function AdminLeadDetailsPage() {
                       id="subject"
                       name="subject"
                       className="dg-input"
-                      defaultValue={`Regarding your quote request ${shortCode(lead.id)}`}
+                      value={emailSubject}
+                      onChange={(event) => setEmailSubject(event.target.value)}
                       required
                     />
                   </div>
@@ -375,17 +443,28 @@ export default function AdminLeadDetailsPage() {
                       name="message"
                       className="dg-textarea"
                       rows={5}
-                      defaultValue={`Hello ${lead.contact_name || 'Customer'},\n\nThank you for contacting Dubai Garments. We have received your request and our sales team will follow up shortly.\n\nRegards,\nDubai Garments Sales Team`}
+                      value={emailMessage}
+                      onChange={(event) => setEmailMessage(event.target.value)}
                       required
                     />
                   </div>
-                  <button
-                    type="submit"
-                    className="ui-btn ui-btn-primary ui-btn-md"
-                    disabled={sendLeadEmailMutation.isPending}
-                  >
-                    {sendLeadEmailMutation.isPending ? 'Sending...' : 'Send Email'}
-                  </button>
+                  <div className="dg-form-row">
+                    <button
+                      type="button"
+                      className="ui-btn ui-btn-secondary ui-btn-md"
+                      onClick={() => void handleDraftReply()}
+                      disabled={isDraftingEmail}
+                    >
+                      {isDraftingEmail ? 'Drafting...' : 'AI Draft Reply'}
+                    </button>
+                    <button
+                      type="submit"
+                      className="ui-btn ui-btn-primary ui-btn-md"
+                      disabled={sendLeadEmailMutation.isPending}
+                    >
+                      {sendLeadEmailMutation.isPending ? 'Sending...' : 'Send Email'}
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>

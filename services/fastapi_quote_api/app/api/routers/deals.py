@@ -22,6 +22,7 @@ from app.services.deals import (
     track_deal_activity,
     update_lead_status_from_deal,
 )
+from app.services.ai_email_drafts import draft_deal_reply
 from app.services.email import create_automation_run, finish_automation_run, send_email
 
 router = APIRouter(prefix="/api/v1", tags=["deals"])
@@ -314,6 +315,22 @@ def create_deal(payload: DealCreateRequest) -> Dict[str, object]:
         raise HTTPException(status_code=500, detail=f"Deal creation failed: {error}") from error
 
     return {"item": deal}
+
+
+@router.post("/deals/{deal_id}/draft-reply")
+def draft_deal_reply_route(deal_id: str, payload: Dict[str, object]) -> Dict[str, object]:
+    try:
+        draft = draft_deal_reply(
+            deal_id=deal_id,
+            tone=str(payload.get("tone") or "professional"),
+            additional_context=str(payload.get("additional_context") or "") or None,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Failed to generate deal email draft: {error}") from error
+
+    return {"ok": True, "draft": draft}
 
 
 @router.post("/leads/{lead_id}/convert-to-deal")

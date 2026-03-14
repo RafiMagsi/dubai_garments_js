@@ -13,6 +13,7 @@ from app.schemas.leads import (
     LeadUpdateRequest,
 )
 from app.services.deals import stage_label
+from app.services.ai_email_drafts import draft_lead_reply
 from app.services.email import create_automation_run, finish_automation_run, send_email
 from app.services.leads import get_lead_by_id, normalize_lead_status, track_lead_activity
 
@@ -320,6 +321,22 @@ def update_lead(lead_id: str, payload: LeadUpdateRequest) -> Dict[str, object]:
         raise HTTPException(status_code=500, detail=f"Lead update failed: {error}") from error
 
     return {"item": lead}
+
+
+@router.post("/leads/{lead_id}/draft-reply")
+def draft_lead_reply_route(lead_id: str, payload: Dict[str, object]) -> Dict[str, object]:
+    try:
+        draft = draft_lead_reply(
+            lead_id=lead_id,
+            tone=str(payload.get("tone") or "professional"),
+            additional_context=str(payload.get("additional_context") or "") or None,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Failed to generate lead email draft: {error}") from error
+
+    return {"ok": True, "draft": draft}
 
 
 @router.patch("/leads/{lead_id}/status")

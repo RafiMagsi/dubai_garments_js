@@ -42,6 +42,7 @@ export const ADMIN_API_ROLE_MATRIX: RoleRule[] = [
   { pattern: '/api/admin/leads*', roles: BACKOFFICE_ALL },
   { pattern: '/api/admin/deals*', roles: BACKOFFICE_ALL },
   { pattern: '/api/admin/quotes*', roles: BACKOFFICE_ALL },
+  { pattern: '/api/admin/emails/send', roles: BACKOFFICE_ALL },
   { pattern: '/api/admin/products*', roles: ADMIN_AND_SALES_MANAGER },
   { pattern: '/api/admin/pipeline', roles: BACKOFFICE_ALL },
   { pattern: '/api/admin/automation-runs*', roles: ADMIN_AND_OPS },

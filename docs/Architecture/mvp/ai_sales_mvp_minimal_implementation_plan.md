@@ -69,21 +69,17 @@ Core MVP outcomes:
 6. `M12` AI Layer Completeness
 - Done: lead summarize/score/classify, provider fallback behavior
 - Done: dedicated `ai_logs` trace table + admin AI log viewer
-- Partial gap: explicit AI draft-reply/quote-email action in admin UX
+- Done: explicit AI draft-reply/quote-email action in admin UX (lead/deal/quote admin flows)
 
 ## Needs To Be Done (Bottom - Focus Work Queue)
 1. `N01` Admin Products Management UI
 - Build admin products list/create/edit/delete screens
 - Add product variant management UX
 
-2. `N04` AI Draft Actions in UX
-- Add “draft reply” / “draft quote email” actions in admin UI
-- Add clear loading/error/fallback UX for these actions
-
-3. `N05` Timeline Consistency Pass
+2. `N05` Timeline Consistency Pass
 - Ensure lead/deal/quote detail pages all show complete timeline entries
 
-4. `N06` Demo Seed + Demo Script Hardening
+3. `N06` Demo Seed + Demo Script Hardening
 - One-command demo seed/reset script
 - Scripted end-to-end demo path for sales walkthrough
 
@@ -159,8 +155,9 @@ Core MVP outcomes:
 3. Dedicated `ai_logs` table + backend trace write path
 4. Admin AI logs list/detail viewer (`/admin/ai-logs`)
 5. Provider fallback behavior exists in lead AI service logic
+6. Explicit AI draft reply / quote-email actions are available in lead/deal/quote admin UX
 - Remaining:
-1. Explicit AI draft reply/quote-email UX surfaced in admin as a first-class feature
+1. None for MVP baseline
 
 ## 7. Activity Timeline
 - Status: `Mostly Done`
@@ -205,8 +202,7 @@ Core MVP outcomes:
 
 ### Must Finish to Close MVP
 1. Add dedicated admin products management screen
-2. Add explicit AI draft-reply/quote-email action in admin UX
-3. Tighten demo seed flow and scripted demo path
+2. Tighten demo seed flow and scripted demo path
 
 ## Updated MVP Definition of Done
 MVP is complete when all are true:
@@ -221,8 +217,7 @@ MVP is complete when all are true:
 
 ## Sprint M1 (MVP Closure Core)
 1. Build admin products CRUD page
-2. Add explicit AI draft reply/quote email action in UI
-3. Finalize per-record activity timeline consistency
+2. Finalize per-record activity timeline consistency
 
 ## Sprint M2 (Demo Hardening)
 1. Add one-command demo seed/reset script

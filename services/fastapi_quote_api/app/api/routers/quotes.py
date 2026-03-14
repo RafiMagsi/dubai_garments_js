@@ -19,6 +19,7 @@ from app.services.quote_pdf import (
     enqueue_quote_document_placeholder,
     get_latest_quote_document,
 )
+from app.services.ai_email_drafts import draft_quote_email
 from app.services.activities import create_activity
 from app.services.email import (
     build_quote_sent_email,
@@ -189,6 +190,22 @@ def view_quote(quote_id: str) -> Dict[str, object]:
         raise HTTPException(status_code=500, detail=f"Failed to fetch quote: {error}") from error
 
     return {"item": quote, "items": items}
+
+
+@router.post("/quotes/{quote_id}/draft-email")
+def draft_quote_email_route(quote_id: str, payload: Dict[str, object]) -> Dict[str, object]:
+    try:
+        draft = draft_quote_email(
+            quote_id=quote_id,
+            tone=str(payload.get("tone") or "professional"),
+            additional_context=str(payload.get("additional_context") or "") or None,
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"Failed to generate quote email draft: {error}") from error
+
+    return {"ok": True, "draft": draft}
 
 
 @router.post("/quotes/{quote_id}/status")

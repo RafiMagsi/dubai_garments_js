@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
@@ -33,6 +33,14 @@ export default function AdminQuoteDetailPage() {
   const updateStatusMutation = useUpdateQuoteStatus();
   const generatePdfMutation = useGenerateQuotePdf();
   const [notes, setNotes] = useState('');
+  const [emailRecipient, setEmailRecipient] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
+  const [isDraftingQuoteEmail, setIsDraftingQuoteEmail] = useState(false);
+  const [isSendingQuoteEmail, setIsSendingQuoteEmail] = useState(false);
+  const [quoteEmailSuccess, setQuoteEmailSuccess] = useState<string | null>(null);
+  const [quoteEmailError, setQuoteEmailError] = useState<string | null>(null);
+  const [quoteEmailDraftMeta, setQuoteEmailDraftMeta] = useState<string | null>(null);
 
   const quote = data?.item;
   const items = data?.items ?? [];
@@ -79,6 +87,17 @@ export default function AdminQuoteDetailPage() {
     return [...activityEvents, ...systemEvents];
   }, [activitiesQuery.data?.items, pdfStatus?.status, quote]);
 
+  useEffect(() => {
+    if (!quote) return;
+    setEmailSubject(`Quote ${quote.quote_number} from Dubai Garments`);
+    setEmailMessage(
+      `Hello,\n\nYour quote ${quote.quote_number} is ready for review.\n\nTotal: ${quote.currency} ${quote.total_amount.toFixed(2)}\n\nRegards,\nDubai Garments Sales Team`
+    );
+    setQuoteEmailSuccess(null);
+    setQuoteEmailError(null);
+    setQuoteEmailDraftMeta(null);
+  }, [quote]);
+
   async function handleStatusChange(status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired') {
     if (!quoteId) return;
     await updateStatusMutation.mutateAsync({
@@ -90,6 +109,74 @@ export default function AdminQuoteDetailPage() {
   async function handleGeneratePdf() {
     if (!quoteId) return;
     await generatePdfMutation.mutateAsync(quoteId);
+  }
+
+  async function handleDraftQuoteEmail() {
+    if (!quoteId) return;
+    setIsDraftingQuoteEmail(true);
+    setQuoteEmailSuccess(null);
+    setQuoteEmailError(null);
+    setQuoteEmailDraftMeta(null);
+    try {
+      const response = await fetch(`/api/admin/quotes/${quoteId}/draft-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tone: 'professional' }),
+      });
+      const payload = (await response.json()) as {
+        draft?: {
+          recipient_email?: string;
+          subject?: string;
+          message?: string;
+          provider?: string;
+          fallback_used?: boolean;
+        };
+        detail?: string;
+        message?: string;
+      };
+      if (!response.ok || !payload.draft) {
+        throw new Error(payload.detail || payload.message || 'Failed to generate quote email draft.');
+      }
+
+      if (payload.draft.recipient_email) setEmailRecipient(payload.draft.recipient_email);
+      if (payload.draft.subject) setEmailSubject(payload.draft.subject);
+      if (payload.draft.message) setEmailMessage(payload.draft.message);
+      setQuoteEmailDraftMeta(
+        `Draft generated via ${payload.draft.provider || 'system'}${payload.draft.fallback_used ? ' (fallback)' : ''}.`
+      );
+    } catch (error) {
+      setQuoteEmailError(error instanceof Error ? error.message : 'Failed to generate AI draft.');
+    } finally {
+      setIsDraftingQuoteEmail(false);
+    }
+  }
+
+  async function handleSendQuoteEmail() {
+    if (!quoteId || !quote) return;
+    setIsSendingQuoteEmail(true);
+    setQuoteEmailSuccess(null);
+    setQuoteEmailError(null);
+    try {
+      const response = await fetch('/api/admin/emails/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quote_id: quoteId,
+          recipient_email: emailRecipient.trim(),
+          subject: emailSubject.trim(),
+          message: emailMessage.trim(),
+        }),
+      });
+      const payload = (await response.json()) as { message?: string; detail?: string };
+      if (!response.ok) {
+        throw new Error(payload.detail || payload.message || 'Failed to send quote email.');
+      }
+      setQuoteEmailSuccess(payload.message || 'Quote email sent successfully.');
+    } catch (error) {
+      setQuoteEmailError(error instanceof Error ? error.message : 'Failed to send quote email.');
+    } finally {
+      setIsSendingQuoteEmail(false);
+    }
   }
 
   return (
@@ -233,6 +320,63 @@ export default function AdminQuoteDetailPage() {
                     ? ` (${pdfStatus.document.error_message})`
                     : ''}
                 </p>
+              </Card>
+
+              <Card className="dg-summary-card">
+                <h3 className="dg-title-sm">Quote Email Composer</h3>
+                <p className="dg-muted-sm">Generate AI draft and send quote email from admin.</p>
+                {quoteEmailSuccess ? <div className="dg-alert-success">{quoteEmailSuccess}</div> : null}
+                {quoteEmailError ? <div className="dg-alert-error">{quoteEmailError}</div> : null}
+                {quoteEmailDraftMeta ? <p className="dg-help">{quoteEmailDraftMeta}</p> : null}
+                <div className="dg-field">
+                  <FieldLabel htmlFor="quoteEmailRecipient">Recipient Email</FieldLabel>
+                  <input
+                    id="quoteEmailRecipient"
+                    className="dg-input"
+                    type="email"
+                    value={emailRecipient}
+                    onChange={(event) => setEmailRecipient(event.target.value)}
+                    placeholder="customer@company.com"
+                    required
+                  />
+                </div>
+                <div className="dg-field">
+                  <FieldLabel htmlFor="quoteEmailSubject">Subject</FieldLabel>
+                  <input
+                    id="quoteEmailSubject"
+                    className="dg-input"
+                    value={emailSubject}
+                    onChange={(event) => setEmailSubject(event.target.value)}
+                    required
+                  />
+                </div>
+                <div className="dg-field">
+                  <FieldLabel htmlFor="quoteEmailMessage">Message</FieldLabel>
+                  <TextAreaField
+                    id="quoteEmailMessage"
+                    value={emailMessage}
+                    onChange={(event) => setEmailMessage(event.target.value)}
+                    rows={7}
+                  />
+                </div>
+                <div className="dg-form-row">
+                  <button
+                    type="button"
+                    className="ui-btn ui-btn-secondary ui-btn-md"
+                    onClick={() => void handleDraftQuoteEmail()}
+                    disabled={isDraftingQuoteEmail}
+                  >
+                    {isDraftingQuoteEmail ? 'Drafting...' : 'AI Draft Quote Email'}
+                  </button>
+                  <button
+                    type="button"
+                    className="ui-btn ui-btn-primary ui-btn-md"
+                    onClick={() => void handleSendQuoteEmail()}
+                    disabled={isSendingQuoteEmail}
+                  >
+                    {isSendingQuoteEmail ? 'Sending...' : 'Send Email'}
+                  </button>
+                </div>
               </Card>
             </Card>
 

@@ -61,7 +61,8 @@ BEFORE INSERT ON public.ai_logs
 FOR EACH ROW EXECUTE FUNCTION assign_tenant_id();
 
 ALTER TABLE public.ai_logs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS tenant_isolation ON public.ai_logs
+DROP POLICY IF EXISTS tenant_isolation ON public.ai_logs;
+CREATE POLICY tenant_isolation ON public.ai_logs
   USING (tenant_id = app_current_tenant_id())
   WITH CHECK (tenant_id = app_current_tenant_id());
 

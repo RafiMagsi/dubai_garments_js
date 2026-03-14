@@ -14,3 +14,8 @@ class EmailSendRequest(BaseModel):
     lead_id: Optional[str] = None
     deal_id: Optional[str] = None
     quote_id: Optional[str] = None
+
+
+class EmailDraftRequest(BaseModel):
+    tone: Optional[str] = "professional"
+    additional_context: Optional[str] = None
