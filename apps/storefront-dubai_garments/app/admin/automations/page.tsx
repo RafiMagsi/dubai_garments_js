@@ -159,7 +159,7 @@ export default function AdminAutomationsPage() {
 
           {!runsQuery.isLoading && !runsQuery.isError && (
             <div className="ui-table-wrap">
-              <table className="ui-table">
+              <table className="ui-table ui-table-density-compact">
                 <thead>
                   <tr>
                     <th>Workflow</th>

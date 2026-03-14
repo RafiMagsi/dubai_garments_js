@@ -159,9 +159,9 @@ export default function AdminPipelinePage() {
           )}
 
           {!isLoading && !isError && (
-          <div className="grid gap-4 xl:grid-cols-3 2xl:grid-cols-6">
+          <div className="dg-pipeline-grid">
             {data?.stages.map((stage) => (
-              <article key={stage.stageKey} className="dg-card dg-summary-card">
+              <article key={stage.stageKey} className="dg-card dg-pipeline-column">
                 <div className="dg-admin-head">
                   <h3 className="dg-title-sm">
                     {stage.stageLabel}
@@ -171,7 +171,7 @@ export default function AdminPipelinePage() {
                   </span>
                 </div>
 
-                <div className="grid gap-3">
+                <div className="dg-pipeline-cards">
                   {stage.items.length === 0 && (
                     <p className="dg-muted-sm">
                       No deals in this stage.

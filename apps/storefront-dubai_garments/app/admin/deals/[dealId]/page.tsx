@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { isAxiosError } from 'axios';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
-import { PageShell, Panel, Toolbar } from '@/components/ui';
+import { PageShell, Panel, StatusBadge, Toolbar } from '@/components/ui';
 import { DealStage, useDealById, useSendDealEmail, useUpdateDeal } from '@/features/admin/deals';
 import { useProducts } from '@/features/products';
 import { formatAed, getStartingUnitPriceAED } from '@/features/products/utils/product-pricing';
@@ -18,10 +18,6 @@ import {
 } from '@/features/admin/shared/view-format';
 
 const stageOptions: DealStage[] = ['new', 'qualified', 'quoted', 'negotiation', 'won', 'lost'];
-
-function stageBadgeClass(stage: string) {
-  return `dg-status-pill dg-status-pill-${stage.toUpperCase()}`;
-}
 
 function productPriceLabel(name: string, startingPrice: number | null) {
   return `${name} - ${startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}`;
@@ -223,39 +219,46 @@ export default function AdminDealDetailsPage() {
 
         {deal && (
           <div className="dg-two-col-grid">
-            <div className="dg-card">
-              <h2 className="dg-title-sm">Deal Snapshot</h2>
-              <div className="dg-detail-list">
-                <div className="dg-detail-item">
-                  <span>Stage</span>
-                  <span className={stageBadgeClass(deal.stage)}>{titleCase(deal.stage)}</span>
+            <div className="dg-side-stack">
+              <div className="dg-card">
+                <div className="dg-admin-head">
+                  <div>
+                    <p className="dg-eyebrow">Deal Profile</p>
+                    <h2 className="dg-title-sm">
+                      {deal.lead_contact_name || deal.customer_company_name || 'Unknown Deal'}
+                      {deal.lead_company_name ? ` • ${deal.lead_company_name}` : ''}
+                    </h2>
+                  </div>
+                  <StatusBadge status={deal.stage}>{titleCase(deal.stage)}</StatusBadge>
                 </div>
-                <div className="dg-detail-item">
-                  <span>Priority</span>
-                  <strong>
-                    {deal.probability_pct >= 70 ? 'high' : deal.probability_pct <= 35 ? 'low' : 'medium'}
-                  </strong>
-                </div>
-                <div className="dg-detail-item">
-                  <span>Value Estimate</span>
-                  <strong>AED {Number(deal.expected_value || 0).toFixed(2)}</strong>
-                </div>
-                <div className="dg-detail-item">
-                  <span>Assigned User</span>
-                  <strong>{deal.owner_user_id ? deal.owner_user_id.slice(0, 8) : '-'}</strong>
-                </div>
-                <div className="dg-detail-item">
-                  <span>Created</span>
-                  <strong>{formatDateTime(deal.created_at)}</strong>
-                </div>
-                <div className="dg-detail-item">
-                  <span>Updated</span>
-                  <strong>{formatDateTime(deal.updated_at)}</strong>
+                <div className="dg-detail-list">
+                  <div className="dg-detail-item">
+                    <span>Priority</span>
+                    <strong>
+                      {deal.probability_pct >= 70 ? 'high' : deal.probability_pct <= 35 ? 'low' : 'medium'}
+                    </strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Value Estimate</span>
+                    <strong>AED {Number(deal.expected_value || 0).toFixed(2)}</strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Assigned User</span>
+                    <strong>{deal.owner_user_id ? deal.owner_user_id.slice(0, 8) : '-'}</strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Created</span>
+                    <strong>{formatDateTime(deal.created_at)}</strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Updated</span>
+                    <strong>{formatDateTime(deal.updated_at)}</strong>
+                  </div>
                 </div>
               </div>
 
-              <div className="dg-card dg-summary-card">
-                <h3 className="dg-title-sm">Lead Context</h3>
+              <div className="dg-card">
+                <h2 className="dg-title-sm">Lead Context</h2>
                 <div className="dg-detail-list">
                   <div className="dg-detail-item">
                     <span>Tracking Code</span>
@@ -280,15 +283,15 @@ export default function AdminDealDetailsPage() {
                 </div>
               </div>
 
-              <div className="dg-card dg-summary-card">
-                <h3 className="dg-title-sm">Deal Notes</h3>
+              <div className="dg-card">
+                <h2 className="dg-title-sm">Deal Notes</h2>
                 <p className="dg-section-copy">{deal.notes || 'No notes available.'}</p>
               </div>
 
-              <div className="dg-card dg-summary-card">
-                <h3 className="dg-title-sm">Related Quotes</h3>
+              <div className="dg-card">
+                <h2 className="dg-title-sm">Related Quotes</h2>
                 {quotes.length > 0 ? (
-                  <div className="dg-list">
+                  <div className="dg-list dg-list-density-compact">
                     {quotes.map((quote) => (
                       <div key={quote.id} className="dg-list-row">
                         <div className="dg-list-main">
@@ -309,7 +312,7 @@ export default function AdminDealDetailsPage() {
               </div>
             </div>
 
-            <div className="dg-side-stack">
+            <div className="dg-side-stack dg-record-rail">
               <div className="dg-card">
                 <h2 className="dg-title-sm">Update Deal</h2>
                 {dealSuccess ? <div className="dg-alert-success">{dealSuccess}</div> : null}

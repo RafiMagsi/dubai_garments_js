@@ -393,7 +393,7 @@ export default function AdminConfigurationPage() {
                     <span className="dg-badge">{items.length}</span>
                   </div>
                   <div className="ui-table-wrap">
-                    <table className="ui-table">
+                    <table className="ui-table ui-table-density-compact">
                       <thead>
                         <tr>
                           <th>Key</th>
@@ -520,7 +520,7 @@ export default function AdminConfigurationPage() {
                   <span className="dg-badge">{categoryScripts.length}</span>
                 </div>
                 <div className="ui-table-wrap">
-                  <table className="ui-table">
+                  <table className="ui-table ui-table-density-compact">
                     <thead>
                       <tr>
                         <th>Script</th>

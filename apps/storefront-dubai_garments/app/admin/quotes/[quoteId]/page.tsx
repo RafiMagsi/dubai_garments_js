@@ -69,7 +69,7 @@ export default function AdminQuoteDetailPage() {
       {isLoading && (
         <Panel>
           <Card>
-            <p className="text-sm text-[var(--color-text-muted)]">Loading quote...</p>
+            <p className="dg-muted-sm">Loading quote...</p>
           </Card>
         </Panel>
       )}
@@ -77,7 +77,7 @@ export default function AdminQuoteDetailPage() {
       {isError && (
         <Panel>
           <Card>
-            <p className="text-sm text-[var(--color-danger-text)]">
+            <p className="dg-alert-error">
               {error instanceof Error ? error.message : 'Failed to load quote.'}
             </p>
           </Card>
@@ -193,7 +193,7 @@ export default function AdminQuoteDetailPage() {
             <Card>
               <h2 className="dg-title-sm">Quote Items</h2>
               <div className="ui-table-wrap">
-                <table className="ui-table">
+                <table className="ui-table ui-table-density-compact">
                   <thead>
                     <tr>
                       <th>Item</th>
@@ -215,7 +215,7 @@ export default function AdminQuoteDetailPage() {
                           {quote.currency} {item.line_total.toFixed(2)}
                         </td>
                         <td>
-                          <pre className="whitespace-pre-wrap text-xs text-[var(--color-text-muted)]">
+                          <pre className="whitespace-pre-wrap dg-help">
                             {JSON.stringify(item.pricing_breakdown, null, 2)}
                           </pre>
                         </td>

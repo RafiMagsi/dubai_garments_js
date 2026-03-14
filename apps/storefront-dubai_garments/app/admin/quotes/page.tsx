@@ -99,9 +99,9 @@ export default function AdminQuotesPage() {
             <span className="dg-badge">{quotes.length} Total</span>
           </div>
 
-          {isLoading && <p className="text-sm text-[var(--color-text-muted)]">Loading quotes...</p>}
+          {isLoading && <p className="dg-muted-sm">Loading quotes...</p>}
           {isError && (
-            <p className="text-sm text-[var(--color-danger-text)]">
+            <p className="dg-alert-error">
               {error instanceof Error ? error.message : 'Failed to load quotes.'}
             </p>
           )}

@@ -111,11 +111,11 @@ export const THEME_OPTIONS: ThemeOption[] = [
   {
     id: 'twenty',
     name: 'Twenty Violet',
-    description: 'Twenty-inspired CRM palette with violet primary and clean neutrals.',
+    description: 'Twenty-inspired CRM palette with indigo primary and neutral surfaces.',
     preview: {
-      brand: '#7b61ff',
-      accent: '#22c55e',
-      surface: '#f7f6ff',
+      brand: '#3e63dd',
+      accent: '#8da4ef',
+      surface: '#fcfcfc',
     },
   },
   {

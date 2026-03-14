@@ -36,7 +36,7 @@ export default function ServiceChecksPanel({
       </div>
 
       <div className="ui-table-wrap mt-3">
-        <table className="ui-table">
+        <table className="ui-table ui-table-density-compact">
           <thead>
             <tr>
               <th>Target</th>

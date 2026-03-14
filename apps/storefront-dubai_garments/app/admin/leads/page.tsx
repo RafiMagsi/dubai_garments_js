@@ -112,8 +112,8 @@ export default function AdminLeadsPage() {
           )}
 
           {!isLoading && !isError && (
-            <div className="ui-table-wrap">
-              <table className="ui-table ui-table-density-compact">
+            <div className="dg-table-wrap">
+              <table className="dg-table dg-table-density-compact">
                 <thead>
                   <tr>
                     <th>Lead</th>
