@@ -2612,8 +2612,11 @@ html[data-dg-theme='twenty'] {
 
 .ui-overlay-center {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: 1.25rem;
 }
 
 .ui-overlay-drawer {
@@ -2625,7 +2628,17 @@ html[data-dg-theme='twenty'] {
 
 .ui-modal-shell {
   width: min(980px, 100%);
+  max-height: calc(100dvh - 2.5rem);
   outline: none;
+}
+
+.ui-modal-viewport {
+  max-height: inherit;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-inline: 1px;
+  padding-bottom: 0.75rem;
 }
 
 .ui-modal-card {
@@ -3304,6 +3317,10 @@ html[data-dg-theme='twenty'] {
 @media (max-width: 639px) {
   .ui-overlay {
     padding: 0.6rem;
+  }
+
+  .ui-modal-shell {
+    max-height: calc(100dvh - 1.2rem);
   }
 
   .ui-modal-card {

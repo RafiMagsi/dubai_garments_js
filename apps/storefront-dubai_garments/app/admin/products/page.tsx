@@ -23,6 +23,14 @@ import {
 } from '@/components/ui';
 import { ProductCategory } from '@/features/products/types/product.types';
 import { formatDateTime } from '@/features/admin/shared/view-format';
+import {
+  BRANDING_OPTIONS,
+  CATEGORY_OPTIONS,
+  COLOR_OPTIONS,
+  MATERIAL_OPTIONS,
+  SIZE_OPTIONS,
+  TAG_OPTIONS,
+} from '@/features/products/data/admin-product-form-options';
 
 type AdminProduct = {
   id: string;
@@ -43,16 +51,19 @@ type AdminProduct = {
   image: string;
   updatedAt: string;
   createdAt: string;
+  variants?: AdminProductVariant[];
 };
 
-const CATEGORY_OPTIONS: ProductCategory[] = [
-  'tshirts',
-  'hoodies',
-  'uniforms',
-  'jerseys',
-  'caps',
-  'jackets',
-];
+type AdminProductVariant = {
+  id?: string;
+  sku: string;
+  variantName: string;
+  size?: string | null;
+  color?: string | null;
+  unitPrice: number;
+  moq: number;
+  isActive: boolean;
+};
 
 type ProductFormState = {
   name: string;
@@ -70,6 +81,7 @@ type ProductFormState = {
   image: string;
   isActive: boolean;
   featured: boolean;
+  variants: AdminProductVariant[];
 };
 
 const EMPTY_FORM: ProductFormState = {
@@ -88,6 +100,7 @@ const EMPTY_FORM: ProductFormState = {
   image: '',
   isActive: true,
   featured: false,
+  variants: [],
 };
 
 function formatCategoryLabel(value: string) {
@@ -110,6 +123,19 @@ function csv(value: string) {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function toggleCsvValue(value: string, item: string) {
+  const current = csv(value);
+  const exists = current.some((entry) => entry.toLowerCase() === item.toLowerCase());
+  if (exists) {
+    return current.filter((entry) => entry.toLowerCase() !== item.toLowerCase()).join(', ');
+  }
+  return [...current, item].join(', ');
+}
+
+function hasCsvValue(value: string, item: string) {
+  return csv(value).some((entry) => entry.toLowerCase() === item.toLowerCase());
 }
 
 async function readResponsePayload(response: Response): Promise<Record<string, unknown>> {
@@ -139,6 +165,16 @@ function toFormState(product: AdminProduct): ProductFormState {
     image: product.image || '',
     isActive: product.isActive,
     featured: product.featured,
+    variants: (product.variants || []).map((variant) => ({
+      id: variant.id,
+      sku: variant.sku,
+      variantName: variant.variantName,
+      size: variant.size || '',
+      color: variant.color || '',
+      unitPrice: Number(variant.unitPrice || 0),
+      moq: Number(variant.moq || 1),
+      isActive: Boolean(variant.isActive),
+    })),
   };
 }
 
@@ -258,6 +294,15 @@ export default function AdminProductsPage() {
           colors: csv(createForm.colors),
           sizes: csv(createForm.sizes),
           brandingOptions: csv(createForm.brandingOptions),
+          variants: createForm.variants.map((variant) => ({
+            sku: variant.sku.trim(),
+            variantName: variant.variantName.trim(),
+            size: String(variant.size || '').trim() || null,
+            color: String(variant.color || '').trim() || null,
+            unitPrice: Number(variant.unitPrice || 0),
+            moq: Number(variant.moq || 1),
+            isActive: variant.isActive,
+          })),
         }),
       });
       const payload = await readResponsePayload(response);
@@ -300,6 +345,15 @@ export default function AdminProductsPage() {
           colors: csv(editForm.colors),
           sizes: csv(editForm.sizes),
           brandingOptions: csv(editForm.brandingOptions),
+          variants: editForm.variants.map((variant) => ({
+            sku: variant.sku.trim(),
+            variantName: variant.variantName.trim(),
+            size: String(variant.size || '').trim() || null,
+            color: String(variant.color || '').trim() || null,
+            unitPrice: Number(variant.unitPrice || 0),
+            moq: Number(variant.moq || 1),
+            isActive: variant.isActive,
+          })),
         }),
       });
       const payload = await readResponsePayload(response);
@@ -430,6 +484,7 @@ export default function AdminProductsPage() {
                   <TableHeadCell>MOQ</TableHeadCell>
                   <TableHeadCell>Lead Time</TableHeadCell>
                   <TableHeadCell>Status</TableHeadCell>
+                  <TableHeadCell>Variants</TableHeadCell>
                   <TableHeadCell>Updated</TableHeadCell>
                   <TableHeadCell>Actions</TableHeadCell>
                 </TableHeadRow>
@@ -437,7 +492,7 @@ export default function AdminProductsPage() {
               <tbody>
                 {filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7}>No products found.</TableCell>
+                    <TableCell colSpan={8}>No products found.</TableCell>
                   </TableRow>
                 ) : (
                   filteredProducts.map((product) => (
@@ -457,6 +512,7 @@ export default function AdminProductsPage() {
                           {product.featured ? <StatusBadge status="info">featured</StatusBadge> : null}
                         </div>
                       </TableCell>
+                      <TableCell>{product.variants?.length || 0}</TableCell>
                       <TableCell>{formatDateTime(product.updatedAt)}</TableCell>
                       <TableCell>
                         <div className="dg-form-row">
@@ -529,7 +585,7 @@ export default function AdminProductsPage() {
           </div>
           <p className="dg-help mt-2 mb-4">
             {deleteTarget
-              ? `Archive \"${deleteTarget.name}\"? It will be hidden from active catalog views.`
+              ? `Archive "${deleteTarget.name}". The record stays in the database and is marked inactive.`
               : 'Archive this product?'}
           </p>
           {formError ? <p className="dg-alert-error">{formError}</p> : null}
@@ -540,7 +596,7 @@ export default function AdminProductsPage() {
               onClick={() => void submitDelete()}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Archiving...' : 'Archive Product'}
+              {isDeleting ? 'Processing...' : 'Archive Product'}
             </button>
             <button
               type="button"
@@ -613,9 +669,16 @@ function renderProductForm(
           <FieldLabel htmlFor="product-material">Material</FieldLabel>
           <TextField
             id="product-material"
+            list="product-material-options"
             value={form.material}
             onChange={(event) => setForm((prev) => ({ ...prev, material: event.target.value }))}
+            placeholder="Pick or type material"
           />
+          <datalist id="product-material-options">
+            {MATERIAL_OPTIONS.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
         </FieldGroup>
 
         <FieldGroup>
@@ -657,38 +720,95 @@ function renderProductForm(
         </FieldGroup>
 
         <FieldGroup>
-          <FieldLabel htmlFor="product-tags">Tags (comma separated)</FieldLabel>
+          <FieldLabel htmlFor="product-tags">Tags</FieldLabel>
+          <div className="dg-checkbox-group mb-2">
+            {TAG_OPTIONS.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={hasCsvValue(form.tags, tag) ? 'ui-btn ui-btn-primary ui-btn-sm' : 'ui-btn ui-btn-secondary ui-btn-sm'}
+                onClick={() => setForm((prev) => ({ ...prev, tags: toggleCsvValue(prev.tags, tag) }))}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
           <TextField
             id="product-tags"
             value={form.tags}
             onChange={(event) => setForm((prev) => ({ ...prev, tags: event.target.value }))}
+            placeholder="Comma separated tags"
           />
         </FieldGroup>
 
         <FieldGroup>
-          <FieldLabel htmlFor="product-colors">Colors (comma separated)</FieldLabel>
+          <FieldLabel htmlFor="product-colors">Colors</FieldLabel>
+          <div className="dg-checkbox-group mb-2">
+            {COLOR_OPTIONS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                className={hasCsvValue(form.colors, color) ? 'ui-btn ui-btn-primary ui-btn-sm' : 'ui-btn ui-btn-secondary ui-btn-sm'}
+                onClick={() => setForm((prev) => ({ ...prev, colors: toggleCsvValue(prev.colors, color) }))}
+              >
+                {color}
+              </button>
+            ))}
+          </div>
           <TextField
             id="product-colors"
             value={form.colors}
             onChange={(event) => setForm((prev) => ({ ...prev, colors: event.target.value }))}
+            placeholder="Comma separated colors"
           />
         </FieldGroup>
 
         <FieldGroup>
-          <FieldLabel htmlFor="product-sizes">Sizes (comma separated)</FieldLabel>
+          <FieldLabel htmlFor="product-sizes">Sizes</FieldLabel>
+          <div className="dg-checkbox-group mb-2">
+            {SIZE_OPTIONS.map((size) => (
+              <button
+                key={size}
+                type="button"
+                className={hasCsvValue(form.sizes, size) ? 'ui-btn ui-btn-primary ui-btn-sm' : 'ui-btn ui-btn-secondary ui-btn-sm'}
+                onClick={() => setForm((prev) => ({ ...prev, sizes: toggleCsvValue(prev.sizes, size) }))}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
           <TextField
             id="product-sizes"
             value={form.sizes}
             onChange={(event) => setForm((prev) => ({ ...prev, sizes: event.target.value }))}
+            placeholder="Comma separated sizes"
           />
         </FieldGroup>
 
         <FieldGroup>
-          <FieldLabel htmlFor="product-branding">Branding Options (comma separated)</FieldLabel>
+          <FieldLabel htmlFor="product-branding">Branding Options</FieldLabel>
+          <div className="dg-checkbox-group mb-2">
+            {BRANDING_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={hasCsvValue(form.brandingOptions, option) ? 'ui-btn ui-btn-primary ui-btn-sm' : 'ui-btn ui-btn-secondary ui-btn-sm'}
+                onClick={() =>
+                  setForm((prev) => ({
+                    ...prev,
+                    brandingOptions: toggleCsvValue(prev.brandingOptions, option),
+                  }))
+                }
+              >
+                {option}
+              </button>
+            ))}
+          </div>
           <TextField
             id="product-branding"
             value={form.brandingOptions}
             onChange={(event) => setForm((prev) => ({ ...prev, brandingOptions: event.target.value }))}
+            placeholder="Comma separated branding options"
           />
         </FieldGroup>
 
@@ -699,6 +819,175 @@ function renderProductForm(
             value={form.image}
             onChange={(event) => setForm((prev) => ({ ...prev, image: event.target.value }))}
           />
+        </FieldGroup>
+
+        <FieldGroup className="md:col-span-2">
+          <div className="dg-admin-head">
+            <FieldLabel>Variants</FieldLabel>
+            <button
+              type="button"
+              className="ui-btn ui-btn-secondary ui-btn-md"
+              onClick={() =>
+                setForm((prev) => ({
+                  ...prev,
+                  variants: [
+                    ...prev.variants,
+                    {
+                      sku: '',
+                      variantName: '',
+                      size: '',
+                      color: '',
+                      unitPrice: 0,
+                      moq: 1,
+                      isActive: true,
+                    },
+                  ],
+                }))
+              }
+            >
+              Add Variant
+            </button>
+          </div>
+          {form.variants.length === 0 ? (
+            <FieldHint>No variants configured. You can still save the base product.</FieldHint>
+          ) : (
+            <div className="dg-side-stack">
+              {form.variants.map((variant, index) => (
+                <div key={`${variant.id || 'new'}-${index}`} className="rounded border border-[var(--color-border)] p-3">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <FieldGroup>
+                      <FieldLabel>SKU</FieldLabel>
+                      <TextField
+                        value={variant.sku}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            variants: prev.variants.map((item, i) =>
+                              i === index ? { ...item, sku: event.target.value } : item
+                            ),
+                          }))
+                        }
+                      />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <FieldLabel>Variant Name</FieldLabel>
+                      <TextField
+                        value={variant.variantName}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            variants: prev.variants.map((item, i) =>
+                              i === index ? { ...item, variantName: event.target.value } : item
+                            ),
+                          }))
+                        }
+                      />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <FieldLabel>Unit Price</FieldLabel>
+                      <TextField
+                        type="number"
+                        step="0.01"
+                        value={String(variant.unitPrice)}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            variants: prev.variants.map((item, i) =>
+                              i === index ? { ...item, unitPrice: Number(event.target.value || 0) } : item
+                            ),
+                          }))
+                        }
+                      />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <FieldLabel>MOQ</FieldLabel>
+                      <TextField
+                        type="number"
+                        value={String(variant.moq)}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            variants: prev.variants.map((item, i) =>
+                              i === index ? { ...item, moq: Number(event.target.value || 1) } : item
+                            ),
+                          }))
+                        }
+                      />
+                    </FieldGroup>
+                    <FieldGroup>
+                      <FieldLabel>Size</FieldLabel>
+                      <TextField
+                        list={`variant-size-options-${index}`}
+                        value={String(variant.size || '')}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            variants: prev.variants.map((item, i) =>
+                              i === index ? { ...item, size: event.target.value } : item
+                            ),
+                          }))
+                        }
+                      />
+                      <datalist id={`variant-size-options-${index}`}>
+                        {SIZE_OPTIONS.map((size) => (
+                          <option key={size} value={size} />
+                        ))}
+                      </datalist>
+                    </FieldGroup>
+                    <FieldGroup>
+                      <FieldLabel>Color</FieldLabel>
+                      <TextField
+                        list={`variant-color-options-${index}`}
+                        value={String(variant.color || '')}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            variants: prev.variants.map((item, i) =>
+                              i === index ? { ...item, color: event.target.value } : item
+                            ),
+                          }))
+                        }
+                      />
+                      <datalist id={`variant-color-options-${index}`}>
+                        {COLOR_OPTIONS.map((color) => (
+                          <option key={color} value={color} />
+                        ))}
+                      </datalist>
+                    </FieldGroup>
+                  </div>
+                  <div className="dg-form-row mt-2">
+                    <label className="dg-help">
+                      <input
+                        type="checkbox"
+                        checked={variant.isActive}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            variants: prev.variants.map((item, i) =>
+                              i === index ? { ...item, isActive: event.target.checked } : item
+                            ),
+                          }))
+                        }
+                      />{' '}
+                      Active
+                    </label>
+                    <button
+                      type="button"
+                      className="ui-btn ui-btn-secondary ui-btn-md"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          variants: prev.variants.filter((_, i) => i !== index),
+                        }))
+                      }
+                    >
+                      Remove Variant
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </FieldGroup>
       </div>
 

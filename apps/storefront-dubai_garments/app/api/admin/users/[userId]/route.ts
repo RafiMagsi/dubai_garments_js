@@ -128,12 +128,12 @@ export async function DELETE(
   const { userId } = await context.params;
 
   if (sessionOrResponse.sub === userId) {
-    return NextResponse.json({ message: 'You cannot delete your own account.' }, { status: 422 });
+    return NextResponse.json({ message: 'You cannot deactivate your own account.' }, { status: 422 });
   }
 
   const existing = await prisma.users.findUnique({
     where: { id: userId },
-    select: { id: true, role: true },
+    select: { id: true, role: true, is_active: true },
   });
 
   if (!existing) {
@@ -146,12 +146,29 @@ export async function DELETE(
     });
     if (totalAdmins <= 1) {
       return NextResponse.json(
-        { message: 'Cannot delete the last active admin.' },
+        { message: 'Cannot deactivate the last active admin.' },
         { status: 422 }
       );
     }
   }
 
-  await prisma.users.delete({ where: { id: userId } });
-  return NextResponse.json({ ok: true });
+  const item = await prisma.users.update({
+    where: { id: userId },
+    data: { is_active: false },
+    select: {
+      id: true,
+      full_name: true,
+      email: true,
+      role: true,
+      is_active: true,
+      last_login_at: true,
+      created_at: true,
+      updated_at: true,
+    },
+  });
+  return NextResponse.json({
+    ok: true,
+    item,
+    message: existing.is_active ? 'User deactivated successfully.' : 'User was already inactive.',
+  });
 }

@@ -181,11 +181,19 @@ export default function AdminUsersPage() {
       if (!response.ok) {
         throw new Error(String(payload?.message || `Failed to delete user (${response.status}).`));
       }
-      setUsers((previous) => previous.filter((item) => item.id !== deleteTarget.id));
-      setActionMessage('User deleted successfully.');
+      if (payload.item) {
+        setUsers((previous) =>
+          previous.map((item) =>
+            item.id === deleteTarget.id ? (payload.item as AdminUser) : item
+          )
+        );
+      } else {
+        await loadUsers();
+      }
+      setActionMessage(String(payload?.message || 'User deactivated successfully.'));
       closeDeleteModal();
     } catch (deleteError) {
-      setDeleteError(deleteError instanceof Error ? deleteError.message : 'Failed to delete user.');
+      setDeleteError(deleteError instanceof Error ? deleteError.message : 'Failed to deactivate user.');
     } finally {
       setIsDeletingUser(false);
     }
@@ -496,7 +504,7 @@ export default function AdminUsersPage() {
                                   className="ui-btn ui-btn-secondary ui-btn-md"
                                   onClick={() => openDeleteModal(user)}
                                 >
-                                  Delete
+                                  Deactivate
                                 </button>
                               </>
                             )}
@@ -682,13 +690,13 @@ export default function AdminUsersPage() {
       <Modal open={deleteModalOpen} onClose={closeDeleteModal}>
         <div className="dg-card p-5 sm:p-6">
           <div className="dg-admin-head">
-            <h2 className="dg-title-sm">Delete User</h2>
+            <h2 className="dg-title-sm">Deactivate User</h2>
             <span className="dg-badge">Admin Only</span>
           </div>
           <p className="dg-help mt-2 mb-4">
             {deleteTarget
-              ? `Delete "${deleteTarget.full_name}" (${deleteTarget.email})? This action cannot be undone.`
-              : 'Delete this user account?'}
+              ? `Deactivate "${deleteTarget.full_name}" (${deleteTarget.email})? The record will stay in the database.`
+              : 'Deactivate this user account?'}
           </p>
 
           {deleteError ? <p className="dg-alert-error">{deleteError}</p> : null}
@@ -700,7 +708,7 @@ export default function AdminUsersPage() {
               onClick={() => void confirmDeleteUser()}
               disabled={isDeletingUser}
             >
-              {isDeletingUser ? 'Deleting...' : 'Delete User'}
+              {isDeletingUser ? 'Processing...' : 'Deactivate User'}
             </button>
             <button
               type="button"

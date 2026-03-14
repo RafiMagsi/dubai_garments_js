@@ -57,6 +57,40 @@ function normalizePriceTiers(value: unknown): Array<{ minQty: number; maxQty?: n
   }, []);
 }
 
+function normalizeVariants(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.reduce<
+    Array<{
+      sku: string;
+      variantName: string;
+      size?: string | null;
+      color?: string | null;
+      unitPrice: number;
+      moq: number;
+      isActive: boolean;
+    }>
+  >((acc, item) => {
+    if (!item || typeof item !== 'object') return acc;
+    const candidate = item as Record<string, unknown>;
+    const sku = String(candidate.sku || '').trim();
+    const variantName = String(candidate.variantName || candidate.variant_name || '').trim();
+    const unitPrice = Number(candidate.unitPrice ?? candidate.unit_price);
+    const moq = Number(candidate.moq ?? 1);
+    if (!sku || !variantName || !Number.isFinite(unitPrice)) return acc;
+
+    acc.push({
+      sku,
+      variantName,
+      size: String(candidate.size || '').trim() || null,
+      color: String(candidate.color || '').trim() || null,
+      unitPrice,
+      moq: Number.isFinite(moq) && moq > 0 ? moq : 1,
+      isActive: candidate.isActive === undefined ? true : Boolean(candidate.isActive),
+    });
+    return acc;
+  }, []);
+}
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ productId: string }> }
@@ -92,6 +126,7 @@ export async function PATCH(
   if (body?.image !== undefined) updates.image = String(body.image || '').trim();
   if (body?.gallery !== undefined) updates.gallery = normalizeStringArray(body.gallery);
   if (body?.priceTiers !== undefined) updates.priceTiers = normalizePriceTiers(body.priceTiers);
+  const normalizedVariants = body?.variants !== undefined ? normalizeVariants(body.variants) : null;
 
   if (updates.slug) {
     const existing = await prisma.product.findFirst({
@@ -108,7 +143,22 @@ export async function PATCH(
 
   const item = await prisma.product.update({
     where: { id: productId },
-    data: updates,
+    data: {
+      ...updates,
+      ...(normalizedVariants
+        ? {
+            variants: {
+              deleteMany: {},
+              create: normalizedVariants,
+            },
+          }
+        : {}),
+    },
+    include: {
+      variants: {
+        orderBy: [{ createdAt: 'asc' }],
+      },
+    },
   });
 
   return NextResponse.json({ item });
@@ -128,6 +178,17 @@ export async function DELETE(
     data: {
       isActive: false,
       featured: false,
+      variants: {
+        updateMany: {
+          where: {},
+          data: { isActive: false },
+        },
+      },
+    },
+    include: {
+      variants: {
+        orderBy: [{ createdAt: 'asc' }],
+      },
     },
   });
 

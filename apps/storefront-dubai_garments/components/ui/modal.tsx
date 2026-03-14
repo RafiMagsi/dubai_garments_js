@@ -113,7 +113,7 @@ export default function Modal({ open, onClose, children, className }: ModalProps
         role="dialog"
         aria-modal="true"
       >
-        {children}
+        <div className="ui-modal-viewport">{children}</div>
       </div>
     </div>,
     document.body

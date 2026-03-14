@@ -59,6 +59,40 @@ function normalizePriceTiers(value: unknown): Array<{ minQty: number; maxQty?: n
   }, []);
 }
 
+function normalizeVariants(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.reduce<
+    Array<{
+      sku: string;
+      variantName: string;
+      size?: string | null;
+      color?: string | null;
+      unitPrice: number;
+      moq: number;
+      isActive: boolean;
+    }>
+  >((acc, item) => {
+    if (!item || typeof item !== 'object') return acc;
+    const candidate = item as Record<string, unknown>;
+    const sku = String(candidate.sku || '').trim();
+    const variantName = String(candidate.variantName || candidate.variant_name || '').trim();
+    const unitPrice = Number(candidate.unitPrice ?? candidate.unit_price);
+    const moq = Number(candidate.moq ?? 1);
+    if (!sku || !variantName || !Number.isFinite(unitPrice)) return acc;
+
+    acc.push({
+      sku,
+      variantName,
+      size: String(candidate.size || '').trim() || null,
+      color: String(candidate.color || '').trim() || null,
+      unitPrice,
+      moq: Number.isFinite(moq) && moq > 0 ? moq : 1,
+      isActive: candidate.isActive === undefined ? true : Boolean(candidate.isActive),
+    });
+    return acc;
+  }, []);
+}
+
 export async function GET(request: NextRequest) {
   const sessionOrResponse = await requireAdminSession();
   if (sessionOrResponse instanceof Response) return sessionOrResponse;
@@ -86,6 +120,11 @@ export async function GET(request: NextRequest) {
         : {}),
     },
     orderBy: [{ updatedAt: 'desc' }],
+    include: {
+      variants: {
+        orderBy: [{ createdAt: 'asc' }],
+      },
+    },
   });
 
   return NextResponse.json({ items: products });
@@ -113,6 +152,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: 'Slug already exists.' }, { status: 409 });
   }
 
+  const variants = normalizeVariants(body?.variants);
+
   const created = await prisma.product.create({
     data: {
       name,
@@ -132,6 +173,16 @@ export async function POST(request: NextRequest) {
       image: String(body?.image || '').trim(),
       gallery: normalizeStringArray(body?.gallery),
       priceTiers: normalizePriceTiers(body?.priceTiers),
+      variants: variants.length
+        ? {
+            create: variants,
+          }
+        : undefined,
+    },
+    include: {
+      variants: {
+        orderBy: [{ createdAt: 'asc' }],
+      },
     },
   });
 
