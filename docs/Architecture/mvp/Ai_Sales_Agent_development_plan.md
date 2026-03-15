@@ -18,6 +18,10 @@ Primary outcomes:
 6. Pipeline Insights
 7. Automation Runs + Execution Transparency
 8. Model and Prompt Settings
+9. Next-Best-Action Dashboard
+10. AI Impact and Value Dashboard
+11. Smart Routing and SLA Automation
+12. Automation Template Library
 
 ## Delivery Tickets
 1. `AIA-001` `frontend` `M` Add admin sidebar entry and main shell page: `AI Sales Agent`.
@@ -40,6 +44,11 @@ Primary outcomes:
 18. `AIA-018` `ops` `S` Add demo seed preset for AI-heavy walkthrough.
 19. `AIA-019` `ops` `S` Add showcase script and sign-off checklist for freelance demos.
 20. `AIA-020` `qa` `S` Final regression pass (AI response quality, fallback behavior, role safety, automation reliability).
+21. `AIA-021` `frontend` `M` Add Next-Best-Action cards on dashboard with confidence, reasons, and execute actions.
+22. `AIA-022` `backend` `M` Build Smart Routing + SLA service (auto-assign, untouched lead SLA reroute).
+23. `AIA-023` `backend` `S` Add automation template registry (new lead, quote reminder, stale deal, reactivation).
+24. `AIA-024` `frontend` `S` Add AI Impact KPI board (time saved, suggestions accepted, risk alerts resolved).
+25. `AIA-025` `backend` `S` Extend Quote Copilot with margin safety, discount guidance, and pricing risk hints.
 
 ## Week-by-Week Execution Board (Daily Order)
 
@@ -145,7 +154,8 @@ Primary outcomes:
 ### Day 20
 1. End-to-end check: lead -> reply studio -> quote copilot path.
 2. Tune latency and fallback messaging for user trust.
-3. Freeze Week 4 output.
+3. Implement `AIA-025` quote intelligence checks (margin safety + discount guidance).
+4. Freeze Week 4 output.
 
 ## Week 5 - Pipeline Insights and Automation Transparency
 ### Day 21
@@ -157,21 +167,25 @@ Primary outcomes:
 1. Build `AIA-013` pipeline insight cards in AI Sales Agent and dashboard.
 2. Add one-click actions (follow-up draft, assign owner, move stage suggestion).
 3. Track execution results in audit logs.
+4. Implement `AIA-021` Next-Best-Action dashboard cards.
 
 ### Day 23
 1. Implement `AIA-014` automation run detail API.
 2. Include workflow input/output summary and failure metadata.
 3. Add permission checks and pagination.
+4. Implement `AIA-022` Smart Routing + SLA automation service.
 
 ### Day 24
 1. Build `AIA-015` automation runs timeline UI.
 2. Add rerun action with guardrails.
 3. Add failure drilldown and remediation hints.
+4. Implement `AIA-023` automation template library backend.
 
 ### Day 25
 1. Validate operational reliability on AI and automation views.
 2. Fix inconsistencies across tabs and details.
-3. Freeze Week 5 output.
+3. Add automation template quick-enable controls in UI.
+4. Freeze Week 5 output.
 
 ## Week 6 - Model Settings, Demo Packaging, and Release Readiness
 ### Day 26
@@ -188,6 +202,7 @@ Primary outcomes:
 1. Implement `AIA-018` demo seed presets.
 2. Build one-command setup for AI-heavy demo data.
 3. Verify deterministic setup flow.
+4. Implement `AIA-024` AI impact KPI board.
 
 ### Day 29
 1. Implement `AIA-019` showcase walkthrough script.
@@ -204,8 +219,8 @@ Primary outcomes:
 2. Week 2: Working lead triage intelligence.
 3. Week 3: Signature lead-to-close AI flow.
 4. Week 4: Reply Studio + Quote Copilot.
-5. Week 5: Pipeline insights + automation transparency.
-6. Week 6: Model settings + demo packaging + release hardening.
+5. Week 5: Pipeline insights + automation transparency + routing/SLA + templates.
+6. Week 6: Model settings + AI impact board + demo packaging + release hardening.
 
 ## Definition of Done (Daily)
 1. Day-scope code merged.
@@ -220,4 +235,6 @@ Primary outcomes:
 4. Reply Studio and Quote Copilot are usable in real lead/deal workflows.
 5. Pipeline insights and automation runs are transparent and actionable.
 6. Model/prompt settings exist with safe fallback behavior.
-7. Demo walkthrough runs cleanly end-to-end in under 7 minutes.
+7. Next-Best-Action dashboard and AI impact KPIs are visible and demoable.
+8. Smart routing/SLA and template automations are running with audit visibility.
+9. Demo walkthrough runs cleanly end-to-end in under 7 minutes.
