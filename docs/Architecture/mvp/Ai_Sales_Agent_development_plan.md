@@ -1,757 +1,223 @@
-# Ai Sales Agent — Development Plan
-
-## Goal
-
-Build a visible, demo-ready **Ai Sales Agent** layer inside the existing AI sales system so the product feels unmistakably AI-first, automation-first, and commercially useful.
-
-This plan is designed to make the system:
-
-- stronger as an MVP
-- more impressive on freelance portals
-- easier to explain to buyers
-- visibly powered by AI and automation
-- practical for real lead-to-close workflows
-
-The core idea is simple:
-
-> Every lead should visibly move through an **AI-assisted visual flow** from inquiry to close.
-
-That means AI should not feel hidden in the backend. It should be shown directly in the product through a dedicated admin experience, clear agent actions, visible automation runs, and a structured lead-to-close workflow.
-
----
-
-# Product Direction
-
-## New Admin Sidebar Item
-
-Add a new page in the admin panel sidebar:
-
-# **Ai Sales Agent**
-
-This should be the main AI operations hub.
-
-Do not treat it as a simple chatbot page.
-
-It should be a **sales intelligence + workflow orchestration + automation visibility layer** for the entire system.
-
----
-
-# Main Product Promise
-
-The Ai Sales Agent should help users do these faster and better:
-
-- understand incoming leads
-- prioritize high-value leads
-- draft better replies
-- prepare quotes faster
-- decide the next best action
-- trigger timely follow-ups
-- reduce lead leakage
-- move deals to close with visible AI support
-
----
-
-# Core MVP Positioning
-
-The project should feel like:
-
-- an AI-assisted CRM
-- an AI-powered quote engine
-- an automated sales follow-up system
-- a visible AI workflow product
-
-Not just:
-- a CRM with one AI button
-- an admin dashboard with hidden LLM calls
-- a backend-heavy system with weak product presentation
-
----
-
-# Ai Sales Agent Page — Main Structure
-
-## Sidebar Label
-**Ai Sales Agent**
-
-## Recommended Page Tabs
-
-### 1. Lead Intelligence
-### 2. Reply Studio
-### 3. Quote Copilot
-### 4. Pipeline Insights
-### 5. Agent Flow
-### 6. Automation Runs
-### 7. Model & Prompt Settings
-
-This structure keeps the AI visible, organized, and demo-friendly.
-
----
-
-# Highest-Impact Addition
-
-## Ai Agent Visual Flow for Each Lead to Close
-
-This is the most important addition.
-
-Every lead should have a visible AI journey.
-
-Instead of only showing raw lead details, the system should show:
-
-- what the AI understood
-- what the AI recommended
-- what happened automatically
-- what the human should do next
-- where the lead currently is in the sales journey
-- what is blocking conversion
-
-This becomes the signature feature.
-
----
-
-# Ai Agent Visual Flow — Lead to Close
-
-## Purpose
-
-Create a visual step-by-step lead flow that shows how the Ai Sales Agent assists at each stage.
-
-This flow should be visible:
-
-- inside each lead detail view
-- inside the Ai Sales Agent page
-- optionally in pipeline/deal views
-- optionally in dashboard summary widgets
-
-## Visual Stages
-
-### Stage 1 — Lead Received
-System receives inquiry from:
-- website form
-- WhatsApp/manual entry
-- sales rep input
-- import/API source
-
-### Stage 2 — AI Lead Analysis
-AI performs:
-- lead summary
-- intent extraction
-- urgency detection
-- complexity detection
-- product/category inference
-- estimated quantity extraction
-- budget inference if possible
-- confidence scoring
-
-### Stage 3 — AI Qualification
-AI determines:
-- lead score
-- hot / warm / cold classification
-- quote readiness
-- whether more info is needed
-- recommended owner/priority
-
-### Stage 4 — AI Recommended Response
-AI produces:
-- first reply draft
-- WhatsApp reply
-- email reply
-- clarification questions
-- next-best-action recommendation
-
-### Stage 5 — Human Review / Sales Action
-Sales user can:
-- approve AI summary
-- send AI-generated reply
-- edit reply
-- request new draft
-- convert to deal
-- trigger quote preparation
-
-### Stage 6 — AI Quote Preparation
-AI helps:
-- suggest products
-- suggest variants
-- suggest quantities
-- generate quote summary
-- generate commercial intro message
-- generate upsell suggestions
-- identify missing quote inputs
-
-### Stage 7 — Quote Sent
-System logs:
-- quote created
-- quote sent
-- AI email draft used or not
-- follow-up timer started
-
-### Stage 8 — Follow-Up Automation
-Automation handles:
-- reminder scheduling
-- no-response follow-up drafts
-- escalation of hot leads
-- stale-deal detection
-- task creation
-
-### Stage 9 — Negotiation / Decision Support
-AI helps with:
-- objection handling draft
-- revised quote messaging
-- deal risk analysis
-- next-best-action recommendation
-
-### Stage 10 — Outcome
-Lead ends in:
-- won
-- lost
-- paused
-- awaiting client info
-
-### Stage 11 — Post-Outcome Intelligence
-System logs:
-- why won
-- why lost
-- AI predicted vs actual outcome
-- reusable insight for future leads
-
----
-
-# What the Visual Flow Should Show
-
-Each lead should show a timeline or flow card with:
-
-- current stage
-- completed stages
-- AI actions performed
-- automation actions performed
-- pending human tasks
-- pending AI recommendations
-- blockers
-- confidence level
-- recommended next move
-
-## Example Lead Flow Card
-
-- Lead received
-- AI summary generated
-- AI scored lead: 82 / High Priority
-- Recommended action: Send quote starter
-- Draft reply created
-- Sales rep approved reply
-- Quote created
-- Follow-up reminder scheduled
-- Awaiting client confirmation
-
-This is the feature that makes the system feel like an **actual AI sales platform**.
-
----
-
-# MVP Features to Build
-
-# 1. Lead Intelligence Module
-
-## Purpose
-Turn every incoming lead into structured, useful sales intelligence.
-
-## Tasks
-- AI lead summary
-- intent extraction
-- urgency label
-- complexity label
-- quantity estimate
-- category/product inference
-- lead score
-- confidence score
-- recommended next action
-
-## UI
-Top card in lead detail and mirrored inside Ai Sales Agent page.
-
-## Done Means
-- lead can be understood in 10 seconds
-- AI produces useful structured output
-- sales user knows what to do next
-
----
-
-# 2. Reply Studio
-
-## Purpose
-Make AI visibly useful in communication.
-
-## Tasks
-- draft first reply
-- draft WhatsApp reply
-- draft email reply
-- draft follow-up after no response
-- rewrite in concise / formal / persuasive tone
-- generate clarification questions
-- save or copy replies
-
-## Done Means
-- user can generate customer-ready text quickly
-- AI helps reduce reply time
-- demo shows obvious value
-
----
-
-# 3. Quote Copilot
-
-## Purpose
-Make quoting faster and smarter.
-
-## Tasks
-- recommend products
-- recommend quantities
-- suggest variants
-- create quote summary
-- generate proposal intro
-- suggest upsell/cross-sell items
-- flag missing data before quote is created
-
-## Done Means
-- lead can move to quote faster
-- quote process feels AI-assisted
-- system looks revenue-focused, not just admin-focused
-
----
-
-# 4. Pipeline Insights
-
-## Purpose
-Use AI to guide deals through the funnel.
-
-## Tasks
-- next-best-action recommendations
-- stalled deal detection
-- at-risk deal analysis
-- follow-up urgency alerts
-- win probability estimate
-- priority queue suggestions
-
-## Done Means
-- users see what matters now
-- AI acts like a sales co-pilot
-- pipeline becomes actionable, not just visual
-
----
-
-# 5. Agent Flow View
-
-## Purpose
-Provide the signature visual AI journey for each lead.
-
-## Tasks
-- lead-to-close flow visualization
-- completed vs pending stages
-- AI action cards
-- automation action cards
-- human intervention points
-- current stage indicator
-- recommended next step
-
-## Done Means
-- every lead has an understandable AI journey
-- product looks unique
-- easy to demo on freelance platforms
-
----
-
-# 6. Automation Runs
-
-## Purpose
-Make automation visible and trustworthy.
-
-## Tasks
-- show automation timeline
-- show AI-triggered jobs
-- show run result
-- show input/output summary
-- show error state if run failed
-- rerun action for admin
-
-## Done Means
-- system visibly “does work”
-- automation feels real to end users
-- easier debugging and demos
-
----
-
-# 7. Model & Prompt Settings
-
-## Purpose
-Make the system feel like a real AI product and strengthen your profile.
-
-## Tasks
-- model selector
-- provider selector
-- prompt template editor
-- test prompt panel
-- fallback model setting
-- temperature/style presets
-- structured output preview
-
-## Done Means
-- system looks professional
-- you can showcase LLM/product thinking
-- better freelance portfolio value
-
----
-
-# Recommended AI / LLM Strategy
-
-Do not overload the MVP with too many models.
-
-## Best setup
-
-### Primary model
-Use OpenAI as the main model for:
-- structured lead analysis
-- JSON outputs
-- next action generation
-- quote object generation
-- workflow AI tasks
-
-### Secondary model
-Use Claude later for:
-- high-quality long-form drafts
-- proposal rewrites
-- nuanced business messaging
-
-### Optional later
-Use Gemini for:
-- multimodal workflows
-- catalog/image/document tasks
-- large context use cases
-
-## MVP Rule
-Use one strong primary model first.
-Add fallback later only if needed.
-
----
-
-# Best First AI Agent
-
-# **Lead Triage Agent**
-
-This should be the first real AI agent.
-
-## What it does
-When a new lead arrives, it automatically:
-
-1. reads the lead
-2. summarizes the lead
-3. extracts structured data
-4. scores the lead
-5. classifies urgency and complexity
-6. suggests next best action
-7. drafts first reply
-8. optionally starts quote preparation
-
-## Why this is the best first agent
-- high value
-- easy to demo
-- safe enough to automate partially
-- directly tied to sales outcome
-- makes AI visible immediately
-
----
-
-# Optional Next Agents
-
-## 1. Quote Preparation Agent
-- recommends quote items
-- drafts quote intro
-- identifies missing fields
-
-## 2. Follow-Up Agent
-- detects inactivity
-- drafts reminder
-- schedules follow-up
-- escalates hot leads
-
-## 3. Deal Risk Agent
-- finds stalled deals
-- explains risks
-- recommends rescue actions
-
-These can come after the Lead Triage Agent.
-
----
-
-# MVP Development Phases
-
-# Phase 1 — Foundation and AI Surface
-
-## Tasks
-- create new admin sidebar page: Ai Sales Agent
-- build page shell and navigation
-- create tabs
-- add lead intelligence card
-- add reply studio card
-- add model settings stub
-- add AI run logging skeleton
-
-## Output
-AI is now visible in the product.
-
----
-
-# Phase 2 — Lead Intelligence + Triage Agent
-
-## Tasks
-- AI lead summary
-- lead score
-- urgency/complexity
-- intent extraction
-- next best action
-- confidence score
-- store AI result in DB
-- trigger on new lead creation
-
-## Output
-The system visibly understands incoming leads.
-
----
-
-# Phase 3 — Ai Agent Visual Flow
-
-## Tasks
-- design lead-to-close flow component
-- map all stages
-- show completed/pending steps
-- show AI actions
-- show automation actions
-- show manual intervention points
-- show recommended next step
-
-## Output
-Each lead has a visible AI journey.
-
----
-
-# Phase 4 — Reply Studio + Quote Copilot
-
-## Tasks
-- draft first response
-- draft follow-up
-- draft quote intro
-- quote product suggestions
-- quote summary generation
-- upsell suggestions
-
-## Output
-AI now helps with revenue work directly.
-
----
-
-# Phase 5 — Pipeline Intelligence + Automations
-
-## Tasks
-- deal risk detection
-- stalled lead alerts
-- next-best-action for deals
-- follow-up automation
-- automation run timeline
-- rerun actions for admins
-
-## Output
-AI and automation feel operational, not experimental.
-
----
-
-# Phase 6 — Prompt / Model Management + Polish
-
-## Tasks
-- model selector
-- provider selector
-- prompt editor
-- AI logs page
-- fallback handling
-- empty states
-- demo seed data
-- screenshots / demo setup
-
-## Output
-Ready for freelance portfolio demos and pilot usage.
-
----
-
-# Suggested Screens
-
-## Admin Screens
-- Dashboard
-- Leads
-- Lead Detail
-- Deals
-- Pipeline
-- Quotes
-- Quote Detail
-- Settings
-- **Ai Sales Agent**
-- Automation Runs
-- AI Logs
-
-## Ai Sales Agent Internal Sections
-- Lead Intelligence
-- Reply Studio
-- Quote Copilot
-- Pipeline Insights
-- Agent Flow
-- Automation Runs
-- Model Settings
-
----
-
-# Minimal Database / Data Additions
-
-Add tables or fields for:
-
-- ai_run_logs
-- ai_lead_analysis
-- ai_recommendations
-- ai_prompt_versions
-- automation_run_events
-- lead_agent_flow_state
-
-If you want to stay lighter for MVP, some of these can be merged into:
-- activities
-- automation_runs
-- system_settings
-
----
-
-# Most Valuable Demo Flow
-
-Use this exact product demo story:
-
-1. new lead is submitted
-2. Ai Sales Agent analyzes it
-3. lead summary appears
-4. lead score appears
-5. recommended next action appears
-6. AI drafts first reply
-7. lead converts to deal
-8. AI suggests quote items
-9. quote is generated
-10. follow-up automation starts
-11. agent flow timeline shows the journey
-
-This is the most portfolio-friendly flow.
-
----
-
-# What Makes This Project More Sellable
-
-This plan makes the project easier to sell because clients can immediately understand:
-
-- where AI is used
-- how automation saves time
-- how the system reduces missed leads
-- how quoting becomes faster
-- how sales teams know what to do next
-
-That is much stronger than saying:
-- Next.js
-- FastAPI
-- n8n
-- OpenAI integration
-
-The business story becomes clear.
-
----
-
-# What to Avoid
-
-Do not start by building:
-
-- full general-purpose autonomous agents
-- deep workflow builders
-- giant analytics suites
-- custom object engines
-- enterprise-grade permissions matrix
-- plugin marketplace
-
-Those slow you down and weaken the MVP.
-
-The first version should be:
-
-- narrow
-- polished
-- useful
-- obvious in value
-- easy to explain
-
----
-
-# Definition of Done for Ai Sales Agent MVP
-
-The Ai Sales Agent MVP is done when:
-
-- admin sidebar shows Ai Sales Agent
-- every lead has AI summary and score
-- every lead has visible agent flow from intake to outcome
-- user can draft AI replies
-- user can use AI quote assistance
-- user can see automation runs
-- user can see recommended next actions
-- system can auto-score new leads
-- system can support follow-up automation
-- demo flow works without confusion
-
----
-
-# Final Build Order
-
-## Sprint 1
-- Ai Sales Agent page shell
-- tab structure
-- lead intelligence card
-- AI run logging basics
-
-## Sprint 2
-- Lead Triage Agent
-- AI summary
-- AI score
-- next action
-- reply draft
-
-## Sprint 3
-- Ai Agent Visual Flow for each lead
-- stage mapping
-- action timeline
-- flow state display
-
-## Sprint 4
-- Quote Copilot
-- product suggestions
-- quote summary
-- quote intro draft
-
-## Sprint 5
-- Pipeline Insights
-- stalled lead detection
-- deal risk recommendations
-- follow-up automation
-
-## Sprint 6
-- model settings
-- prompt editor
-- AI logs
-- polish
-- demo data
-- portfolio screenshots
-
----
-
-# Final Recommendation
-
-The best move is:
-
-## Build **Ai Sales Agent** as a dedicated AI-first workspace
-with a visible **lead-to-close visual agent flow** for every lead.
-
-That will make the product:
-- stronger as an MVP
-- better for freelance showcasing
-- more memorable to clients
-- much more obviously AI-powered
-
-This is the right direction if your goal is to make AI and automation the most prominent part of the system.
+# AI Sales Agent - Development Plan (Week-by-Week Execution Board)
+
+## Objective
+Build a visible AI-first and automation-first sales layer that is demo-ready for client showcases and practical for pilot usage.
+
+Primary outcomes:
+1. AI is visible in daily workflow, not hidden in backend calls
+2. Lead-to-close journey is shown as an AI-assisted flow
+3. Automation performs real work with approval/audit controls
+4. Product is strong enough for freelance portfolio demos
+
+## Module Scope
+1. Global AI Copilot
+2. Lead Intelligence + Lead Triage Agent
+3. Agent Flow (Lead to Close Visual Journey)
+4. Reply Studio
+5. Quote Copilot
+6. Pipeline Insights
+7. Automation Runs + Execution Transparency
+8. Model and Prompt Settings
+
+## Delivery Tickets
+1. `AIA-001` `frontend` `M` Add admin sidebar entry and main shell page: `AI Sales Agent`.
+2. `AIA-002` `frontend` `M` Add AI Sales Agent tabs (Lead Intelligence, Reply Studio, Quote Copilot, Pipeline Insights, Agent Flow, Automation Runs, Model Settings).
+3. `AIA-003` `backend` `M` Create `POST /api/admin/copilot/query` with typed response contract.
+4. `AIA-004` `backend` `M` Create `POST /api/admin/copilot/execute` with RBAC action whitelist.
+5. `AIA-005` `db` `M` Add `ai_logs` enrichment fields for action type, confidence, fallback, and latency.
+6. `AIA-006` `backend` `M` Implement Lead Triage Agent pipeline (summary, intent, urgency, complexity, score, next action).
+7. `AIA-007` `frontend` `M` Build Lead Intelligence card stack in lead detail and AI Agent page.
+8. `AIA-008` `frontend` `M` Build Agent Flow component (stages, status, blockers, pending actions).
+9. `AIA-009` `frontend` `M` Build Reply Studio (draft, rewrite tone, follow-up draft, clarification questions).
+10. `AIA-010` `backend` `M` Add quote recommendation endpoint for Quote Copilot.
+11. `AIA-011` `frontend` `M` Build Quote Copilot panel with product/variant/quantity recommendations.
+12. `AIA-012` `backend` `M` Build Pipeline Insights endpoint (stalled deals, risk, next-best-action).
+13. `AIA-013` `frontend` `M` Build Pipeline Insights cards and action queue.
+14. `AIA-014` `backend` `S` Add automation run event detail API (input/output summary + failures).
+15. `AIA-015` `frontend` `S` Add Automation Runs timeline UI and rerun action.
+16. `AIA-016` `backend` `S` Add prompt/model config API with safe validation.
+17. `AIA-017` `frontend` `S` Add Model and Prompt Settings UI with test panel.
+18. `AIA-018` `ops` `S` Add demo seed preset for AI-heavy walkthrough.
+19. `AIA-019` `ops` `S` Add showcase script and sign-off checklist for freelance demos.
+20. `AIA-020` `qa` `S` Final regression pass (AI response quality, fallback behavior, role safety, automation reliability).
+
+## Week-by-Week Execution Board (Daily Order)
+
+## Week 1 - Surface and Copilot Foundation
+### Day 1
+1. Implement `AIA-001` sidebar route and page skeleton.
+2. Implement `AIA-002` tab shell and base layout placeholders.
+3. Add route-level admin guards and nav visibility checks.
+
+### Day 2
+1. Implement `AIA-003` copilot query endpoint contract.
+2. Define typed JSON schema for intents (`followups_today`, `draft_reply`, `at_risk_deals`).
+3. Add fallback deterministic response path when model output fails schema validation.
+
+### Day 3
+1. Implement `AIA-004` copilot execute endpoint with RBAC whitelist.
+2. Add audit write path into `ai_logs` for all copilot actions.
+3. Add action simulation mode (`dry_run=true`) for safe demos.
+
+### Day 4
+1. Build copilot UI input in admin header (global visibility).
+2. Add intent suggestion chips and structured action card rendering.
+3. Connect query/execute APIs and display action outcomes.
+
+### Day 5
+1. Hardening pass for copilot UX states (loading/error/empty/success).
+2. Validate tenant scoping on all copilot queries.
+3. Freeze Week 1 baseline.
+
+## Week 2 - Lead Intelligence and Triage Agent
+### Day 6
+1. Implement `AIA-006` lead triage orchestration service.
+2. Add extraction fields: summary, intent, urgency, complexity, quantity, confidence.
+3. Add score/classification outputs and next-best-action output.
+
+### Day 7
+1. Persist triage result in DB (`AIA-005` data additions).
+2. Wire triage trigger for new lead intake and manual retrigger action.
+3. Add fallback provider behavior and failure reason logging.
+
+### Day 8
+1. Build `AIA-007` Lead Intelligence cards in lead detail page.
+2. Mirror same cards in AI Sales Agent > Lead Intelligence tab.
+3. Add "last analyzed" and provider/fallback badges.
+
+### Day 9
+1. Add action buttons from intelligence cards (draft reply, convert, prioritize).
+2. Ensure each action writes timeline/audit events.
+3. Add confidence and reason visibility for explainability.
+
+### Day 10
+1. Regression test lead intake to intelligence rendering flow.
+2. Validate role behavior (`admin`, `sales_manager`, `sales_rep`, `ops`).
+3. Freeze Week 2 output.
+
+## Week 3 - Agent Flow (Signature Feature)
+### Day 11
+1. Implement `AIA-008` stage model for lead-to-close flow.
+2. Define 11-stage canonical flow and completion rules.
+3. Map flow states from existing lead/deal/quote/automation data.
+
+### Day 12
+1. Build Agent Flow timeline/stepper UI with status coloring.
+2. Show completed, active, pending, blocked states.
+3. Add blockers and recommended next move panel.
+
+### Day 13
+1. Add AI action markers and automation action markers in flow.
+2. Add human intervention checkpoints and pending approvals.
+3. Show confidence trend and risk hints in flow sidebar.
+
+### Day 14
+1. Embed Agent Flow in lead detail view.
+2. Add Agent Flow tab in AI Sales Agent page.
+3. Add deep links from flow steps to related detail actions.
+
+### Day 15
+1. Full UX polish for flow readability and compactness.
+2. Add empty/error/loading states for all flow sub-panels.
+3. Freeze Week 3 output.
+
+## Week 4 - Reply Studio and Quote Copilot
+### Day 16
+1. Implement `AIA-009` reply studio service and UI actions.
+2. Add first reply draft, follow-up draft, clarification questions.
+3. Add rewrite tones (concise, formal, persuasive).
+
+### Day 17
+1. Connect reply studio with lead/deal/quote contexts.
+2. Add "approve and send" flow with audit events.
+3. Add manual edit + regenerate controls.
+
+### Day 18
+1. Implement `AIA-010` quote recommendation endpoint.
+2. Build quote recommendation payload with product/quantity/variant suggestions.
+3. Add missing-data detection logic before quote creation.
+
+### Day 19
+1. Build `AIA-011` Quote Copilot UI panel.
+2. Add recommendation acceptance actions and quote summary generation.
+3. Add upsell/cross-sell suggestion block.
+
+### Day 20
+1. End-to-end check: lead -> reply studio -> quote copilot path.
+2. Tune latency and fallback messaging for user trust.
+3. Freeze Week 4 output.
+
+## Week 5 - Pipeline Insights and Automation Transparency
+### Day 21
+1. Implement `AIA-012` pipeline insight service (stalled, risk, next action).
+2. Define risk score reasons and urgency queues.
+3. Add stage-aging and inactivity heuristics.
+
+### Day 22
+1. Build `AIA-013` pipeline insight cards in AI Sales Agent and dashboard.
+2. Add one-click actions (follow-up draft, assign owner, move stage suggestion).
+3. Track execution results in audit logs.
+
+### Day 23
+1. Implement `AIA-014` automation run detail API.
+2. Include workflow input/output summary and failure metadata.
+3. Add permission checks and pagination.
+
+### Day 24
+1. Build `AIA-015` automation runs timeline UI.
+2. Add rerun action with guardrails.
+3. Add failure drilldown and remediation hints.
+
+### Day 25
+1. Validate operational reliability on AI and automation views.
+2. Fix inconsistencies across tabs and details.
+3. Freeze Week 5 output.
+
+## Week 6 - Model Settings, Demo Packaging, and Release Readiness
+### Day 26
+1. Implement `AIA-016` prompt/model config APIs.
+2. Add validation and safe defaults.
+3. Add strict env checks for model/provider keys.
+
+### Day 27
+1. Build `AIA-017` Model and Prompt Settings UI.
+2. Add test prompt panel and structured output preview.
+3. Add fallback toggles and temperature/style presets.
+
+### Day 28
+1. Implement `AIA-018` demo seed presets.
+2. Build one-command setup for AI-heavy demo data.
+3. Verify deterministic setup flow.
+
+### Day 29
+1. Implement `AIA-019` showcase walkthrough script.
+2. Add checklist for portfolio demo run.
+3. Capture baseline screenshots and expected talking points.
+
+### Day 30
+1. Execute `AIA-020` final QA and regression suite.
+2. Fix critical defects and finalize release notes.
+3. Freeze AI Sales Agent module as demo-ready.
+
+## Weekly Deliverables Summary
+1. Week 1: Visible AI page and global copilot foundation.
+2. Week 2: Working lead triage intelligence.
+3. Week 3: Signature lead-to-close AI flow.
+4. Week 4: Reply Studio + Quote Copilot.
+5. Week 5: Pipeline insights + automation transparency.
+6. Week 6: Model settings + demo packaging + release hardening.
+
+## Definition of Done (Daily)
+1. Day-scope code merged.
+2. API/UI behavior manually validated.
+3. Logs/audit events confirmed for AI actions.
+4. No critical blocker left unassigned.
+
+## Exit Criteria
+1. AI Sales Agent page fully operational with all tabs.
+2. Global copilot can answer and execute at least 3 intents.
+3. Lead triage + agent flow visible in lead detail and AI hub.
+4. Reply Studio and Quote Copilot are usable in real lead/deal workflows.
+5. Pipeline insights and automation runs are transparent and actionable.
+6. Model/prompt settings exist with safe fallback behavior.
+7. Demo walkthrough runs cleanly end-to-end in under 7 minutes.
