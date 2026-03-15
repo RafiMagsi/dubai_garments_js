@@ -10,6 +10,7 @@ import { canAccessAdminPage } from '@/lib/auth/permissions';
 
 const adminNavItems = [
   { href: '/admin/dashboard', label: 'Dashboard', hint: 'Revenue Snapshot', section: 'Workspace' },
+  { href: '/admin/ai-sales-agent', label: 'Ai Sales Agent', hint: 'Lead-to-Close Copilot', section: 'Sales Operations' },
   { href: '/admin/analytics', label: 'Analytics', hint: 'Business Metrics', section: 'Workspace' },
   { href: '/admin/leads', label: 'Leads', hint: 'Qualification Queue', section: 'Sales Operations' },
   { href: '/admin/deals', label: 'Deals', hint: 'Pipeline Board', section: 'Sales Operations' },

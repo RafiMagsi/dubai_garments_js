@@ -19,6 +19,7 @@ export const ADMIN_PAGE_ROLE_MATRIX: RoleRule[] = [
   { pattern: '/admin', roles: BACKOFFICE_ALL },
   { pattern: '/admin/dashboard', roles: BACKOFFICE_ALL },
   { pattern: '/admin/analytics', roles: BACKOFFICE_ALL },
+  { pattern: '/admin/ai-sales-agent*', roles: BACKOFFICE_ALL },
   { pattern: '/admin/leads*', roles: BACKOFFICE_ALL },
   { pattern: '/admin/deals*', roles: BACKOFFICE_ALL },
   { pattern: '/admin/quotes*', roles: BACKOFFICE_ALL },
