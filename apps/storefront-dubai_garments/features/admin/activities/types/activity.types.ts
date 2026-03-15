@@ -8,7 +8,8 @@ export type ActivityType =
   | 'followup_triggered'
   | 'customer_replied'
   | 'deal_created'
-  | 'deal_stage_changed';
+  | 'deal_stage_changed'
+  | 'ai_copilot_action';
 
 export interface Activity {
   id: string;

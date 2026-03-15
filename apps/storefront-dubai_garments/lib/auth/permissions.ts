@@ -19,7 +19,6 @@ export const ADMIN_PAGE_ROLE_MATRIX: RoleRule[] = [
   { pattern: '/admin', roles: BACKOFFICE_ALL },
   { pattern: '/admin/dashboard', roles: BACKOFFICE_ALL },
   { pattern: '/admin/analytics', roles: BACKOFFICE_ALL },
-  { pattern: '/admin/ai-sales-agent*', roles: BACKOFFICE_ALL },
   { pattern: '/admin/leads*', roles: BACKOFFICE_ALL },
   { pattern: '/admin/deals*', roles: BACKOFFICE_ALL },
   { pattern: '/admin/quotes*', roles: BACKOFFICE_ALL },
@@ -35,6 +34,7 @@ export const ADMIN_PAGE_ROLE_MATRIX: RoleRule[] = [
   { pattern: '/admin/design-system', roles: ADMIN_ONLY },
   { pattern: '/admin/users', roles: ADMIN_ONLY },
   { pattern: '/admin/rbac-matrix', roles: ADMIN_ONLY },
+  { pattern: '/admin/ai-sales-agent*', roles: BACKOFFICE_ALL },
 ];
 
 // Explicit API matrix for second-layer route-handler authorization.
@@ -53,6 +53,7 @@ export const ADMIN_API_ROLE_MATRIX: RoleRule[] = [
   { pattern: '/api/admin/reconfigure', roles: ADMIN_ONLY },
   { pattern: '/api/admin/users*', roles: ADMIN_ONLY },
   { pattern: '/api/admin/auth/logout', roles: BACKOFFICE_ALL },
+  { pattern: '/api/admin/ai-sales-agent*', roles: BACKOFFICE_ALL },
 ];
 
 function pathMatches(pattern: string, pathname: string): boolean {
