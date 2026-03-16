@@ -409,7 +409,7 @@ export default function LeadIntelligenceCards({
     }
 
   return (
-    <div className="dg-ai-intel-root">
+    <div className="dg-ai-intel-root" data-testid="lead-intelligence-cards">
       <div className="dg-ai-intel-hero">
         <div className="dg-ai-intel-hero-body">
           <div className="dg-ai-intel-header">
@@ -420,8 +420,8 @@ export default function LeadIntelligenceCards({
               </CardText>
             </div>
             <div className="dg-ai-intel-chip-row">
-              <Badge kind={classificationKind(classification)}>{String(classification).toUpperCase()}</Badge>
-              <Badge kind={fallbackUsed ? 'amber' : 'green'}>
+              <Badge kind={classificationKind(classification)} data-testid="lead-intelligence-classification-badge">{String(classification).toUpperCase()}</Badge>
+              <Badge kind={fallbackUsed ? 'amber' : 'green'} data-testid="lead-intelligence-fallback-badge">
                 {fallbackUsed ? 'Fallback' : 'Primary'}
               </Badge>
             </div>
@@ -430,10 +430,10 @@ export default function LeadIntelligenceCards({
           <div className="dg-ai-intel-meta-grid">
             <div className="dg-ai-intel-chip-row">
               <Badge kind={freshness.tone}>{freshness.label}</Badge>
-              <Badge kind="slate">Last: {formatDateTime(lastAnalyzed)}</Badge>
+              <Badge kind="slate" data-testid="lead-intelligence-last-analyzed-badge">Last: {formatDateTime(lastAnalyzed)}</Badge>
             </div>
             <div className="dg-ai-intel-chip-row dg-ai-intel-meta-right">
-              <Badge kind="blue">Provider: {provider}</Badge>
+              <Badge kind="blue" data-testid="lead-intelligence-provider-badge">Provider: {provider}</Badge>
               <Badge kind="slate">Source: {source}</Badge>
             </div>
           </div>
@@ -486,6 +486,7 @@ export default function LeadIntelligenceCards({
                 className="dg-btn-primary"
                 onClick={handleRunLeadTriage}
                 disabled={triageBusy}
+                data-testid="lead-intelligence-triage-btn"
               >
                 {triageBusy ? 'Running Triage...' : 'Run Lead Triage'}
               </button>
@@ -506,6 +507,7 @@ export default function LeadIntelligenceCards({
             variant="primary"
             onClick={handleDraftReply}
             disabled={actionBusy !== null}
+            data-testid="lead-intelligence-draft-reply-btn"
           >
             {actionBusy === 'draft' ? 'Drafting...' : 'Draft Reply'}
           </Button>
@@ -515,6 +517,7 @@ export default function LeadIntelligenceCards({
             variant="secondary"
             onClick={handleConvertLead}
             disabled={actionBusy !== null}
+            data-testid="lead-intelligence-convert-btn"
           >
             {actionBusy === 'convert' ? 'Converting...' : 'Convert to Deal'}
           </Button>
@@ -524,6 +527,7 @@ export default function LeadIntelligenceCards({
             variant="secondary"
             onClick={handlePrioritizeLead}
             disabled={actionBusy !== null}
+            data-testid="lead-intelligence-prioritize-btn"
           >
             {actionBusy === 'prioritize' ? 'Prioritizing...' : 'Prioritize Lead'}
           </Button>
@@ -611,7 +615,7 @@ export default function LeadIntelligenceCards({
                 border: '1px solid rgba(99,102,241,0.12)',
             }}
             >
-            <div className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
+            <div className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500" data-testid="lead-intelligence-confidence-block">
                 Confidence
             </div>
             <div className="dg-mt-2 dg-text-sm dg-text-neutral-800">
@@ -629,7 +633,7 @@ export default function LeadIntelligenceCards({
                 border: '1px solid rgba(245,158,11,0.12)',
             }}
             >
-            <div className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
+            <div className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500" data-testid="lead-intelligence-reason-block">
                 Reason
             </div>
             <div className="dg-mt-2 dg-text-sm dg-text-neutral-800">
@@ -669,7 +673,7 @@ export default function LeadIntelligenceCards({
         ) : null}
 
         {draftReplyPreview ? (
-        <Card className="dg-ai-intel-draft-card">
+        <Card className="dg-ai-intel-draft-card" data-testid="lead-intelligence-draft-preview">
             <CardTitle>Draft Reply Preview</CardTitle>
             {draftReplyPreview.subject ? (
             <CardText className="dg-ai-intel-draft-subject dg-ai-intel-wrap">

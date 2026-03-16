@@ -99,7 +99,7 @@ Primary outcomes:
 2. Ensure each action writes timeline/audit events.
 3. Add confidence and reason visibility for explainability.
 
-### Day 10
+### Day 10 - done
 1. Regression test lead intake to intelligence rendering flow.
 2. Validate role behavior (`admin`, `sales_manager`, `sales_rep`, `ops`).
 3. Freeze Week 2 output.

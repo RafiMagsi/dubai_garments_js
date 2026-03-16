@@ -292,7 +292,7 @@ export default function AdminLeadDetailsPage() {
         ) : null}
 
         {lead ? (
-          <div className="dg-mb-6">
+          <div className="dg-mb-6" data-testid="lead-detail-intelligence-section">
             <LeadIntelligenceCards lead={lead} title="Lead Intelligence" />
           </div>
         ) : null}

@@ -302,9 +302,10 @@ export default function AiSalesAgentTabShell() {
                 value={leadPreviewId}
                 onChange={(event) => setLeadPreviewId(event.target.value)}
                 placeholder="Paste a Lead ID"
+                data-testid="ai-sales-agent-lead-preview-input"
               />
               {previewLead ? (
-                <div
+                <div data-testid="ai-sales-agent-lead-preview-cards"
                   style={{
                     marginTop: 2,
                     paddingTop: 8,
@@ -319,6 +320,7 @@ export default function AiSalesAgentTabShell() {
                   <LeadIntelligenceCards
                     lead={previewLead}
                     title="AI Sales Agent > Lead Intelligence"
+                    data-testid="ai-sales-agent-lead-intelligence-preview"
                     compact
                   />
                 </div>
