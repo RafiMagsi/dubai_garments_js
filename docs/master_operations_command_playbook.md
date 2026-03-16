@@ -31,6 +31,7 @@ This version does four things better than a raw command dump:
 16. Resource, Memory, Disk, and Swap Commands
 17. Recovery Procedures by Problem Type
 18. Hard Lessons and Operational Rules
+19. Database Command Center (PostgreSQL + Docker Compose)
 
 ---
 
@@ -210,6 +211,35 @@ ssh -i ~/.ssh/LightsailDefaultKey-ap-southeast-1.pem bitnami@YOUR_SERVER_IP
 
 Use when:
 - you need terminal access to the server
+
+---
+
+### Fix `zsh: command not found: ssh` on macOS
+
+Check direct binary first:
+
+```bash
+/usr/bin/ssh -V
+```
+
+Temporary PATH fix for current terminal:
+
+```bash
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$PATH"
+ssh -V
+```
+
+Permanent fix in shell config:
+
+```bash
+echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+which ssh
+ssh -V
+```
+
+Use when:
+- `ssh` disappears after shell guard or `.zshrc` changes
 
 ---
 
@@ -1162,6 +1192,31 @@ Use when:
 
 ---
 
+### Apply tenant-removal migration and verify schema
+
+Run migration from storefront container:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "npm run db:migrate"
+```
+
+Verify tenant objects are removed:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "SELECT to_regclass('public.tenants') AS tenants_table, EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND column_name='tenant_id') AS any_tenant_id_column;"
+```
+
+Expected result:
+- `tenants_table` is `NULL`
+- `any_tenant_id_column` is `f`
+
+Use when:
+- moving from old tenant schema to current single-instance schema
+- import fails with tenant-function errors (`app_default_tenant_id`, `relation \"tenants\" does not exist`)
+
+---
+
 ### Export current server DB for backup
 
 ```bash
@@ -1424,22 +1479,19 @@ Important:
 
 ---
 
-### Verify user hash prefix / workspace mapping
-
-With workspaces table present:
+### Verify user hash prefix (current non-tenant schema)
 
 ```bash
 docker exec -i dubai_garments_postgres psql -U rafi -d dubai_garments <<'SQL'
-SELECT u.email, u.role, t.slug AS tenant_slug, left(u.password_hash, 4) AS hash_prefix
+SELECT u.email, u.role, left(u.password_hash, 4) AS hash_prefix
 FROM users u
-JOIN workspaces t ON t.id = u.tenant_id
 WHERE lower(u.email) = lower('admin@dubaigarments.me');
 SQL
 ```
 
 Use when:
 - login returns unauthorized
-- you need to confirm bcrypt hash prefix and workspace linkage
+- you need to confirm bcrypt hash prefix (`$2a$`, `$2b$`, or `$2y$`)
 
 ---
 
@@ -1452,6 +1504,12 @@ npm run db:seed:users
 
 Use when:
 - admin login is broken and seed script is the intended repair path
+
+Docker Compose dev variant:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "npm run db:seed:users"
+```
 
 If script fails with `psql: not found`, install client:
 
@@ -1779,6 +1837,314 @@ rsync -az --delete ./apps/storefront-dubai_garments/ USER@HOST:/var/www/aisales/
 - If Docker builds freeze a small Lightsail instance, add swap and stop doing heavy builds on the server if possible.
 - If a project script expects `psql` on the host, either install `postgresql-client` or rewrite the script to use `docker exec ... psql`.
 - If you manually create a DB container and also use Compose-managed Postgres, you will confuse yourself unless you verify hostname, network, and volume every time.
+
+---
+
+## 19. Database Command Center (PostgreSQL + Docker Compose)
+
+This is the single DB section for day-to-day operations.
+
+Assumed compose files:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml
+```
+
+---
+
+### 19.1 Connect and identify target DB
+
+Show Postgres container:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml ps postgres
+```
+
+Open psql shell:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec postgres psql -U rafi -d dubai_garments
+```
+
+One-shot connection info:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "\conninfo"
+```
+
+---
+
+### 19.2 Core inspection commands
+
+List databases:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d postgres -c "\l"
+```
+
+List roles:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d postgres -c "\du"
+```
+
+List tables in public schema:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "\dt public.*"
+```
+
+Describe table:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "\d+ users"
+```
+
+List indexes:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "\di public.*"
+```
+
+---
+
+### 19.3 Record counts and data checks
+
+Single table count:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "SELECT COUNT(*) FROM users;"
+```
+
+Top rows:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "SELECT id, email, role FROM users ORDER BY created_at DESC LIMIT 20;"
+```
+
+Count all public tables:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U rafi -d dubai_garments <<'SQL'
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT tablename
+    FROM pg_tables
+    WHERE schemaname = 'public'
+    ORDER BY tablename
+  LOOP
+    EXECUTE format('SELECT %L AS table_name, COUNT(*) AS rows FROM %I.%I', r.tablename, 'public', r.tablename);
+  END LOOP;
+END $$;
+SQL
+```
+
+Fast table-size summary:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U rafi -d dubai_garments -c "
+SELECT relname AS table_name,
+       pg_size_pretty(pg_total_relation_size(relid)) AS total_size
+FROM pg_catalog.pg_statio_user_tables
+ORDER BY pg_total_relation_size(relid) DESC;"
+```
+
+---
+
+### 19.4 Migration and seed commands
+
+Run migrations:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "npm run db:migrate"
+```
+
+Run user seed:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "npm run db:seed:users"
+```
+
+Run full demo prepare:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "npm run demo:prepare"
+```
+
+---
+
+### 19.5 Dump and restore commands
+
+Export full DB backup:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  pg_dump -U rafi -d dubai_garments > dubai_garments_backup_$(date +%F_%H%M%S).sql
+```
+
+Export schema-only:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  pg_dump -U rafi -d dubai_garments --schema-only > dubai_garments_schema.sql
+```
+
+Export data-only:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  pg_dump -U rafi -d dubai_garments --data-only --inserts > dubai_garments_data.sql
+```
+
+Import SQL with hard-stop on first error:
+
+```bash
+cat apps/storefront-dubai_garments/dubai_garments_data_clean.sql \
+| docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -v ON_ERROR_STOP=1 -U rafi -d dubai_garments
+```
+
+Import workaround for dump search_path issues:
+
+```bash
+{
+  echo "SET search_path TO public;";
+  sed '/^SET transaction_timeout/d' apps/storefront-dubai_garments/dubai_garments_data_clean.sql \
+  | sed "/^SELECT pg_catalog.set_config('search_path', '', false);/d"
+} | docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -v ON_ERROR_STOP=1 -U rafi -d dubai_garments
+```
+
+---
+
+### 19.6 Runtime health and lock diagnostics
+
+Current sessions:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U rafi -d dubai_garments -c "
+SELECT pid, usename, datname, state, wait_event_type, wait_event, query_start, LEFT(query, 120) AS query
+FROM pg_stat_activity
+WHERE datname='dubai_garments'
+ORDER BY query_start DESC;"
+```
+
+Long-running queries (> 30s):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U rafi -d dubai_garments -c "
+SELECT pid, now() - query_start AS duration, state, LEFT(query, 200) AS query
+FROM pg_stat_activity
+WHERE datname='dubai_garments'
+  AND query_start IS NOT NULL
+  AND now() - query_start > interval '30 seconds'
+ORDER BY duration DESC;"
+```
+
+Blocking locks:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U rafi -d dubai_garments -c "
+SELECT blocked.pid     AS blocked_pid,
+       blocked.query   AS blocked_query,
+       blocking.pid    AS blocking_pid,
+       blocking.query  AS blocking_query
+FROM pg_catalog.pg_locks blocked_locks
+JOIN pg_catalog.pg_stat_activity blocked
+  ON blocked.pid = blocked_locks.pid
+JOIN pg_catalog.pg_locks blocking_locks
+  ON blocking_locks.locktype = blocked_locks.locktype
+ AND blocking_locks.DATABASE IS NOT DISTINCT FROM blocked_locks.DATABASE
+ AND blocking_locks.relation IS NOT DISTINCT FROM blocked_locks.relation
+ AND blocking_locks.page IS NOT DISTINCT FROM blocked_locks.page
+ AND blocking_locks.tuple IS NOT DISTINCT FROM blocked_locks.tuple
+ AND blocking_locks.virtualxid IS NOT DISTINCT FROM blocked_locks.virtualxid
+ AND blocking_locks.transactionid IS NOT DISTINCT FROM blocked_locks.transactionid
+ AND blocking_locks.classid IS NOT DISTINCT FROM blocked_locks.classid
+ AND blocking_locks.objid IS NOT DISTINCT FROM blocked_locks.objid
+ AND blocking_locks.objsubid IS NOT DISTINCT FROM blocked_locks.objsubid
+ AND blocking_locks.pid != blocked_locks.pid
+JOIN pg_catalog.pg_stat_activity blocking
+  ON blocking.pid = blocking_locks.pid
+WHERE NOT blocked_locks.granted;"
+```
+
+---
+
+### 19.7 Maintenance commands
+
+Analyze all tables:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "ANALYZE;"
+```
+
+Vacuum analyze (safe online):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "VACUUM (ANALYZE);"
+```
+
+Reindex a table:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "REINDEX TABLE users;"
+```
+
+List sequences first:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres \
+  psql -U rafi -d dubai_garments -c "\ds public.*"
+```
+
+Reset one sequence (replace placeholders):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec -T postgres psql -U rafi -d dubai_garments -c "
+SELECT setval(
+  'public.YOUR_SEQUENCE_NAME',
+  COALESCE((SELECT MAX(YOUR_ID_COLUMN) FROM public.YOUR_TABLE), 1),
+  true
+);"
+```
+
+Use when:
+- inserts fail with duplicate key due to out-of-sync sequence
+
+---
+
+### 19.8 Safety checks before any destructive DB action
+
+Print DB + container + volume identity:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "echo \$DATABASE_URL"
+docker compose -f docker-compose.yml -f docker-compose.dev.yml ps postgres
+docker inspect dubai_garments_postgres --format '{{range .Mounts}}{{println .Name "->" .Destination}}{{end}}'
+```
+
+Confirm backup exists first:
+
+```bash
+ls -lh dubai_garments_backup_*.sql
+```
+
+Policy:
+- do not run `DROP`, `TRUNCATE`, schema reset, or volume removal without explicit backup + explicit approval.
 
 ---
 
