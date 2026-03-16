@@ -64,10 +64,18 @@ async function createLeadViaIntake(page: Page) {
 let leadId = '';
 
 test.describe.serial('AI Sales Agent regression', () => {
-  test('Flow A/B/C/D/E/F from checklist', async ({ page }) => {
+  test('Flow A/B/C/D/E/F from checklist (AI Sales Agent first)', async ({ page }) => {
     await login(page, 'admin');
     leadId = await createLeadViaIntake(page);
 
+    // Start from AI Sales Agent page (primary workflow for this regression)
+    await page.goto('/admin/ai-sales-agent');
+    await expect(page.getByTestId('ai-sales-agent-lead-preview-input')).toBeVisible();
+    await page.getByTestId('ai-sales-agent-lead-preview-input').fill(leadId);
+    await expect(page.getByTestId('ai-sales-agent-lead-preview-cards')).toBeVisible();
+    await expect(page.getByTestId('ai-sales-agent-lead-intelligence-preview')).toBeVisible();
+
+    // Then validate lead detail rendering + actions
     await page.goto(`/admin/leads/${leadId}`);
     await expect(page.getByTestId('lead-detail-intelligence-section')).toBeVisible();
     await expect(page.getByTestId('lead-intelligence-cards')).toBeVisible();
@@ -120,4 +128,3 @@ test.describe.serial('AI Sales Agent regression', () => {
     }
   });
 });
-

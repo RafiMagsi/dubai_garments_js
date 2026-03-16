@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { HTMLAttributes } from 'react';
 import Link from 'next/link';
 import { Button, Card, CardText, CardTitle } from '@/components/ui';
 // import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
@@ -44,7 +45,7 @@ type LeadIntelligenceCardsProps = {
   } | null | undefined;
   title?: string;
   compact?: boolean;
-};
+} & HTMLAttributes<HTMLDivElement>;
 
 function parseReasoning(raw: unknown): LeadAiReasoning | null {
   if (!raw) return null;
@@ -184,6 +185,8 @@ export default function LeadIntelligenceCards({
   lead,
   title = 'Lead Intelligence',
   compact = false,
+  className,
+  ...props
 }: LeadIntelligenceCardsProps) {
   const [triageBusy, setTriageBusy] = useState(false);
   const [triageStatus, setTriageStatus] = useState<string | null>(null);
@@ -409,7 +412,7 @@ export default function LeadIntelligenceCards({
     }
 
   return (
-    <div className="dg-ai-intel-root" data-testid="lead-intelligence-cards">
+    <div className={`dg-ai-intel-root ${className ?? ''}`.trim()} data-testid="lead-intelligence-cards" {...props}>
       <div className="dg-ai-intel-hero">
         <div className="dg-ai-intel-hero-body">
           <div className="dg-ai-intel-header">
