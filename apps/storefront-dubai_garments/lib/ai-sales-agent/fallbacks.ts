@@ -11,6 +11,13 @@ type CopilotRequestContext = {
   role: string;
 };
 
+function resolveContext(context?: CopilotRequestContext): CopilotRequestContext {
+  return {
+    userId: context?.userId ?? '',
+    role: context?.role ?? 'admin',
+  };
+}
+
 function startOfToday() {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -22,15 +29,16 @@ function endOfToday() {
 }
 
 export async function fallbackFollowupsToday(
-  context: CopilotRequestContext
+  context?: CopilotRequestContext
 ): Promise<FollowupsTodayResponse> {
+  const safeContext = resolveContext(context);
   const todayStart = startOfToday();
   const todayEnd = endOfToday();
 
     const leadWhere =
-        context.role === 'sales_rep'
+        safeContext.role === 'sales_rep'
             ? {
-                assigned_to_user_id: context.userId,
+                assigned_to_user_id: safeContext.userId,
                 OR: [
                 { timeline_date: { gte: todayStart, lte: todayEnd } },
                 { status: { in: ['new', 'qualified', 'quoted'] } },
@@ -70,8 +78,9 @@ export async function fallbackFollowupsToday(
 
 export async function fallbackDraftReply(
   input: CopilotRequest,
-  context: CopilotRequestContext
+  context?: CopilotRequestContext
 ): Promise<DraftReplyResponse> {
+  const safeContext = resolveContext(context);
   if (!input.leadId) {
     return {
       channel: input.channel ?? 'email',
@@ -85,10 +94,10 @@ export async function fallbackDraftReply(
 
     const lead = await prisma.leads.findFirst({
     where:
-        context.role === 'sales_rep'
+        safeContext.role === 'sales_rep'
         ? {
             id: input.leadId,
-            assigned_to_user_id: context.userId,
+            assigned_to_user_id: safeContext.userId,
             }
         : {
             id: input.leadId,
@@ -121,12 +130,13 @@ export async function fallbackDraftReply(
 }
 
 export async function fallbackAtRiskDeals(
-  context: CopilotRequestContext
+  context?: CopilotRequestContext
 ): Promise<AtRiskDealsResponse> {
+    const safeContext = resolveContext(context);
     const dealWhere =
-    context.role === 'sales_rep'
+    safeContext.role === 'sales_rep'
         ? {
-            owner_user_id: context.userId,
+            owner_user_id: safeContext.userId,
             stage: { in: ['qualified', 'proposal_sent', 'negotiation'] },
         }
         : {
