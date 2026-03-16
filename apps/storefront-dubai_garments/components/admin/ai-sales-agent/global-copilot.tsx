@@ -3,18 +3,41 @@
 import { useState } from 'react';
 import { Button, Card, SelectField, TextField } from '@/components/ui';
 import AiSalesAgentActionCards from './action-cards';
-import { executeCopilot, queryCopilot } from '@/features/admin/ai-sales-agent/api';
+import { executeCopilot, queryCopilot, runLeadTriage } from '@/features/admin/ai-sales-agent/api';
 import type {
+  AiSalesAgentEnvelope,
   CopilotEnvelope,
   CopilotExecuteRequest,
   CopilotIntent,
 } from '@/features/admin/ai-sales-agent/types';
+
 
 type Props = {
   compact?: boolean;
 };
 
 type CopilotUiState = 'idle' | 'loading' | 'success' | 'empty' | 'error' | 'executing';
+
+function isCopilotEnvelope(response: AiSalesAgentEnvelope): response is CopilotEnvelope {
+  return 'intent' in response || 'action' in response;
+}
+
+function asUuidOrUndefined(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const uuidV4Like =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidV4Like.test(trimmed) ? trimmed : undefined;
+}
+
+function extractUuidFromText(value: string): string | undefined {
+  const direct = asUuidOrUndefined(value);
+  if (direct) return direct;
+  const match = value.match(
+    /([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i
+  );
+  return match?.[1];
+}
 
 const intentChips: Array<{ label: string; intent: CopilotIntent; prompt: string }> = [
   {
@@ -37,8 +60,9 @@ const intentChips: Array<{ label: string; intent: CopilotIntent; prompt: string 
 export default function GlobalAiSalesCopilot({ compact = false }: Props) {
   const [expanded, setExpanded] = useState(!compact);
   const [activeIntent, setActiveIntent] = useState<CopilotIntent>('followups_today');
-  const [leadId, setLeadId] = useState('');
-  const [dealId, setDealId] = useState('');
+  const [copilotLeadInput, setCopilotLeadInput] = useState('');
+  const [copilotDealInput, setCopilotDealInput] = useState('');
+  const [triageLeadInput, setTriageLeadInput] = useState('');
   const [userNotes, setUserNotes] = useState('');
   const [tone, setTone] = useState<'professional' | 'friendly' | 'persuasive'>('professional');
   const [channel, setChannel] = useState<'email' | 'whatsapp'>('email');
@@ -46,8 +70,11 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [response, setResponse] = useState<CopilotEnvelope | null>(null);
+  const [response, setResponse] = useState<AiSalesAgentEnvelope | null>(null);
   const [uiState, setUiState] = useState<CopilotUiState>('idle');
+  const [isTriaging, setIsTriaging] = useState(false);
+  const isDraftReplyIntent = activeIntent === 'draft_reply';
+  const isAtRiskIntent = activeIntent === 'at_risk_deals';
 
   function applyIntent(intent: CopilotIntent, prompt: string) {
     setActiveIntent(intent);
@@ -59,11 +86,13 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             setError(null);
             setIsLoading(true);
             setUiState('loading');
+            const normalizedLeadId = extractUuidFromText(copilotLeadInput);
+            const normalizedDealId = extractUuidFromText(copilotDealInput);
 
             const result = await queryCopilot({
                 intent: activeIntent,
-                leadId: leadId.trim() || undefined,
-                dealId: dealId.trim() || undefined,
+                leadId: normalizedLeadId,
+                dealId: normalizedDealId,
                 channel,
                     context: {
                         tone,
@@ -72,15 +101,18 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             });
 
             const hasFollowupItems =
+            isCopilotEnvelope(result) &&
             result.intent === 'followups_today' &&
             Array.isArray((result as any).data?.items) &&
             (result as any).data.items.length > 0;
 
             const hasDraftReply =
+            isCopilotEnvelope(result) &&
             result.intent === 'draft_reply' &&
             !!(result as any).data?.message;
 
             const hasAtRiskDeals =
+            isCopilotEnvelope(result) &&
             result.intent === 'at_risk_deals' &&
             Array.isArray((result as any).data?.deals) &&
             (result as any).data.deals.length > 0;
@@ -104,11 +136,13 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             setError(null);
             setIsExecuting(true);
             setUiState('executing');
+            const normalizedLeadId = extractUuidFromText(copilotLeadInput);
+            const normalizedDealId = extractUuidFromText(copilotDealInput);
 
             const result = await executeCopilot({
             action: input.action!,
-            leadId: input.leadId ?? (leadId.trim() || undefined),
-            dealId: input.dealId ?? (dealId.trim() || undefined),
+            leadId: input.leadId ?? normalizedLeadId,
+            dealId: input.dealId ?? normalizedDealId,
             channel: input.channel ?? channel,
             dry_run: dryRun,
             payload: {
@@ -126,6 +160,40 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             setUiState('error');
         } finally {
             setIsExecuting(false);
+        }
+    }
+
+    async function handleRunLeadTriage() {
+        const normalizedLeadId = extractUuidFromText(triageLeadInput);
+        if (!triageLeadInput.trim()) {
+            setError('Lead ID is required to run lead triage.');
+            setUiState('error');
+            return;
+        }
+        if (!normalizedLeadId) {
+            setError('Lead ID must be a full UUID (example: 62d05770-3406-4f11-a43d-ea024260f98e).');
+            setUiState('error');
+            return;
+        }
+
+        try {
+            setError(null);
+            setIsTriaging(true);
+            setUiState('loading');
+
+            const result = await runLeadTriage({
+            leadId: normalizedLeadId,
+            dry_run: dryRun,
+            });
+
+            setResponse(result);
+            setUiState('success');
+            setExpanded(true);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to run lead triage.');
+            setUiState('error');
+        } finally {
+            setIsTriaging(false);
         }
     }
 
@@ -166,8 +234,8 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
         </div>
       </div>
 
-      <div className="copilot-core" style={{ padding: 18, display: 'grid', gap: 12 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+      <div className="copilot-core" style={{ padding: 16, display: 'grid', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {intentChips.map((chip, index) => {
             const active = chip.intent === activeIntent;
             return (
@@ -185,60 +253,170 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
           })}
         </div>
 
-        <div className="copilot-prompt-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
-          <TextField
-            value={userNotes}
-            onChange={(e) => setUserNotes(e.target.value)}
-            placeholder="Ask what to do next with a lead, quote, or deal..."
-          />
-          <Button onClick={handleRunQuery} disabled={isLoading}>
-            {isLoading ? 'Thinking...' : 'Run Copilot'}
-          </Button>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, color: '#64748b' }}>
-          <div>
-            Intent: <strong>{activeIntent}</strong>
-          </div>
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            style={{ border: 0, background: 'transparent', color: '#64748b', fontWeight: 600, cursor: 'pointer', padding: 0 }}
-          >
-            {expanded ? 'Hide advanced controls' : 'Show advanced controls'}
-          </button>
-        </div>
-      </div>
-
-      {expanded ? (
-        <div className="copilot-advanced" style={{ borderTop: '1px solid var(--color-border)', padding: 18, display: 'grid', gap: 12 }}>
+        <div
+          className="copilot-controls-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) minmax(340px, 0.95fr)',
+            gap: 10,
+            alignItems: 'start',
+          }}
+        >
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: 10,
+              gap: 8,
+              border: '1px solid var(--color-border)',
+              borderRadius: 12,
+              padding: 10,
+              background: '#fff',
             }}
           >
-            <TextField value={leadId} onChange={(e) => setLeadId(e.target.value)} placeholder="Lead ID" />
-            <TextField value={dealId} onChange={(e) => setDealId(e.target.value)} placeholder="Deal ID" />
-            <SelectField value={channel} onChange={(e) => setChannel(e.target.value as 'email' | 'whatsapp')}>
-              <option value="email">Email</option>
-              <option value="whatsapp">WhatsApp</option>
-            </SelectField>
-            <SelectField value={tone} onChange={(e) => setTone(e.target.value as 'professional' | 'friendly' | 'persuasive')}>
-              <option value="professional">Professional</option>
-              <option value="friendly">Friendly</option>
-              <option value="persuasive">Persuasive</option>
-            </SelectField>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Query Copilot
+            </div>
+            <div
+              className="copilot-query-row"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) auto',
+                gap: 8,
+                alignItems: 'center',
+              }}
+            >
+              <TextField
+                value={userNotes}
+                onChange={(e) => setUserNotes(e.target.value)}
+                placeholder="Ask what to do next with a lead, quote, or deal..."
+                style={{ width: '100%', minWidth: 0 }}
+              />
+              <Button size="sm" onClick={handleRunQuery} disabled={isLoading}>
+                {isLoading ? 'Thinking...' : 'Run Copilot'}
+              </Button>
+            </div>
+            <div style={{ fontSize: 12, color: '#64748b' }}>
+              Intent: <strong>{activeIntent}</strong>
+            </div>
+
+            {isDraftReplyIntent ? (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div
+                  className="copilot-draft-fields"
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                    gap: 8,
+                  }}
+                >
+                  <TextField
+                    value={copilotLeadInput}
+                    onChange={(e) => setCopilotLeadInput(e.target.value)}
+                    placeholder="Lead ID (paste UUID or text containing UUID)"
+                  />
+                  <TextField
+                    value={copilotDealInput}
+                    onChange={(e) => setCopilotDealInput(e.target.value)}
+                    placeholder="Deal ID (optional)"
+                  />
+                  <SelectField value={channel} onChange={(e) => setChannel(e.target.value as 'email' | 'whatsapp')}>
+                    <option value="email">Email</option>
+                    <option value="whatsapp">WhatsApp</option>
+                  </SelectField>
+                  <SelectField value={tone} onChange={(e) => setTone(e.target.value as 'professional' | 'friendly' | 'persuasive')}>
+                    <option value="professional">Professional</option>
+                    <option value="friendly">Friendly</option>
+                    <option value="persuasive">Persuasive</option>
+                  </SelectField>
+                </div>
+                <small style={{ color: '#64748b', fontSize: 12 }}>
+                  Lead ID is required for targeted draft reply. Channel/tone apply only to Draft Reply.
+                </small>
+              </div>
+            ) : null}
+
+            {isAtRiskIntent ? (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <TextField
+                  value={copilotDealInput}
+                  onChange={(e) => setCopilotDealInput(e.target.value)}
+                  placeholder="Deal ID (paste UUID or text containing UUID)"
+                />
+                <small style={{ color: '#64748b', fontSize: 12 }}>
+                  Deal ID is used for at-risk workflow targeting and related actions.
+                </small>
+              </div>
+            ) : null}
+
+            {!isDraftReplyIntent && !isAtRiskIntent ? (
+              <small style={{ color: '#64748b', fontSize: 12 }}>
+                No additional fields are required for this intent.
+              </small>
+            ) : null}
           </div>
 
+          <div
+            style={{
+              display: 'grid',
+              gap: 8,
+              border: '1px solid var(--color-border)',
+              borderRadius: 12,
+              padding: 10,
+              background: '#fff',
+            }}
+          >
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Lead Triage
+            </div>
+            <div
+              className="copilot-triage-row"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) auto',
+                gap: 8,
+                alignItems: 'center',
+              }}
+            >
+              <TextField
+                value={triageLeadInput}
+                onChange={(e) => setTriageLeadInput(e.target.value)}
+                placeholder="Lead ID (paste UUID or text containing UUID)"
+                style={{ width: '100%', minWidth: 0 }}
+              />
+              <Button size="sm" variant="secondary" onClick={handleRunLeadTriage} disabled={isTriaging}>
+                {isTriaging ? 'Triaging...' : 'Run Lead Triage'}
+              </Button>
+            </div>
+            <small style={{ color: '#64748b', fontSize: 12 }}>
+              Triage uses only this Lead ID field.
+            </small>
+          </div>
+        </div>
+
+      </div>
+      <style jsx>{`
+        @media (max-width: 860px) {
+          .copilot-controls-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .copilot-draft-fields {
+            grid-template-columns: 1fr !important;
+          }
+          .copilot-query-row,
+          .copilot-triage-row {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+
+      {expanded ? (
+        <div className="copilot-advanced" style={{ borderTop: '1px solid var(--color-border)', padding: 18, display: 'grid', gap: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#334155' }}>
               <input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} />
               <span>Demo safe mode (no destructive side effects)</span>
             </label>
             <small style={{ color: '#64748b', fontSize: 12 }}>
-              Channel and tone apply to query and execute actions.
+              Advanced controls affect execution safety and response behavior.
             </small>
           </div>
 
@@ -288,7 +466,9 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
                 <span className="dg-badge">Schema: {response.schemaValid ? 'valid' : 'fallback'}</span>
                 ) : null}
                 {response.requestId ? <span className="dg-badge">Request: {response.requestId}</span> : null}
-                {response.auditId ? <span className="dg-badge">Audit: {response.auditId}</span> : null}
+                {isCopilotEnvelope(response) && response.auditId ? (
+                  <span className="dg-badge">Audit: {response.auditId}</span>
+                ) : null}
             </div>
             ) : null}
 

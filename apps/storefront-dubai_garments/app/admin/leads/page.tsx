@@ -45,6 +45,14 @@ export default function AdminLeadsPage() {
     setAppliedStatus(statusFilter);
   }
 
+  async function handleCopyLeadId(leadId: string) {
+    try {
+      await navigator.clipboard.writeText(leadId);
+    } catch {
+      // Ignore clipboard errors silently.
+    }
+  }
+
   return (
     <AdminShell>
       <PageShell density="compact">
@@ -137,7 +145,21 @@ export default function AdminLeadsPage() {
                           <div>{lead.contact_name || '-'}</div>
                           <div className="dg-help">{lead.email || '-'}</div>
                         </td>
-                        <td>{shortCode(lead.id)}</td>
+                        <td>
+                          <div>{shortCode(lead.id)}</div>
+                          <div className="dg-help" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <code>{lead.id}</code>
+                            <button
+                              type="button"
+                              className="ui-btn ui-btn-secondary ui-btn-sm"
+                              onClick={() => {
+                                void handleCopyLeadId(lead.id);
+                              }}
+                            >
+                              Copy
+                            </button>
+                          </div>
+                        </td>
                         <td>{lead.ai_product || '-'}</td>
                         <td>{lead.requested_qty ? `${lead.requested_qty} pcs` : '-'}</td>
                         <td>

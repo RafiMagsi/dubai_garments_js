@@ -109,3 +109,47 @@ export const CopilotExecuteSuccessSchema = z.object({
 
 export type CopilotAction = z.infer<typeof CopilotActionSchema>;
 export type CopilotExecuteRequest = z.infer<typeof CopilotExecuteRequestSchema>;
+
+export const LeadTriageRequestSchema = z.object({
+  leadId: z.string().uuid(),
+  dry_run: z.boolean().optional().default(false),
+});
+
+export const LeadIntentSchema = z.enum([
+  'quotation_request',
+  'product_inquiry',
+  'bulk_order',
+  'followup_request',
+  'general_sales',
+  'unknown',
+]);
+
+export const LeadUrgencySchema = z.enum(['high', 'medium', 'low']);
+export const LeadComplexitySchema = z.enum(['high', 'medium', 'low']);
+export const LeadClassificationSchema = z.enum(['hot', 'warm', 'cold']);
+
+export const LeadTriageOutputSchema = z.object({
+  summary: z.string(),
+  intent: LeadIntentSchema,
+  urgency: LeadUrgencySchema,
+  complexity: LeadComplexitySchema,
+  quantity: z.number().nullable(),
+  confidence: z.number().min(0).max(100),
+  score: z.number().min(0).max(100),
+  classification: LeadClassificationSchema,
+  nextBestAction: z.string(),
+});
+
+export const LeadTriageResponseSchema = z.object({
+  ok: z.literal(true),
+  dryRun: z.boolean(),
+  source: z.enum(['model', 'fallback']),
+  persisted: z.boolean(),
+  leadId: z.string(),
+  data: LeadTriageOutputSchema,
+  requestId: z.string().nullable(),
+});
+
+export type LeadTriageRequest = z.infer<typeof LeadTriageRequestSchema>;
+export type LeadTriageOutput = z.infer<typeof LeadTriageOutputSchema>;
+export type LeadTriageResponse = z.infer<typeof LeadTriageResponseSchema>;

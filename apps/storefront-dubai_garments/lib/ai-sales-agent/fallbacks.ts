@@ -81,28 +81,30 @@ export async function fallbackDraftReply(
   context?: CopilotRequestContext
 ): Promise<DraftReplyResponse> {
   const safeContext = resolveContext(context);
-  if (!input.leadId) {
+  const resolvedLeadId = input.leadId ?? null;
+
+  if (!resolvedLeadId) {
     return {
       channel: input.channel ?? 'email',
       subject: 'Thanks for your inquiry',
       message:
         'Thank you for your inquiry. We reviewed your request and would be happy to assist you. Please share any missing details such as quantity, timeline, and preferred product specifications so we can prepare the best next step.',
-      rationale: 'Fallback generic response because no leadId was provided.',
-      suggestedNextAction: 'Collect missing details before moving to quote.',
+      rationale: 'Fallback generic response because leadId was not provided.',
+      suggestedNextAction: 'Provide a Lead ID in Query Copilot to draft a targeted reply.',
     };
   }
 
-    const lead = await prisma.leads.findFirst({
+  const lead = await prisma.leads.findFirst({
     where:
-        safeContext.role === 'sales_rep'
+      safeContext.role === 'sales_rep'
         ? {
-            id: input.leadId,
+            id: resolvedLeadId,
             assigned_to_user_id: safeContext.userId,
-            }
+          }
         : {
-            id: input.leadId,
-            },
-    });
+            id: resolvedLeadId,
+          },
+  });
 
   if (!lead) {
     return {
