@@ -8,6 +8,7 @@ import AiSalesAgentTabShell from '@/components/admin/ai-sales-agent/tab-shell';
 import GlobalAiSalesCopilot from '@/components/admin/ai-sales-agent/global-copilot';
 
 export default function AdminAiSalesAgentPage() {
+
   return (
     <AdminShell>
       <PageShell>
@@ -30,6 +31,7 @@ export default function AdminAiSalesAgentPage() {
         />
 
         <AiSalesAgentTabShell />
+
         <div className="dg-mt-4">
           <GlobalAiSalesCopilot />
         </div>

@@ -14,6 +14,7 @@ import {
   shortCode,
   titleCase,
 } from '@/features/admin/shared/view-format';
+import LeadIntelligenceCards from '@/components/admin/ai-sales-agent/lead-intelligence-cards';
 
 const statusOptions: LeadStatus[] = ['new', 'qualified', 'quoted', 'won', 'lost'];
 
@@ -290,6 +291,12 @@ export default function AdminLeadDetailsPage() {
           </div>
         ) : null}
 
+        {lead ? (
+          <div className="dg-mb-6">
+            <LeadIntelligenceCards lead={lead} title="Lead Intelligence" />
+          </div>
+        ) : null}
+
         {lead && (
           <div className="dg-record-detail-grid">
             <div className="dg-side-stack">
@@ -329,47 +336,6 @@ export default function AdminLeadDetailsPage() {
                     <strong>{lead.timeline_date || '-'}</strong>
                   </div>
                 </div>
-              </div>
-
-              <div className="dg-card">
-                <div className="dg-admin-head">
-                  <h2 className="dg-title-sm">Qualification Snapshot</h2>
-                  <span className={statusPillClass(lead.ai_classification || 'NEW')}>
-                    {lead.ai_classification || 'Unclassified'}
-                  </span>
-                </div>
-                <div className="dg-detail-list">
-                  <div className="dg-detail-item">
-                    <span>AI Score</span>
-                    <strong>{lead.ai_score ?? '-'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Provider</span>
-                    <strong>{lead.ai_provider || '-'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Processed At</span>
-                    <strong>{formatDateTime(lead.ai_processed_at)}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Fallback Used</span>
-                    <strong>{lead.ai_fallback_used ? 'Yes' : 'No'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Urgency</span>
-                    <strong>{lead.ai_urgency || '-'}</strong>
-                  </div>
-                  <div className="dg-detail-item">
-                    <span>Complexity</span>
-                    <strong>{lead.ai_complexity || '-'}</strong>
-                  </div>
-                </div>
-                {lead.ai_reasoning?.summary ? (
-                  <div className="dg-summary-card">
-                    <h3 className="dg-title-sm">AI Reasoning</h3>
-                    <p className="dg-muted-sm">{lead.ai_reasoning.summary}</p>
-                  </div>
-                ) : null}
               </div>
 
               <div className="dg-card">

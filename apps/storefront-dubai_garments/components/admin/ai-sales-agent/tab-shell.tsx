@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
+import LeadIntelligenceCards from './lead-intelligence-cards';
+import { useLeadById } from '@/features/admin/leads';
 
 type AgentTabKey =
   | 'lead-intelligence'
@@ -116,7 +118,10 @@ const flowSteps = ['Lead Intake', 'AI Analysis', 'Reply Draft', 'Deal Guidance',
 
 export default function AiSalesAgentTabShell() {
   const [activeTab, setActiveTab] = useState<AgentTabKey>('lead-intelligence');
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [leadPreviewId, setLeadPreviewId] = useState('');
+  const { data: leadPreviewData } = useLeadById(leadPreviewId.trim());
+  const previewLead = leadPreviewData?.item;
 
   const currentTab = useMemo(() => tabs.find((tab) => tab.key === activeTab) ?? tabs[0], [activeTab]);
 
@@ -271,6 +276,69 @@ export default function AiSalesAgentTabShell() {
             ) : null}
           </div>
         </Card>
+
+        {activeTab === 'lead-intelligence' ? (
+          <Card>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: '#64748b',
+                    fontWeight: 700,
+                  }}
+                >
+                  Lead Intelligence Preview
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
+                  Paste a Lead ID to load the same intelligence cards used on Lead Detail page.
+                </p>
+              </div>
+              <input
+                className="dg-input"
+                value={leadPreviewId}
+                onChange={(event) => setLeadPreviewId(event.target.value)}
+                placeholder="Paste a Lead ID"
+              />
+              {previewLead ? (
+                <div
+                  style={{
+                    marginTop: 2,
+                    paddingTop: 8,
+                    borderTop: '1px solid #e5e7eb',
+                    background: 'linear-gradient(180deg, rgba(238,242,255,0.45), rgba(255,255,255,0.9))',
+                    borderRadius: 12,
+                    paddingLeft: 6,
+                    paddingRight: 6,
+                    paddingBottom: 6,
+                  }}
+                >
+                  <LeadIntelligenceCards
+                    lead={previewLead}
+                    title="AI Sales Agent > Lead Intelligence"
+                    compact
+                  />
+                </div>
+              ) : (
+                <div
+                  style={{
+                    border: '1px dashed var(--color-border)',
+                    borderRadius: 12,
+                    padding: 14,
+                    fontSize: 13,
+                    color: '#64748b',
+                    background: '#f8fafc',
+                  }}
+                >
+                  No lead loaded yet. Enter a valid lead ID to preview intelligence output.
+                </div>
+              )}
+            </div>
+          </Card>
+        ) : null}
       </div>
       <style jsx>{`
         .ais-shell {
