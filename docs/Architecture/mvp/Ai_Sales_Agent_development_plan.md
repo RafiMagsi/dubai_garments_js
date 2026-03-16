@@ -53,48 +53,48 @@ Primary outcomes:
 ## Week-by-Week Execution Board (Daily Order)
 
 ## Week 1 - Surface and Copilot Foundation
-### Day 1
+### Day 1 - done
 1. Implement `AIA-001` sidebar route and page skeleton.
 2. Implement `AIA-002` tab shell and base layout placeholders.
 3. Add route-level admin guards and nav visibility checks.
 
-### Day 2
+### Day 2 - done
 1. Implement `AIA-003` copilot query endpoint contract.
 2. Define typed JSON schema for intents (`followups_today`, `draft_reply`, `at_risk_deals`).
 3. Add fallback deterministic response path when model output fails schema validation.
 
-### Day 3
+### Day 3 - done
 1. Implement `AIA-004` copilot execute endpoint with RBAC whitelist.
 2. Add audit write path into `ai_logs` for all copilot actions.
 3. Add action simulation mode (`dry_run=true`) for safe demos.
 
-### Day 4
+### Day 4 - done
 1. Build copilot UI input in admin header (global visibility).
 2. Add intent suggestion chips and structured action card rendering.
 3. Connect query/execute APIs and display action outcomes.
 
-### Day 5
+### Day 5 - done
 1. Hardening pass for copilot UX states (loading/error/empty/success).
 2. Validate workspace scoping on all copilot queries.
 3. Freeze Week 1 baseline.
 
 ## Week 2 - Lead Intelligence and Triage Agent
-### Day 6
+### Day 6 - done
 1. Implement `AIA-006` lead triage orchestration service.
 2. Add extraction fields: summary, intent, urgency, complexity, quantity, confidence.
 3. Add score/classification outputs and next-best-action output.
 
-### Day 7
+### Day 7 - done
 1. Persist triage result in DB (`AIA-005` data additions).
 2. Wire triage trigger for new lead intake and manual retrigger action.
 3. Add fallback provider behavior and failure reason logging.
 
-### Day 8
+### Day 8 - done
 1. Build `AIA-007` Lead Intelligence cards in lead detail page.
 2. Mirror same cards in AI Sales Agent > Lead Intelligence tab.
 3. Add "last analyzed" and provider/fallback badges.
 
-### Day 9
+### Day 9 - done
 1. Add action buttons from intelligence cards (draft reply, convert, prioritize).
 2. Ensure each action writes timeline/audit events.
 3. Add confidence and reason visibility for explainability.

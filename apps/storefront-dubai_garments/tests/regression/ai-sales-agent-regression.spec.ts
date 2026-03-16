@@ -1,0 +1,123 @@
+import { expect, test, type Page } from '@playwright/test';
+
+type RoleKey = 'admin' | 'sales_manager' | 'sales_rep' | 'ops';
+
+const creds: Record<RoleKey, { email: string; password: string }> = {
+  admin: {
+    email: process.env.QA_ADMIN_EMAIL || 'admin@dubaigarments.me',
+    password: process.env.QA_ADMIN_PASSWORD || 'test@1234',
+  },
+  sales_manager: {
+    email: process.env.QA_SALES_MANAGER_EMAIL || 'sales.manager@dubaigarments.me',
+    password: process.env.QA_SALES_MANAGER_PASSWORD || 'test@1234',
+  },
+  sales_rep: {
+    email: process.env.QA_SALES_REP_EMAIL || 'sales.rep@dubaigarments.me',
+    password: process.env.QA_SALES_REP_PASSWORD || 'test@1234',
+  },
+  ops: {
+    email: process.env.QA_OPS_EMAIL || 'ops@dubaigarments.me',
+    password: process.env.QA_OPS_PASSWORD || 'test@1234',
+  },
+};
+
+async function login(page: Page, role: RoleKey) {
+  await page.goto('/admin/login');
+  await page.getByLabel('Email').fill(creds[role].email);
+  await page.getByLabel('Password').fill(creds[role].password);
+  await page.getByRole('button', { name: 'Sign In' }).click();
+  await expect(page).toHaveURL(/\/admin\/dashboard/);
+}
+
+async function createLeadViaIntake(page: Page) {
+  const productsResponse = await page.request.get('/api/products');
+  expect(productsResponse.ok()).toBeTruthy();
+  const products = (await productsResponse.json()) as Array<{ id: string }>;
+  expect(products.length).toBeGreaterThan(0);
+
+  const runId = Date.now();
+  const company = `QA-${runId}`;
+  const name = `Regression ${runId}`;
+  const email = `qa+${runId}@example.com`;
+
+  const intakeResponse = await page.request.post('/api/quote-requests', {
+    multipart: {
+      name,
+      company,
+      email,
+      product: products[0].id,
+      quantity: '120',
+      delivery_date: '2026-04-15',
+      message: `Regression lead ${runId} for AI Day 10 checks`,
+    },
+  });
+  expect(intakeResponse.ok()).toBeTruthy();
+
+  const listResponse = await page.request.get(`/api/admin/leads?search=${encodeURIComponent(company)}`);
+  expect(listResponse.ok()).toBeTruthy();
+  const listPayload = (await listResponse.json()) as { items?: Array<{ id: string; company_name?: string }> };
+  const leadId = listPayload.items?.[0]?.id;
+  expect(leadId).toBeTruthy();
+  return leadId as string;
+}
+
+let leadId = '';
+
+test.describe.serial('AI Sales Agent regression', () => {
+  test('Flow A/B/C/D/E/F from checklist', async ({ page }) => {
+    await login(page, 'admin');
+    leadId = await createLeadViaIntake(page);
+
+    await page.goto(`/admin/leads/${leadId}`);
+    await expect(page.getByTestId('lead-detail-intelligence-section')).toBeVisible();
+    await expect(page.getByTestId('lead-intelligence-cards')).toBeVisible();
+    await expect(page.getByTestId('lead-intelligence-classification-badge')).toBeVisible();
+    await expect(page.getByTestId('lead-intelligence-fallback-badge')).toBeVisible();
+    await expect(page.getByTestId('lead-intelligence-last-analyzed-badge')).toBeVisible();
+    await expect(page.getByTestId('lead-intelligence-provider-badge')).toBeVisible();
+    await expect(page.getByTestId('lead-intelligence-confidence-block')).toBeVisible();
+    await expect(page.getByTestId('lead-intelligence-reason-block')).toBeVisible();
+
+    await page.getByTestId('lead-intelligence-triage-btn').click();
+    await expect(page.getByText(/Lead triage completed/i)).toBeVisible();
+
+    await page.getByTestId('lead-intelligence-draft-reply-btn').click();
+    await expect(page.getByTestId('lead-intelligence-draft-preview')).toBeVisible();
+
+    await page.getByTestId('lead-intelligence-convert-btn').click();
+    await expect(page.getByText(/converted/i)).toBeVisible();
+
+    await page.getByTestId('lead-intelligence-prioritize-btn').click();
+    await expect(page.getByText(/prioritized/i)).toBeVisible();
+
+    await page.goto('/admin/ai-sales-agent');
+    await expect(page.getByTestId('ai-sales-agent-lead-intelligence-preview')).toBeVisible();
+    await page.getByTestId('ai-sales-agent-lead-preview-input').fill(leadId);
+    await expect(page.getByTestId('ai-sales-agent-lead-preview-cards')).toBeVisible();
+  });
+
+  test('Role behavior matrix validation (API + page visibility)', async ({ page }) => {
+    await login(page, 'admin');
+    await page.goto('/admin/users');
+    await expect(page.getByRole('heading', { name: /Users/i })).toBeVisible();
+    const adminUsersResponse = await page.request.get('/api/admin/users');
+    expect(adminUsersResponse.status()).toBe(200);
+
+    for (const role of ['sales_manager', 'sales_rep', 'ops'] as const) {
+      await login(page, role);
+      await page.goto('/admin/ai-sales-agent');
+      await expect(page.getByRole('heading', { name: /Ai Sales Agent/i })).toBeVisible();
+
+      const usersResponse = await page.request.get('/api/admin/users');
+      expect([401, 403]).toContain(usersResponse.status());
+
+      const copilotResponse = await page.request.post('/api/admin/ai-sales-agent/copilot', {
+        data: {
+          intent: 'followups_today',
+        },
+      });
+      expect(copilotResponse.status()).toBe(200);
+    }
+  });
+});
+

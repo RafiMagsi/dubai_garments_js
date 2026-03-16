@@ -1,0 +1,324 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#admin-main-content"
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - paragraph [ref=e6]: Dubai Garments
+        - paragraph [ref=e7]: Revenue OS
+        - paragraph [ref=e8]: Plug-and-play AI sales operations for leads, deals, quotes, and automations.
+      - navigation "Admin Navigation" [ref=e9]:
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: Workspace
+          - link "Dashboard Revenue Snapshot" [ref=e12] [cursor=pointer]:
+            - /url: /admin/dashboard
+            - generic [ref=e13]: Dashboard
+            - generic [ref=e14]: Revenue Snapshot
+          - link "Analytics Business Metrics" [ref=e15] [cursor=pointer]:
+            - /url: /admin/analytics
+            - generic [ref=e16]: Analytics
+            - generic [ref=e17]: Business Metrics
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: Sales Operations
+          - link "Ai Sales Agent Lead-to-Close Copilot" [ref=e20] [cursor=pointer]:
+            - /url: /admin/ai-sales-agent
+            - generic [ref=e21]: Ai Sales Agent
+            - generic [ref=e22]: Lead-to-Close Copilot
+          - link "Leads Qualification Queue" [ref=e23] [cursor=pointer]:
+            - /url: /admin/leads
+            - generic [ref=e24]: Leads
+            - generic [ref=e25]: Qualification Queue
+          - link "Deals Pipeline Board" [ref=e26] [cursor=pointer]:
+            - /url: /admin/deals
+            - generic [ref=e27]: Deals
+            - generic [ref=e28]: Pipeline Board
+          - link "Quotes Pricing & Approvals" [ref=e29] [cursor=pointer]:
+            - /url: /admin/quotes
+            - generic [ref=e30]: Quotes
+            - generic [ref=e31]: Pricing & Approvals
+          - link "Products Catalog Management" [ref=e32] [cursor=pointer]:
+            - /url: /admin/products
+            - generic [ref=e33]: Products
+            - generic [ref=e34]: Catalog Management
+          - link "Pipeline Stage View" [ref=e35] [cursor=pointer]:
+            - /url: /admin/pipeline
+            - generic [ref=e36]: Pipeline
+            - generic [ref=e37]: Stage View
+          - link "Activities System Timeline" [ref=e38] [cursor=pointer]:
+            - /url: /admin/activities
+            - generic [ref=e39]: Activities
+            - generic [ref=e40]: System Timeline
+        - generic [ref=e41]:
+          - paragraph [ref=e42]: Platform Control
+          - link "Automations Workflow Monitoring" [ref=e43] [cursor=pointer]:
+            - /url: /admin/automations
+            - generic [ref=e44]: Automations
+            - generic [ref=e45]: Workflow Monitoring
+          - link "AI Logs Model Trace Logs" [ref=e46] [cursor=pointer]:
+            - /url: /admin/ai-logs
+            - generic [ref=e47]: AI Logs
+            - generic [ref=e48]: Model Trace Logs
+          - link "Observability Health & Metrics" [ref=e49] [cursor=pointer]:
+            - /url: /admin/observability
+            - generic [ref=e50]: Observability
+            - generic [ref=e51]: Health & Metrics
+          - link "Configuration Scripts & Runtime" [ref=e52] [cursor=pointer]:
+            - /url: /admin/configuration
+            - generic [ref=e53]: Configuration
+            - generic [ref=e54]: Scripts & Runtime
+          - link "Users User Access Control" [ref=e55] [cursor=pointer]:
+            - /url: /admin/users
+            - generic [ref=e56]: Users
+            - generic [ref=e57]: User Access Control
+          - link "Reconfigure Install Settings" [ref=e58] [cursor=pointer]:
+            - /url: /admin/reconfigure
+            - generic [ref=e59]: Reconfigure
+            - generic [ref=e60]: Install Settings
+          - link "Search Global Finder" [ref=e61] [cursor=pointer]:
+            - /url: /admin/search
+            - generic [ref=e62]: Search
+            - generic [ref=e63]: Global Finder
+          - link "Design System Tokens & UI Kit" [ref=e64] [cursor=pointer]:
+            - /url: /admin/design-system
+            - generic [ref=e65]: Design System
+            - generic [ref=e66]: Tokens & UI Kit
+          - link "RBAC Matrix Role Access Rules" [ref=e67] [cursor=pointer]:
+            - /url: /admin/rbac-matrix
+            - generic [ref=e68]: RBAC Matrix
+            - generic [ref=e69]: Role Access Rules
+      - generic [ref=e70]:
+        - link "Open Storefront" [ref=e71] [cursor=pointer]:
+          - /url: /
+        - button "Logout" [ref=e72]
+    - main [ref=e73]:
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - paragraph [ref=e76]: Sales Console
+          - paragraph [ref=e77]: Dubai Garments Revenue Workspace
+        - generic [ref=e79]:
+          - textbox "Search records, type '/admin/route', or press Cmd/Ctrl+K" [ref=e80]
+          - button "Open quick command palette" [ref=e81]: Cmd/Ctrl+K
+          - button "Go" [ref=e82]
+        - generic [ref=e83]:
+          - generic [ref=e84]: R
+          - generic [ref=e85]:
+            - paragraph [ref=e86]: Rafi Admin
+            - generic [ref=e87]: admin@dubaigarments.me
+      - generic [ref=e88]:
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - 'heading "Lead #8CE51A" [level=1] [ref=e92]'
+            - paragraph [ref=e93]: Lead profile, qualification context, communication history, and pipeline actions.
+          - generic [ref=e95]:
+            - link "Back to Leads" [ref=e96] [cursor=pointer]:
+              - /url: /admin/leads
+            - link "Pipeline" [ref=e97] [cursor=pointer]:
+              - /url: /admin/deals
+        - generic [ref=e98]:
+          - generic [ref=e100]:
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - generic [ref=e104]:
+                  - heading "Lead Intelligence" [level=3] [ref=e105]
+                  - paragraph [ref=e106]: Persistent AI intelligence profile for this lead.
+                - generic [ref=e107]:
+                  - generic [ref=e108]: UNKNOWN
+                  - generic [ref=e109]: Primary
+              - generic [ref=e110]:
+                - generic [ref=e111]:
+                  - generic [ref=e112]: No analysis
+                  - generic [ref=e113]: "Last: Not analyzed yet"
+                - generic [ref=e114]:
+                  - generic [ref=e115]: "Provider: unknown"
+                  - generic [ref=e116]: "Source: fallback"
+              - generic [ref=e117]:
+                - generic [ref=e118]:
+                  - generic [ref=e119]: Score
+                  - generic [ref=e120]: Not scored
+                - generic [ref=e122]:
+                  - generic [ref=e123]: Confidence
+                  - generic [ref=e124]: Not available
+              - generic [ref=e127]:
+                - generic [ref=e128]:
+                  - paragraph [ref=e129]: Decision
+                  - generic [ref=e131]: High Risk
+                - paragraph [ref=e132]: Run lead triage to persist a recommended next-best action for this lead.
+                - generic [ref=e133]:
+                  - link "Open Lead" [ref=e134] [cursor=pointer]:
+                    - /url: /admin/leads/8ce51a8e-76fd-4ef7-a004-acf2d6ea8d9e
+                  - button "Run Lead Triage" [ref=e135]
+                  - link "Run Agent Flow" [ref=e136] [cursor=pointer]:
+                    - /url: /admin/ai-sales-agent
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - button "Draft Reply" [ref=e139]
+                - button "Convert to Deal" [ref=e140]
+                - button "Prioritize Lead" [ref=e141]
+              - paragraph [ref=e142]: Convert to Deal creates a deal from this lead. Prioritize Lead updates lead status to Qualified.
+              - generic [ref=e144]:
+                - generic [ref=e145]: Strategic Summary
+                - generic [ref=e146]: No persisted AI summary available yet.
+              - generic [ref=e147]:
+                - generic [ref=e148]:
+                  - generic [ref=e149]: Pipeline Momentum
+                  - generic [ref=e150]: Awaiting score
+                - generic [ref=e151]:
+                  - generic [ref=e152]: Urgency Signal
+                  - generic [ref=e153]: Low
+                - generic [ref=e154]:
+                  - generic [ref=e155]: Model Confidence
+                  - generic [ref=e156]: Not available
+                - generic [ref=e157]:
+                  - generic [ref=e158]: Analysis Freshness
+                  - generic [ref=e159]: No analysis
+              - heading "Intelligence Signals" [level=3] [ref=e161]
+              - generic [ref=e162]:
+                - generic [ref=e163]:
+                  - generic [ref=e164]: Intent
+                  - generic [ref=e165]: Unknown
+                - generic [ref=e166]:
+                  - generic [ref=e167]: Urgency
+                  - generic [ref=e168]: Unknown
+                - generic [ref=e169]:
+                  - generic [ref=e170]: Complexity
+                  - generic [ref=e171]: Unknown
+                - generic [ref=e172]:
+                  - generic [ref=e173]: Quantity
+                  - generic [ref=e174]: Not detected
+                - generic [ref=e175]:
+                  - generic [ref=e176]: Confidence
+                  - generic [ref=e177]: Not available
+                - generic [ref=e178]:
+                  - generic [ref=e179]: Score
+                  - generic [ref=e180]: Not scored
+              - generic [ref=e181]:
+                - heading "Explainability" [level=3] [ref=e182]
+                - paragraph [ref=e183]: Why the AI rated this lead the way it did.
+                - generic [ref=e184]:
+                  - generic [ref=e185]:
+                    - generic [ref=e186]: Confidence
+                    - generic [ref=e187]: Not available
+                    - generic [ref=e188]: Higher confidence means the triage had stronger signal quality from the lead content.
+                  - generic [ref=e189]:
+                    - generic [ref=e190]: Reason
+                    - generic [ref=e191]: No detailed reason available yet.
+              - generic [ref=e193]:
+                - generic [ref=e194]:
+                  - generic [ref=e195]:
+                    - strong [ref=e196]: "Lead ID:"
+                    - text: 8ce51a8e-76fd-4ef7-a004-acf2d6ea8d9e
+                  - generic [ref=e197]:
+                    - strong [ref=e198]: "AI Path:"
+                    - text: Primary
+                - generic [ref=e199]:
+                  - strong [ref=e200]: "Pipeline Reliability:"
+                  - text: No failure reason logged on latest persisted analysis.
+          - generic [ref=e201]:
+            - generic [ref=e202]:
+              - generic [ref=e203]:
+                - generic [ref=e204]:
+                  - generic [ref=e205]:
+                    - paragraph [ref=e206]: Lead Profile
+                    - heading "Regression 1773697273499 • QA-1773697273499" [level=2] [ref=e207]
+                  - generic [ref=e208]: New
+                - generic [ref=e209]:
+                  - generic [ref=e210]:
+                    - generic [ref=e211]: Tracking Code
+                    - strong [ref=e212]: 8CE51A
+                  - generic [ref=e213]:
+                    - generic [ref=e214]: Email
+                    - strong [ref=e215]: qa+1773697273499@example.com
+                  - generic [ref=e216]:
+                    - generic [ref=e217]: Phone
+                    - strong [ref=e218]: "-"
+                  - generic [ref=e219]:
+                    - generic [ref=e220]: Product
+                    - strong [ref=e221]: "-"
+                  - generic [ref=e222]:
+                    - generic [ref=e223]: Quantity
+                    - strong [ref=e224]: 120 pcs
+                  - generic [ref=e225]:
+                    - generic [ref=e226]: Required Delivery
+                    - strong [ref=e227]: 2026-04-15
+              - generic [ref=e228]:
+                - heading "Customer Request" [level=2] [ref=e229]
+                - paragraph [ref=e230]: "Product: adc57c5e-d5a8-4a06-a830-5d6d589b64cc Message: Regression lead 1773697273499 for AI Day 10 checks"
+              - generic [ref=e231]:
+                - heading "Lead Timeline" [level=2] [ref=e232]
+                - generic [ref=e233]:
+                  - generic [ref=e235]:
+                    - generic [ref=e236]:
+                      - paragraph [ref=e237]: Lead created from quote request
+                      - generic [ref=e238]: Lead Created
+                    - paragraph [ref=e239]: 3/17/2026, 2:41:13 AM
+                    - paragraph [ref=e240]: Lead was created from public quote request form.
+                  - generic [ref=e242]:
+                    - generic [ref=e243]:
+                      - paragraph [ref=e244]: Lead Created
+                      - generic [ref=e245]: Lead Created
+                    - paragraph [ref=e246]: 3/17/2026, 2:41:13 AM
+                    - paragraph [ref=e247]: QA-1773697273499
+                    - paragraph [ref=e248]: Lead 8CE51A was created from website.
+                  - generic [ref=e250]:
+                    - generic [ref=e251]:
+                      - paragraph [ref=e252]: Lead Updated
+                      - generic [ref=e253]: Lead Updated
+                    - paragraph [ref=e254]: 3/17/2026, 2:41:13 AM
+                    - paragraph [ref=e255]: "Current status: New."
+            - generic [ref=e256]:
+              - generic [ref=e257]:
+                - heading "Update Lead Status" [level=2] [ref=e258]
+                - generic [ref=e259]:
+                  - generic [ref=e260]:
+                    - generic [ref=e261]: Status
+                    - combobox "Status" [ref=e262]:
+                      - option "New" [selected]
+                      - option "Qualified"
+                      - option "Quoted"
+                      - option "Won"
+                      - option "Lost"
+                  - button "Save Status" [ref=e263]
+              - generic [ref=e264]:
+                - heading "Deal Link" [level=2] [ref=e265]
+                - paragraph [ref=e266]: No deal exists for this lead yet.
+                - generic [ref=e267]:
+                  - generic [ref=e268]:
+                    - generic [ref=e269]:
+                      - generic [ref=e270]: Priority
+                      - combobox "Priority" [ref=e271]:
+                        - option "medium" [selected]
+                        - option "high"
+                        - option "low"
+                    - generic [ref=e272]:
+                      - generic [ref=e273]: Owner Assignment
+                      - combobox "Owner Assignment" [ref=e274]:
+                        - option "Assign to me (recommended)" [selected]
+                        - option "Leave unassigned"
+                      - paragraph [ref=e275]: "Defaults for sales workflow: assign the new deal to current signed-in user."
+                    - generic [ref=e276]:
+                      - generic [ref=e277]: Value Estimate
+                      - spinbutton "Value Estimate" [ref=e278]
+                  - generic [ref=e279]:
+                    - generic [ref=e280]: Notes
+                    - textbox "Notes" [ref=e281]
+                  - button "Create Deal" [ref=e282]
+              - generic [ref=e283]:
+                - heading "Email Communication" [level=2] [ref=e284]
+                - generic [ref=e285]:
+                  - generic [ref=e286]:
+                    - generic [ref=e287]: Recipient Email
+                    - textbox "Recipient Email" [ref=e288]: qa+1773697273499@example.com
+                  - generic [ref=e289]:
+                    - generic [ref=e290]: Subject
+                    - textbox "Subject" [ref=e291]: Regarding your quote request 8CE51A
+                  - generic [ref=e292]:
+                    - generic [ref=e293]: Message
+                    - textbox "Message" [ref=e294]: Hello Regression 1773697273499, Thank you for contacting Dubai Garments. We have received your request and our sales team will follow up shortly. Regards, Dubai Garments Sales Team
+                  - generic [ref=e295]:
+                    - button "AI Draft Reply" [ref=e296]
+                    - button "Send Email" [ref=e297]
+  - alert [ref=e298]
+```

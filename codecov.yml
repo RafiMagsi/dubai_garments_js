@@ -1,0 +1,20 @@
+codecov:
+  require_ci_to_pass: false
+
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 2%
+    patch:
+      default:
+        target: auto
+        threshold: 5%
+
+ignore:
+  - "docs/**"
+  - "**/*.md"
+  - "apps/storefront-dubai_garments/.next/**"
+  - "apps/storefront-dubai_garments/node_modules/**"
+
