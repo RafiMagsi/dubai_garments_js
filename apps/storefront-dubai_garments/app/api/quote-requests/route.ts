@@ -7,6 +7,7 @@ const FASTAPI_BASE_URL =
   process.env.FASTAPI_BASE_URL ||
   process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ||
   'http://localhost:8000';
+const AUTOMATION_SHARED_SECRET = process.env.AUTOMATION_SHARED_SECRET || '';
 
 export async function POST(request: Request) {
   const startedAt = Date.now();
@@ -32,6 +33,32 @@ export async function POST(request: Request) {
         upstream_status: upstreamResponse.status,
         duration_ms: Date.now() - startedAt,
       });
+
+      if (upstreamResponse.ok && payload?.leadId) {
+        if (AUTOMATION_SHARED_SECRET) {
+          try {
+            await fetch(new URL('/api/internal/ai/triage', request.url), {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-request-id': requestId,
+                'x-automation-secret': AUTOMATION_SHARED_SECRET,
+              },
+              body: JSON.stringify({
+                leadId: payload.leadId,
+                dry_run: false,
+              }),
+            });
+          } catch {
+            // Do not fail quote request submission if triage trigger fails.
+          }
+        } else {
+          logApiEvent('warn', 'storefront_quote_request_triage_skipped', {
+            request_id: requestId,
+            reason: 'AUTOMATION_SHARED_SECRET not configured',
+          });
+        }
+      }
       return NextResponse.json(payload, { status: upstreamResponse.status });
     }
 

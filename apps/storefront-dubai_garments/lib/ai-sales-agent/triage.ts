@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import type { LeadTriageOutput } from './contracts';
 
 type TriageTenantContext = {
-  userId: string;
+  userId?: string | null;
   role: string;
 };
 
@@ -221,13 +221,20 @@ export async function runLeadTriage(
   leadId: string,
   context: TriageTenantContext,
   dryRun = false
-): Promise<{ source: 'model' | 'fallback'; persisted: boolean; data: LeadTriageOutput }> {
+): Promise<{
+  source: 'model' | 'fallback';
+  provider: string;
+  fallbackUsed: boolean;
+  failureReason: string | null;
+  persisted: boolean;
+  data: LeadTriageOutput;
+}> {
   const lead = await prisma.leads.findFirst({
     where:
       context.role === 'sales_rep'
         ? {
             id: leadId,
-            assigned_to_user_id: context.userId,
+            assigned_to_user_id: context.userId ?? '',
           }
         : {
             id: leadId,
@@ -237,6 +244,11 @@ export async function runLeadTriage(
   if (!lead) {
     throw new Error('Lead not found or not accessible.');
   }
+
+    let source: 'model' | 'fallback' = 'fallback';
+    let provider = 'deterministic';
+    let fallbackUsed = true;
+    let failureReason: string | null = null;
 
   const sourceText = [
     normalizeText(lead.notes),
@@ -280,42 +292,69 @@ export async function runLeadTriage(
 
   if (dryRun) {
     return {
-      source: 'fallback',
-      persisted: false,
-      data,
+        source,
+        provider,
+        fallbackUsed,
+        failureReason,
+        persisted: false,
+        data,
     };
   }
 
   await prisma.leads.update({
     where: { id: leadId },
     data: {
-      ai_processed_at: new Date(),
-      ai_quantity: quantity,
-      ai_urgency: urgency,
-      ai_complexity: complexity,
-      ai_score: score,
-      ai_classification: classification,
-      ai_reasoning: JSON.stringify(data),
+    ai_processed_at: new Date(),
+    ai_quantity: quantity,
+    ai_urgency: urgency,
+    ai_complexity: complexity,
+    ai_provider: provider,
+    ai_fallback_used: fallbackUsed,
+    ai_score: score,
+    ai_classification: classification,
+    ai_reasoning: {
+            summary: data.summary,
+            intent: data.intent,
+            urgency: data.urgency,
+            complexity: data.complexity,
+            quantity: data.quantity,
+            confidence: data.confidence,
+            score: data.score,
+            classification: data.classification,
+            nextBestAction: data.nextBestAction,
+            provider,
+            source,
+            fallbackUsed,
+            failureReason,
+            processedAt: new Date().toISOString(),
+        },
     },
   });
 
   await prisma.activities.create({
     data: {
-      user_id: context.userId,
+      user_id: context.userId ?? null,
       lead_id: leadId,
       activity_type: 'ai_lead_triage',
       title: 'Ai Sales Agent triaged lead',
       details: `Lead classified as ${classification} with score ${score}.`,
       metadata: {
         triage: data,
-        source: 'fallback',
-      },
+        source,
+        provider,
+        fallbackUsed,
+        failureReason,
+        dryRun,
+        },
     },
   });
 
   return {
-    source: 'fallback',
+    source,
+    provider,
+    fallbackUsed,
+    failureReason,
     persisted: true,
     data,
-  };
+    };
 }
