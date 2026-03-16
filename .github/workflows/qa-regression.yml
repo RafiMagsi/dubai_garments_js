@@ -8,7 +8,7 @@ jobs:
   qa:
     runs-on: ubuntu-latest
     env:
-      BASE_URL: ${{ secrets.QA_BASE_URL }}
+      QA_BASE_URL: ${{ secrets.QA_BASE_URL }}
       QA_ADMIN_EMAIL: ${{ secrets.QA_ADMIN_EMAIL }}
       QA_ADMIN_PASSWORD: ${{ secrets.QA_ADMIN_PASSWORD }}
       QA_SALES_MANAGER_EMAIL: ${{ secrets.QA_SALES_MANAGER_EMAIL }}
@@ -17,6 +17,7 @@ jobs:
       QA_SALES_REP_PASSWORD: ${{ secrets.QA_SALES_REP_PASSWORD }}
       QA_OPS_EMAIL: ${{ secrets.QA_OPS_EMAIL }}
       QA_OPS_PASSWORD: ${{ secrets.QA_OPS_PASSWORD }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     defaults:
       run:
         working-directory: apps/storefront-dubai_garments
