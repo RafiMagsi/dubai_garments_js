@@ -79,6 +79,27 @@ A database instance is defined by:
 - Docker network
 - attached Docker volume
 
+---
+
+### Rule 4 — Load safety guards before running Docker/DB commands
+
+```bash
+source /Users/rafi/developer/ai_development/projects/dubai_garments/scripts/shell-guards.zsh
+```
+
+This blocks destructive commands by default, including:
+- `docker compose down -v`
+- `docker volume rm ...`
+- `docker volume prune`
+- `docker system prune --volumes`
+- destructive `psql -c` statements (`drop/truncate`)
+
+Emergency bypass (one command only):
+
+```bash
+ALLOW_DB_DESTRUCTIVE=1 <your-command>
+```
+
 Always verify:
 - which container the app talks to
 - which volume that container uses
@@ -923,7 +944,7 @@ Use when:
 - rebuilding from a clean service state
 
 Danger:
-- `down -v` also removes volumes
+- Never use `docker compose down -v` in this project; it wipes DB volumes
 
 ---
 

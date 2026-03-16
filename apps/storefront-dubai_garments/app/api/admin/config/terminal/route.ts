@@ -28,7 +28,6 @@ function resolveStorefrontAppDir() {
 
 const ALLOWED_COMMANDS: Array<{ label: string; cmd: string; args: string[] }> = [
   { label: 'npm run db:migrate', cmd: 'npm', args: ['run', 'db:migrate'] },
-  { label: 'npm run db:rollback', cmd: 'npm', args: ['run', 'db:rollback'] },
   { label: 'npm run db:tables', cmd: 'npm', args: ['run', 'db:tables'] },
   { label: 'npm run db:seed', cmd: 'npm', args: ['run', 'db:seed'] },
   { label: 'npm run db:seed:users', cmd: 'npm', args: ['run', 'db:seed:users'] },

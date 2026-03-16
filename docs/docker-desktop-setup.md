@@ -127,10 +127,10 @@ Stop:
 docker compose down
 ```
 
-Stop and delete volumes:
+Stop and delete volumes (disabled for this project data-safety policy):
 
 ```bash
-docker compose down -v
+# DO NOT RUN: docker compose down -v
 ```
 
 Rebuild one service:
@@ -168,10 +168,13 @@ cd apps/storefront-dubai_garments
 npm run db:migrate
 ```
 
-Copy only one table from local Postgres to Docker Postgres (example: `leads`):
+Table-level copy/reset script is disabled for data safety.  
+Use full import + migrate instead:
 
 ```bash
-SOURCE_DATABASE_URL='postgresql://<local_user>:<local_password>@localhost:5432/dubai_garments' ./scripts/db-copy-table-local-to-docker.sh leads
+./scripts/db-import-dump.sh /path/to/your_dump.sql
+cd apps/storefront-dubai_garments
+npm run db:migrate
 ```
 
 ## 8. What each service does

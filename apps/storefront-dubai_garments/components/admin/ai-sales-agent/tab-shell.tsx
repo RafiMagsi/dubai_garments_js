@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Panel } from '@/components/ui';
+import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
 
 type AgentTabKey =
   | 'lead-intelligence'
@@ -18,6 +18,11 @@ type AgentTab = {
   eyebrow: string;
   title: string;
   description: string;
+  kpiLabel: string;
+  kpiValue: string;
+  kpiDelta: string;
+  health: 'healthy' | 'warning' | 'critical';
+  features: string[];
 };
 
 const tabs: AgentTab[] = [
@@ -27,6 +32,11 @@ const tabs: AgentTab[] = [
     eyebrow: 'AI Intake',
     title: 'Lead Intelligence',
     description: 'Lead summary, score, urgency, complexity, intent, and recommended next action.',
+    kpiLabel: 'Analyzed Leads',
+    kpiValue: '128',
+    kpiDelta: '+14 today',
+    health: 'healthy',
+    features: ['Lead score calibration', 'Intent classification', 'Follow-up queue shaping'],
   },
   {
     key: 'reply-studio',
@@ -34,6 +44,11 @@ const tabs: AgentTab[] = [
     eyebrow: 'AI Messaging',
     title: 'Reply Studio',
     description: 'Generate first replies, follow-ups, and sales-ready communication drafts.',
+    kpiLabel: 'Drafts Generated',
+    kpiValue: '64',
+    kpiDelta: '89% accepted',
+    health: 'healthy',
+    features: ['Tone controls', 'Channel-aware drafts', 'Actionable next-step prompts'],
   },
   {
     key: 'quote-copilot',
@@ -41,6 +56,11 @@ const tabs: AgentTab[] = [
     eyebrow: 'AI Revenue',
     title: 'Quote Copilot',
     description: 'Suggest products, quantities, upsells, and quote-ready summaries.',
+    kpiLabel: 'Quote Assist Runs',
+    kpiValue: '37',
+    kpiDelta: '+9 this week',
+    health: 'warning',
+    features: ['Product suggestions', 'Volume pricing hints', 'Upsell cross-sell cues'],
   },
   {
     key: 'pipeline-insights',
@@ -48,6 +68,11 @@ const tabs: AgentTab[] = [
     eyebrow: 'AI Guidance',
     title: 'Pipeline Insights',
     description: 'Show stalled deals, next-best actions, and at-risk opportunities.',
+    kpiLabel: 'At-Risk Alerts',
+    kpiValue: '12',
+    kpiDelta: '3 critical',
+    health: 'critical',
+    features: ['Stall detection', 'Risk segmentation', 'Recommended intervention paths'],
   },
   {
     key: 'agent-flow',
@@ -55,6 +80,11 @@ const tabs: AgentTab[] = [
     eyebrow: 'Visual AI Journey',
     title: 'Lead-to-Close Agent Flow',
     description: 'Track visible AI and automation steps for every lead from intake to outcome.',
+    kpiLabel: 'Flow Coverage',
+    kpiValue: '92%',
+    kpiDelta: 'End-to-end',
+    health: 'healthy',
+    features: ['Intake-to-close map', 'Step-level visibility', 'Execution audit links'],
   },
   {
     key: 'automation-runs',
@@ -62,6 +92,11 @@ const tabs: AgentTab[] = [
     eyebrow: 'Execution Layer',
     title: 'Automation Runs',
     description: 'Surface AI-triggered workflow activity and system actions.',
+    kpiLabel: 'Run Success Rate',
+    kpiValue: '96.4%',
+    kpiDelta: 'Last 24h',
+    health: 'healthy',
+    features: ['Queued run stream', 'Failure drilldown', 'Retry and rerun controls'],
   },
   {
     key: 'model-settings',
@@ -69,65 +104,168 @@ const tabs: AgentTab[] = [
     eyebrow: 'LLM Controls',
     title: 'Model & Prompt Settings',
     description: 'Future home for model selection, prompt templates, and fallback strategy.',
+    kpiLabel: 'Prompt Versions',
+    kpiValue: '11',
+    kpiDelta: '2 active',
+    health: 'warning',
+    features: ['Prompt templates', 'Provider fallback strategy', 'Contract validation rules'],
   },
 ];
 
+const flowSteps = ['Lead Intake', 'AI Analysis', 'Reply Draft', 'Deal Guidance', 'Quote Assist', 'Close Loop'];
+
 export default function AiSalesAgentTabShell() {
   const [activeTab, setActiveTab] = useState<AgentTabKey>('lead-intelligence');
+  const [expanded, setExpanded] = useState(true);
 
-  const currentTab = useMemo(
-    () => tabs.find((tab) => tab.key === activeTab) ?? tabs[0],
-    [activeTab]
-  );
+  const currentTab = useMemo(() => tabs.find((tab) => tab.key === activeTab) ?? tabs[0], [activeTab]);
+
+  const healthStyles = {
+    healthy: { border: '#a7f3d0', bg: '#ecfdf5', fg: '#047857' },
+    warning: { border: '#fed7aa', bg: '#fff7ed', fg: '#b45309' },
+    critical: { border: '#fecaca', bg: '#fef2f2', fg: '#be123c' },
+  }[currentTab.health];
 
   return (
     <Panel>
-      <div className="dg-flex dg-flex-col dg-gap-5">
-        <div className="dg-flex dg-flex-wrap dg-gap-2">
+      <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {tabs.map((tab) => {
             const isActive = tab.key === activeTab;
-
             return (
-              <button
+              <Button
                 key={tab.key}
-                type="button"
+                size="sm"
+                variant={isActive ? 'primary' : 'secondary'}
                 onClick={() => setActiveTab(tab.key)}
-                className={isActive ? 'dg-tab dg-tab-active' : 'dg-tab'}
-                aria-pressed={isActive}
+                style={isActive ? { boxShadow: '0 8px 16px rgba(37,99,235,0.16)' } : undefined}
               >
                 {tab.label}
-              </button>
+              </Button>
             );
           })}
-        </div>
 
-        <div className="dg-rounded-xl dg-border dg-border-neutral-200 dg-bg-white dg-p-6">
-          <div className="dg-mb-2 dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
-            {currentTab.eyebrow}
+          <div style={{ marginLeft: 'auto' }}>
+            <Button variant="secondary" size="sm" onClick={() => setExpanded((v) => !v)}>
+              {expanded ? 'Collapse Overview' : 'Expand Overview'}
+            </Button>
           </div>
-
-          <h2 className="dg-text-xl dg-font-semibold">{currentTab.title}</h2>
-
-          <p className="dg-mt-2 dg-text-sm dg-text-neutral-600">
-            {currentTab.description}
-          </p>
-
-          <div className="dg-mt-6 dg-grid dg-grid-cols-2 dg-gap-4">
-            <div className="dg-rounded-lg dg-border dg-border-dashed dg-border-neutral-300 dg-p-4">
-                <h3 className="dg-font-medium">Visible AI Outcome</h3>
-                <p className="dg-mt-2 dg-text-sm dg-text-neutral-500">
-                Make AI understandable and actionable for sales teams, not hidden in backend services.
-                </p>
-            </div>
-
-            <div className="dg-rounded-lg dg-border dg-border-dashed dg-border-neutral-300 dg-p-4">
-                <h3 className="dg-font-medium">Implementation Status</h3>
-                <p className="dg-mt-2 dg-text-sm dg-text-neutral-500">
-                Route, navigation, tab shell, and permission hooks are ready. Feature modules come next.
-                </p>
-            </div>
-            </div>
         </div>
+
+        <Card>
+          <div style={{ display: 'grid', gap: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+              <div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    color: '#64748b',
+                    fontWeight: 700,
+                  }}
+                >
+                  {currentTab.eyebrow}
+                </p>
+                <CardTitle style={{ marginTop: 6 }}>{currentTab.title}</CardTitle>
+                <CardText style={{ marginTop: 8 }}>{currentTab.description}</CardText>
+              </div>
+
+              <div
+                style={{
+                  border: `1px solid ${healthStyles.border}`,
+                  background: healthStyles.bg,
+                  color: healthStyles.fg,
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  minWidth: 140,
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  {currentTab.kpiLabel}
+                </p>
+                <p style={{ margin: '6px 0 0', fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{currentTab.kpiValue}</p>
+                <p style={{ margin: '6px 0 0', fontSize: 12, color: '#475569' }}>{currentTab.kpiDelta}</p>
+              </div>
+            </div>
+
+            {expanded ? (
+              <>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                    gap: 8,
+                  }}
+                >
+                  {flowSteps.map((step, index) => {
+                    const active = index <= (tabs.findIndex((t) => t.key === activeTab) % flowSteps.length);
+                    return (
+                      <div
+                        key={step}
+                        style={{
+                          border: `1px solid ${active ? 'rgba(59,130,246,0.30)' : 'var(--color-border)'}`,
+                          background: active ? 'rgba(59,130,246,0.08)' : '#fff',
+                          borderRadius: 10,
+                          padding: '10px 12px',
+                        }}
+                      >
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 11,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            color: '#64748b',
+                            fontWeight: 700,
+                          }}
+                        >
+                          Step {index + 1}
+                        </p>
+                        <p style={{ margin: '4px 0 0', fontSize: 12, fontWeight: 600, color: '#1e293b' }}>{step}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                    gap: 8,
+                  }}
+                >
+                  {currentTab.features.map((feature) => (
+                    <div
+                      key={feature}
+                      style={{
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 10,
+                        background: '#fff',
+                        padding: '10px 12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: 999,
+                            background: '#3b82f6',
+                            display: 'inline-block',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1e293b' }}>{feature}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </div>
+        </Card>
       </div>
     </Panel>
   );

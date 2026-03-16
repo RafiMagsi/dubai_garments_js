@@ -10,9 +10,9 @@ Use this checklist before MVP release/demo sign-off.
 - Users/RBAC checks
 
 ## Pre-Run Setup
-1. Reset demo data:
-- Local: `cd apps/storefront-dubai_garments && npm run demo:reset`
-- Docker: `docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "cd /app && npm run demo:reset"`
+1. Prepare demo data (non-destructive):
+- Local: `cd apps/storefront-dubai_garments && npm run demo:prepare`
+- Docker: `docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "cd /app && npm run demo:prepare"`
 2. Print walkthrough:
 - Local: `cd apps/storefront-dubai_garments && npm run demo:walkthrough`
 - Docker: `docker compose -f docker-compose.yml -f docker-compose.dev.yml exec storefront sh -lc "cd /app && npm run demo:walkthrough"`
@@ -70,4 +70,3 @@ Use this checklist before MVP release/demo sign-off.
 - [ ] No unresolved high-severity (`P1`) issues
 - [ ] All smoke sections A-F pass or have accepted waiver
 - [ ] Release sign-off template completed
-
