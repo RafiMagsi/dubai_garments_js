@@ -139,11 +139,32 @@ export default function AiSalesAgentActionCards({
 }: ActionCardsProps) {
   if (!response?.ok) return null;
 
+  const motionStyle = (
+    <style jsx>{`
+      @keyframes aicReveal {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        div[style*='aicReveal'] {
+          animation: none !important;
+        }
+      }
+    `}</style>
+  );
+
   if (response.intent === 'followups_today') {
     const data = response.data as { summary: string; items: FollowupItem[] } | undefined;
     if (!data?.items) return null;
 
     return (
+      <>
       <div style={{ display: 'grid', gap: 12 }}>
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -162,7 +183,14 @@ export default function AiSalesAgentActionCards({
             key={item.id}
             accent={item.priority === 'high' ? '#f43f5e' : item.priority === 'medium' ? '#f59e0b' : '#3b82f6'}
           >
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div
+              style={{
+                display: 'grid',
+                gap: 12,
+                animation: 'aicReveal 260ms cubic-bezier(0.22, 1, 0.36, 1) both',
+                animationDelay: `${80 + index * 60}ms`,
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <Badge text={item.type} tone="blue" />
@@ -178,6 +206,8 @@ export default function AiSalesAgentActionCards({
           </ItemCard>
         ))}
       </div>
+      {motionStyle}
+      </>
     );
   }
 
@@ -186,6 +216,7 @@ export default function AiSalesAgentActionCards({
     if (!data) return null;
 
     return (
+      <>
       <div style={{ display: 'grid', gap: 12 }}>
         <ItemCard accent="#8b5cf6">
           <div style={{ display: 'grid', gap: 12 }}>
@@ -228,6 +259,8 @@ export default function AiSalesAgentActionCards({
           </div>
         </ItemCard>
       </div>
+      {motionStyle}
+      </>
     );
   }
 
@@ -236,6 +269,7 @@ export default function AiSalesAgentActionCards({
     if (!data?.deals) return null;
 
     return (
+      <>
       <div style={{ display: 'grid', gap: 12 }}>
         <Card style={{ borderColor: '#fecdd3' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -251,7 +285,13 @@ export default function AiSalesAgentActionCards({
 
         {data.deals.map((deal) => (
           <ItemCard key={deal.id} accent="#f43f5e">
-            <div style={{ display: 'grid', gap: 12 }}>
+            <div
+              style={{
+                display: 'grid',
+                gap: 12,
+                animation: 'aicReveal 260ms cubic-bezier(0.22, 1, 0.36, 1) both',
+              }}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ display: 'grid', gap: 8 }}>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -291,13 +331,22 @@ export default function AiSalesAgentActionCards({
           </ItemCard>
         ))}
       </div>
+      {motionStyle}
+      </>
     );
   }
 
   if (response.action && response.result) {
     return (
+      <>
       <ItemCard accent="#3b82f6">
-        <div style={{ display: 'grid', gap: 12 }}>
+        <div
+          style={{
+            display: 'grid',
+            gap: 12,
+            animation: 'aicReveal 260ms cubic-bezier(0.22, 1, 0.36, 1) both',
+          }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div>
               <p style={{ margin: 0, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', fontWeight: 700 }}>
@@ -327,6 +376,8 @@ export default function AiSalesAgentActionCards({
           </pre>
         </div>
       </ItemCard>
+      {motionStyle}
+      </>
     );
   }
 

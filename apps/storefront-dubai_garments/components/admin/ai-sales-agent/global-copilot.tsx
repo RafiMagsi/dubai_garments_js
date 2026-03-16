@@ -101,8 +101,8 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
   }
 
   return (
-    <Card style={{ padding: 0 }}>
-      <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--color-border)' }}>
+    <Card className="copilot-root" style={{ padding: 0 }}>
+      <div className="copilot-head" style={{ padding: '16px 18px', borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div
             style={{
@@ -137,9 +137,9 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
         </div>
       </div>
 
-      <div style={{ padding: 18, display: 'grid', gap: 12 }}>
+      <div className="copilot-core" style={{ padding: 18, display: 'grid', gap: 12 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {intentChips.map((chip) => {
+          {intentChips.map((chip, index) => {
             const active = chip.intent === activeIntent;
             return (
               <Button
@@ -147,7 +147,8 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
                 variant={active ? 'primary' : 'secondary'}
                 size="sm"
                 onClick={() => applyIntent(chip.intent, chip.prompt)}
-                style={active ? { boxShadow: '0 8px 16px rgba(37,99,235,0.16)' } : undefined}
+                className="copilot-chip"
+                style={{ animationDelay: `${80 + index * 45}ms`, ...(active ? { boxShadow: '0 8px 16px rgba(37,99,235,0.16)' } : undefined) }}
               >
                 {chip.label}
               </Button>
@@ -155,7 +156,7 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
           })}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
+        <div className="copilot-prompt-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
           <TextField
             value={userNotes}
             onChange={(e) => setUserNotes(e.target.value)}
@@ -181,7 +182,7 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
       </div>
 
       {expanded ? (
-        <div style={{ borderTop: '1px solid var(--color-border)', padding: 18, display: 'grid', gap: 12 }}>
+        <div className="copilot-advanced" style={{ borderTop: '1px solid var(--color-border)', padding: 18, display: 'grid', gap: 12 }}>
           <div
             style={{
               display: 'grid',
@@ -228,15 +229,92 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
           ) : null}
 
           {response ? (
-            <AiSalesAgentActionCards
-              response={response}
-              onExecute={handleExecute}
-              isExecuting={isExecuting}
-              dryRun={dryRun}
-            />
+            <div className="copilot-results">
+              <AiSalesAgentActionCards
+                response={response}
+                onExecute={handleExecute}
+                isExecuting={isExecuting}
+                dryRun={dryRun}
+              />
+            </div>
           ) : null}
         </div>
       ) : null}
+      <style jsx>{`
+        .copilot-root {
+          animation: copilot-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .copilot-head {
+          animation: copilot-fade-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .copilot-core {
+          animation: copilot-fade-up 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .copilot-chip {
+          animation: copilot-chip-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .copilot-prompt-row {
+          animation: copilot-fade-up 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .copilot-advanced {
+          animation: copilot-disclose 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          transform-origin: top;
+        }
+        .copilot-results {
+          animation: copilot-fade-up 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes copilot-in {
+          from {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes copilot-fade-up {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes copilot-chip-in {
+          from {
+            opacity: 0;
+            transform: translateY(6px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes copilot-disclose {
+          from {
+            opacity: 0;
+            transform: translateY(-8px) scaleY(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scaleY(1);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .copilot-root,
+          .copilot-head,
+          .copilot-core,
+          .copilot-chip,
+          .copilot-prompt-row,
+          .copilot-advanced,
+          .copilot-results {
+            animation: none !important;
+          }
+        }
+      `}</style>
     </Card>
   );
 }

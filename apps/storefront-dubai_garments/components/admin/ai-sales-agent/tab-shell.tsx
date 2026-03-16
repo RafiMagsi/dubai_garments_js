@@ -128,9 +128,9 @@ export default function AiSalesAgentTabShell() {
 
   return (
     <Panel>
-      <div style={{ display: 'grid', gap: 12 }}>
+      <div className="ais-shell" style={{ display: 'grid', gap: 12 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {tabs.map((tab) => {
+          {tabs.map((tab, index) => {
             const isActive = tab.key === activeTab;
             return (
               <Button
@@ -138,7 +138,8 @@ export default function AiSalesAgentTabShell() {
                 size="sm"
                 variant={isActive ? 'primary' : 'secondary'}
                 onClick={() => setActiveTab(tab.key)}
-                style={isActive ? { boxShadow: '0 8px 16px rgba(37,99,235,0.16)' } : undefined}
+                className="ais-tab-btn"
+                style={{ animationDelay: `${60 + index * 35}ms`, ...(isActive ? { boxShadow: '0 8px 16px rgba(37,99,235,0.16)' } : undefined) }}
               >
                 {tab.label}
               </Button>
@@ -152,7 +153,7 @@ export default function AiSalesAgentTabShell() {
           </div>
         </div>
 
-        <Card>
+        <Card className="ais-overview" key={activeTab}>
           <div style={{ display: 'grid', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
               <div>
@@ -202,15 +203,17 @@ export default function AiSalesAgentTabShell() {
                   {flowSteps.map((step, index) => {
                     const active = index <= (tabs.findIndex((t) => t.key === activeTab) % flowSteps.length);
                     return (
-                      <div
-                        key={step}
-                        style={{
-                          border: `1px solid ${active ? 'rgba(59,130,246,0.30)' : 'var(--color-border)'}`,
-                          background: active ? 'rgba(59,130,246,0.08)' : '#fff',
-                          borderRadius: 10,
-                          padding: '10px 12px',
-                        }}
-                      >
+                <div
+                  className="ais-flow-step"
+                  key={step}
+                  style={{
+                    border: `1px solid ${active ? 'rgba(59,130,246,0.30)' : 'var(--color-border)'}`,
+                    background: active ? 'rgba(59,130,246,0.08)' : '#fff',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    animationDelay: `${80 + index * 35}ms`,
+                  }}
+                >
                         <p
                           style={{
                             margin: 0,
@@ -236,14 +239,16 @@ export default function AiSalesAgentTabShell() {
                     gap: 8,
                   }}
                 >
-                  {currentTab.features.map((feature) => (
+                  {currentTab.features.map((feature, index) => (
                     <div
+                      className="ais-feature-card"
                       key={feature}
                       style={{
                         border: '1px solid var(--color-border)',
                         borderRadius: 10,
                         background: '#fff',
                         padding: '10px 12px',
+                        animationDelay: `${120 + index * 45}ms`,
                       }}
                     >
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -267,6 +272,82 @@ export default function AiSalesAgentTabShell() {
           </div>
         </Card>
       </div>
+      <style jsx>{`
+        .ais-shell {
+          animation: ais-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .ais-tab-btn {
+          animation: ais-chip-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .ais-overview {
+          animation: ais-overview-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .ais-flow-step {
+          animation: ais-step-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .ais-feature-card {
+          animation: ais-card-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes ais-in {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes ais-overview-in {
+          from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.995);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes ais-chip-in {
+          from {
+            opacity: 0;
+            transform: translateY(7px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        @keyframes ais-step-in {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes ais-card-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ais-shell,
+          .ais-tab-btn,
+          .ais-overview,
+          .ais-flow-step,
+          .ais-feature-card {
+            animation: none !important;
+          }
+        }
+      `}</style>
     </Panel>
   );
 }
