@@ -5,9 +5,10 @@ import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
 const qaDir = path.join(root, '.qa');
-const regressionDocPath = path.join(root, '..', '..', 'docs', 'qa', 'regression-testing', 'regression-testing.md');
+const regressionDocsDir = path.join(root, '..', '..', 'docs', 'qa', 'regression-testing');
 
 fs.mkdirSync(qaDir, { recursive: true });
+fs.mkdirSync(regressionDocsDir, { recursive: true });
 
 function run(cmd, args, options = {}) {
   const result = spawnSync(cmd, args, {
@@ -65,6 +66,11 @@ const functionCoverage = coverageSummary?.total?.functions?.pct ?? 0;
 const statementCoverage = coverageSummary?.total?.statements?.pct ?? 0;
 
 const now = new Date().toISOString();
+const safeTimestamp = now.replace(/[:.]/g, '-');
+const regressionDocPath = path.join(
+  regressionDocsDir,
+  `regression-results-${safeTimestamp}.md`
+);
 
 const report = [
   '# AI Sales Agent — Regression Checklist',

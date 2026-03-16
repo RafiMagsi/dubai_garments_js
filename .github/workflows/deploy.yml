@@ -101,3 +101,9 @@ jobs:
             chmod +x apps/storefront-dubai_garments/scripts/*.sh || true
 
             SKIP_GIT_SYNC=true ./scripts/github-deploy.sh "${{ env.DEPLOY_MODE }}" "${{ env.DEPLOY_REF }}"
+
+  qa_regression:
+    name: QA Regression
+    needs: deploy
+    uses: ./.github/workflows/qa-regression.yml
+    secrets: inherit

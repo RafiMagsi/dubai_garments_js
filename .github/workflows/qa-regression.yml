@@ -1,14 +1,11 @@
 name: QA Regression
 
 on:
+  workflow_call:
   workflow_dispatch:
-  workflow_run:
-    workflows: ["Deploy"]
-    types: [completed]
 
 jobs:
   qa:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     env:
       BASE_URL: ${{ secrets.QA_BASE_URL }}
@@ -26,6 +23,42 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Preflight Required Secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+
+          required=(
+            QA_BASE_URL
+            QA_ADMIN_EMAIL
+            QA_ADMIN_PASSWORD
+            QA_SALES_MANAGER_EMAIL
+            QA_SALES_MANAGER_PASSWORD
+            QA_SALES_REP_EMAIL
+            QA_SALES_REP_PASSWORD
+            QA_OPS_EMAIL
+            QA_OPS_PASSWORD
+            CODECOV_TOKEN
+          )
+
+          for key in "${required[@]}"; do
+            value="${!key:-}"
+            if [ -z "$value" ]; then
+              missing+=("$key")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Missing required secrets:"
+            for key in "${missing[@]}"; do
+              echo " - $key"
+            done
+            exit 1
+          fi
+
+          echo "Preflight passed: all required secrets are configured."
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -50,7 +83,7 @@ jobs:
           name: qa-regression-artifacts
           path: |
             apps/storefront-dubai_garments/.qa
-            docs/qa/regression-testing/regression-testing.md
+            docs/qa/regression-testing/regression-results-*.md
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v5

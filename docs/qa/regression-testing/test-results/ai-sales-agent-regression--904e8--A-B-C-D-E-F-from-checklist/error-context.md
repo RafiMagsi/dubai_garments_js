@@ -110,7 +110,7 @@
       - generic [ref=e88]:
         - generic [ref=e90]:
           - generic [ref=e91]:
-            - 'heading "Lead #8CE51A" [level=1] [ref=e92]'
+            - 'heading "Lead #4FE674" [level=1] [ref=e92]'
             - paragraph [ref=e93]: Lead profile, qualification context, communication history, and pipeline actions.
           - generic [ref=e95]:
             - link "Back to Leads" [ref=e96] [cursor=pointer]:
@@ -148,7 +148,7 @@
                 - paragraph [ref=e132]: Run lead triage to persist a recommended next-best action for this lead.
                 - generic [ref=e133]:
                   - link "Open Lead" [ref=e134] [cursor=pointer]:
-                    - /url: /admin/leads/8ce51a8e-76fd-4ef7-a004-acf2d6ea8d9e
+                    - /url: /admin/leads/4fe67418-b954-45bc-a833-7f7f404e1f90
                   - button "Run Lead Triage" [ref=e135]
                   - link "Run Agent Flow" [ref=e136] [cursor=pointer]:
                     - /url: /admin/ai-sales-agent
@@ -209,7 +209,7 @@
                 - generic [ref=e194]:
                   - generic [ref=e195]:
                     - strong [ref=e196]: "Lead ID:"
-                    - text: 8ce51a8e-76fd-4ef7-a004-acf2d6ea8d9e
+                    - text: 4fe67418-b954-45bc-a833-7f7f404e1f90
                   - generic [ref=e197]:
                     - strong [ref=e198]: "AI Path:"
                     - text: Primary
@@ -222,15 +222,15 @@
                 - generic [ref=e204]:
                   - generic [ref=e205]:
                     - paragraph [ref=e206]: Lead Profile
-                    - heading "Regression 1773697273499 • QA-1773697273499" [level=2] [ref=e207]
+                    - heading "Regression 1773697801512 • QA-1773697801512" [level=2] [ref=e207]
                   - generic [ref=e208]: New
                 - generic [ref=e209]:
                   - generic [ref=e210]:
                     - generic [ref=e211]: Tracking Code
-                    - strong [ref=e212]: 8CE51A
+                    - strong [ref=e212]: 4FE674
                   - generic [ref=e213]:
                     - generic [ref=e214]: Email
-                    - strong [ref=e215]: qa+1773697273499@example.com
+                    - strong [ref=e215]: qa+1773697801512@example.com
                   - generic [ref=e216]:
                     - generic [ref=e217]: Phone
                     - strong [ref=e218]: "-"
@@ -245,7 +245,7 @@
                     - strong [ref=e227]: 2026-04-15
               - generic [ref=e228]:
                 - heading "Customer Request" [level=2] [ref=e229]
-                - paragraph [ref=e230]: "Product: adc57c5e-d5a8-4a06-a830-5d6d589b64cc Message: Regression lead 1773697273499 for AI Day 10 checks"
+                - paragraph [ref=e230]: "Product: adc57c5e-d5a8-4a06-a830-5d6d589b64cc Message: Regression lead 1773697801512 for AI Day 10 checks"
               - generic [ref=e231]:
                 - heading "Lead Timeline" [level=2] [ref=e232]
                 - generic [ref=e233]:
@@ -253,20 +253,20 @@
                     - generic [ref=e236]:
                       - paragraph [ref=e237]: Lead created from quote request
                       - generic [ref=e238]: Lead Created
-                    - paragraph [ref=e239]: 3/17/2026, 2:41:13 AM
+                    - paragraph [ref=e239]: 3/17/2026, 2:50:02 AM
                     - paragraph [ref=e240]: Lead was created from public quote request form.
                   - generic [ref=e242]:
                     - generic [ref=e243]:
                       - paragraph [ref=e244]: Lead Created
                       - generic [ref=e245]: Lead Created
-                    - paragraph [ref=e246]: 3/17/2026, 2:41:13 AM
-                    - paragraph [ref=e247]: QA-1773697273499
-                    - paragraph [ref=e248]: Lead 8CE51A was created from website.
+                    - paragraph [ref=e246]: 3/17/2026, 2:50:02 AM
+                    - paragraph [ref=e247]: QA-1773697801512
+                    - paragraph [ref=e248]: Lead 4FE674 was created from website.
                   - generic [ref=e250]:
                     - generic [ref=e251]:
                       - paragraph [ref=e252]: Lead Updated
                       - generic [ref=e253]: Lead Updated
-                    - paragraph [ref=e254]: 3/17/2026, 2:41:13 AM
+                    - paragraph [ref=e254]: 3/17/2026, 2:50:02 AM
                     - paragraph [ref=e255]: "Current status: New."
             - generic [ref=e256]:
               - generic [ref=e257]:
@@ -310,13 +310,13 @@
                 - generic [ref=e285]:
                   - generic [ref=e286]:
                     - generic [ref=e287]: Recipient Email
-                    - textbox "Recipient Email" [ref=e288]: qa+1773697273499@example.com
+                    - textbox "Recipient Email" [ref=e288]: qa+1773697801512@example.com
                   - generic [ref=e289]:
                     - generic [ref=e290]: Subject
-                    - textbox "Subject" [ref=e291]: Regarding your quote request 8CE51A
+                    - textbox "Subject" [ref=e291]: Regarding your quote request 4FE674
                   - generic [ref=e292]:
                     - generic [ref=e293]: Message
-                    - textbox "Message" [ref=e294]: Hello Regression 1773697273499, Thank you for contacting Dubai Garments. We have received your request and our sales team will follow up shortly. Regards, Dubai Garments Sales Team
+                    - textbox "Message" [ref=e294]: Hello Regression 1773697801512, Thank you for contacting Dubai Garments. We have received your request and our sales team will follow up shortly. Regards, Dubai Garments Sales Team
                   - generic [ref=e295]:
                     - button "AI Draft Reply" [ref=e296]
                     - button "Send Email" [ref=e297]
