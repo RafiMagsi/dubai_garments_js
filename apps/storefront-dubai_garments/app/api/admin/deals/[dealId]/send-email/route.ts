@@ -1,4 +1,4 @@
-import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
+import { fastApiFetch } from '@/lib/integrations/fastapi-proxy';
 import { NextRequest, NextResponse } from 'next/server';
 
 const FASTAPI_BASE_URL =

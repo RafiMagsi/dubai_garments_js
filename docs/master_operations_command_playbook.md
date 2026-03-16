@@ -1424,22 +1424,22 @@ Important:
 
 ---
 
-### Verify user hash prefix / tenant mapping
+### Verify user hash prefix / workspace mapping
 
-With tenants table present:
+With workspaces table present:
 
 ```bash
 docker exec -i dubai_garments_postgres psql -U rafi -d dubai_garments <<'SQL'
 SELECT u.email, u.role, t.slug AS tenant_slug, left(u.password_hash, 4) AS hash_prefix
 FROM users u
-JOIN tenants t ON t.id = u.tenant_id
+JOIN workspaces t ON t.id = u.tenant_id
 WHERE lower(u.email) = lower('admin@dubaigarments.me');
 SQL
 ```
 
 Use when:
 - login returns unauthorized
-- you need to confirm bcrypt hash prefix and tenant linkage
+- you need to confirm bcrypt hash prefix and workspace linkage
 
 ---
 

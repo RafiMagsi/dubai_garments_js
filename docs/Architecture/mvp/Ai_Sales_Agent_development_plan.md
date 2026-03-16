@@ -75,7 +75,7 @@ Primary outcomes:
 
 ### Day 5
 1. Hardening pass for copilot UX states (loading/error/empty/success).
-2. Validate tenant scoping on all copilot queries.
+2. Validate workspace scoping on all copilot queries.
 3. Freeze Week 1 baseline.
 
 ## Week 2 - Lead Intelligence and Triage Agent

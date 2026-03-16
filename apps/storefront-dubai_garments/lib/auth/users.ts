@@ -7,8 +7,6 @@ export type AppUser = {
   email: string;
   role: AppRole;
   displayName: string;
-  tenantId?: string;
-  tenantSlug: string;
 };
 
 type DbUser = {
@@ -16,15 +14,12 @@ type DbUser = {
   email: string;
   full_name: string;
   role: string;
-  tenant_id?: string;
-  tenant_slug: string;
 };
 
 export async function findUserByCredentials(
   role: AppRole,
   email: string,
-  password: string,
-  tenantSlug: string
+  password: string
 ): Promise<AppUser | null> {
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -33,14 +28,10 @@ export async function findUserByCredentials(
       u.id::text,
       u.email,
       u.full_name,
-      u.role,
-      u.tenant_id::text AS tenant_id,
-      t.slug AS tenant_slug
+      u.role
     FROM users u
-    JOIN tenants t ON t.id = u.tenant_id
     WHERE LOWER(u.email) = ${normalizedEmail}
       AND u.role = ${role}
-      AND t.slug = ${tenantSlug}
       AND u.is_active = TRUE
       AND u.password_hash = crypt(${password}, u.password_hash)
     LIMIT 1
@@ -56,15 +47,12 @@ export async function findUserByCredentials(
     email: user.email,
     role: user.role as AppRole,
     displayName: user.full_name,
-    tenantId: user.tenant_id,
-    tenantSlug: user.tenant_slug,
   };
 }
 
 export async function findBackofficeUserByCredentials(
   email: string,
-  password: string,
-  tenantSlug: string
+  password: string
 ): Promise<AppUser | null> {
   const normalizedEmail = email.trim().toLowerCase();
   const backofficeRoles: AppRole[] = ['admin', 'sales_manager', 'sales_rep', 'ops'];
@@ -74,14 +62,10 @@ export async function findBackofficeUserByCredentials(
       u.id::text,
       u.email,
       u.full_name,
-      u.role,
-      u.tenant_id::text AS tenant_id,
-      t.slug AS tenant_slug
+      u.role
     FROM users u
-    JOIN tenants t ON t.id = u.tenant_id
     WHERE LOWER(u.email) = ${normalizedEmail}
       AND u.role IN (${Prisma.join(backofficeRoles)})
-      AND t.slug = ${tenantSlug}
       AND u.is_active = TRUE
       AND u.password_hash = crypt(${password}, u.password_hash)
     LIMIT 1
@@ -97,7 +81,5 @@ export async function findBackofficeUserByCredentials(
     email: user.email,
     role: user.role as AppRole,
     displayName: user.full_name,
-    tenantId: user.tenant_id,
-    tenantSlug: user.tenant_slug,
   };
 }

@@ -11,7 +11,7 @@ Operational trust, maintainability, and scale readiness.
 5. `OPS-P10-005` `ops` `M` Add SLO/SLI and alerting baseline (API latency, worker failures, queue depth).
 6. `OPS-P10-006` `ops` `S` Implement immutable audit retention policy and archival.
 7. `BE-P10-007` `backend` `S` Add security headers + rate limit strategy review.
-8. `AI-P10-008` `ai` `S` Add policy compliance checks for AI actions (tenant/legal rules).
+8. `AI-P10-008` `ai` `S` Add policy compliance checks for AI actions (workspace/legal rules).
 9. `AUT-P10-009` `automation` `S` Add idempotency keys for external side-effect workflows.
 10. `OPS-P10-010` `ops` `S` Finalize SOC-style operational runbooks and support playbook.
 
@@ -68,7 +68,7 @@ Operational trust, maintainability, and scale readiness.
 ## Week 3 - AI Compliance and Governance Completion
 ### Day 11
 1. Implement `AI-P10-008` policy compliance checks for AI actions.
-2. Add tenant/legal rule hooks and policy decision logging.
+2. Add workspace/legal rule hooks and policy decision logging.
 
 ### Day 12
 1. Expand AI compliance tests (allowed/blocked/escalated actions).

@@ -30,7 +30,7 @@ Decision-grade visibility for sales leadership.
 
 ### Day 3
 1. Start `BE-P9-002` analytics API contracts.
-2. Add tenant/time-window filters and pagination.
+2. Add workspace/time-window filters and pagination.
 3. Add API response consistency rules across endpoints.
 
 ### Day 4
@@ -59,7 +59,7 @@ Decision-grade visibility for sales leadership.
 
 ### Day 9
 1. Implement `FE-P9-009` CSV/XLSX export flow.
-2. Add export guards for role/tenant data limits.
+2. Add export guards for role/workspace data limits.
 3. Add export usage logging hooks.
 
 ### Day 10

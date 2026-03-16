@@ -14,9 +14,9 @@ Core MVP outcomes:
 ## Module Index (Priority Order)
 
 ## Done (Top Priority Baseline Confirmed)
-1. `M01` Workspace/Tenant Foundation
-- Tenant foundation + tenant isolation migrations (`0015`, `0016`)
-- Tenant-aware session and route-level protections
+1. `M01` Workspace/workspace Foundation
+- workspace foundation + workspace isolation migrations (`0015`, `0016`)
+- workspace-aware session and route-level protections
 - Install and reconfigure foundations exist
 
 2. `M02` Admin Auth Protection
@@ -89,7 +89,7 @@ Core MVP outcomes:
 ## 1. Workspace and Auth Foundation
 - Status: `Done`
 - Verified done:
-1. Tenant foundation + tenant isolation migrations exist (`0015`, `0016`)
+1. workspace foundation + workspace isolation migrations exist (`0015`, `0016`)
 2. Admin auth APIs + protected admin routes exist
 3. `proxy.ts` and server-side `requireAdminSession` checks are in place
 4. `/install` and `/admin/reconfigure` flows exist
@@ -186,14 +186,14 @@ Core MVP outcomes:
 4. Branding workflow complete: admin upload for logo/favicon + saved branding keys + runtime storefront/admin render path
 
 ## MVP Scope Adjustments (Outdated Items Fixed)
-1. Remove “skip tenants for MVP” guidance: tenant foundation already exists and should stay.
+1. Remove “skip workspaces for MVP” guidance: workspace foundation already exists and should stay.
 2. Keep MVP narrow: do not add advanced object builder/view engine/plugin marketplace yet.
 3. Keep enterprise Phase 9/10 items out of MVP closure unless they block demo or pilot stability.
 
 ## What Is Done vs To-Do (Condensed)
 
 ### Done
-1. Tenant-aware foundation and admin protection
+1. workspace-aware foundation and admin protection
 2. Install/reconfigure flows
 3. Admin shell and core CRM pages
 4. Leads/deals/quotes core lifecycle
@@ -207,7 +207,7 @@ Core MVP outcomes:
 
 ## Updated MVP Definition of Done
 MVP is complete when all are true:
-1. Login and tenant-safe admin access works reliably
+1. Login and workspace-safe admin access works reliably
 2. Lead -> Deal -> Quote -> PDF flow works end-to-end
 3. AI summary/score/classification is visible and reliable on leads
 4. Automation history is visible and retryable

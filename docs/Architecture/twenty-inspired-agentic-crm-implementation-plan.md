@@ -1,7 +1,7 @@
 # Twenty-Inspired Agentic CRM Implementation Plan (Full-Project Optimized)
 
 ## Goal
-Build a premium, multi-tenant, AI-first, automation-native CRM in this repo using Twenty-inspired UX and product patterns, while staying clean-room (no direct code copy).
+Build a premium, multi-workspace, AI-first, automation-native CRM in this repo using Twenty-inspired UX and product patterns, while staying clean-room (no direct code copy).
 
 ## Scope Principle
 Use Twenty as reference for:
@@ -41,7 +41,7 @@ Objective: deterministic deploy/runtime/auth/migrations before expansion.
 Tasks:
 1. Lock env/runtime conventions and env doctor checks
 2. Stabilize deploy pipeline with fail-fast/no-output timeout and smoke tests
-3. Enforce auth guardrails and tenant resolver consistency
+3. Enforce auth guardrails and workspace resolver consistency
 4. Ensure migration idempotency (`pgcrypto`, `set_updated_at`, trigger safety)
 5. Add observability baseline (/metrics, /health, logs, request IDs)
 
@@ -49,18 +49,18 @@ Deliverables:
 1. Reproducible deploy and rollback path
 2. No login/migration regressions
 
-## Phase 1: Multi-Tenant + RBAC Core Hardening (1 sprint)
-Objective: tenant-safe and permission-safe foundation.
+## Phase 1: Multi-workspace + RBAC Core Hardening (1 sprint)
+Objective: workspace-safe and permission-safe foundation.
 
 Tasks:
-1. Verify tenant scoping across all core queries/routes
-2. Extend RLS coverage where safe (`users`, `system_settings`, key tenant tables)
-3. Enforce tenant-aware session model and server-side guards
+1. Verify workspace scoping across all core queries/routes
+2. Extend RLS coverage where safe (`users`, `system_settings`, key workspace tables)
+3. Enforce workspace-aware session model and server-side guards
 4. Complete role/permission enforcement on admin actions
-5. Add tenant/permission integrity test suite
+5. Add workspace/permission integrity test suite
 
 Deliverables:
-1. Strong tenant isolation
+1. Strong workspace isolation
 2. Role-gated operations foundation
 
 ## Phase 2: CRM UX Shell + Workspace Experience (1-2 sprints)
@@ -84,7 +84,7 @@ Tasks:
 1. Implement object/field builder (custom fields + relation fields)
 2. Add record layout configuration (sections/cards/field visibility)
 3. Build view engine: filters, sort, group-by, saved views, kanban/table modes
-4. Add per-user and per-tenant view preferences
+4. Add per-user and per-workspace view preferences
 5. Add import/export and data quality (dedupe/validation)
 
 Deliverables:
@@ -152,7 +152,7 @@ Objective: maximize buyer adoption and ease of deployment.
 
 Tasks:
 1. Harden install wizard + one-time lock and reconfigure mode
-2. Complete white-label controls per tenant (logo/colors/theme/domain)
+2. Complete white-label controls per workspace (logo/colors/theme/domain)
 3. Build integration center with health/status (email/slack/telegram/webhooks/storage)
 4. Add API key management and usage audit
 5. Add plugin/integration contracts for extensibility
@@ -190,7 +190,7 @@ Deliverables:
 2. Sustainable release operations
 
 ## Cross-Phase Non-Negotiables
-1. Tenant isolation and permission checks cannot regress
+1. workspace isolation and permission checks cannot regress
 2. Every phase ships with tests + runbook updates
 3. Every risky feature requires observability and rollback path
 4. API contracts stay versioned and documented
@@ -203,7 +203,7 @@ Deliverables:
 4. UI implementation with reusable components
 5. Test coverage for happy path + failure path
 6. Ops/runbook updates + smoke verification
-7. Demo script and sample tenant data updated
+7. Demo script and sample workspace data updated
 
 ## Suggested Execution Order
 1. Phase 0

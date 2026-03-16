@@ -6,9 +6,7 @@ import type {
   FollowupsTodayResponse,
 } from './contracts';
 
-type CopilotTenantContext = {
-  tenantId?: string | null;
-  tenantSlug: string;
+type CopilotRequestContext = {
   userId: string;
   role: string;
 };
@@ -24,15 +22,15 @@ function endOfToday() {
 }
 
 export async function fallbackFollowupsToday(
-  tenant: CopilotTenantContext
+  context: CopilotRequestContext
 ): Promise<FollowupsTodayResponse> {
   const todayStart = startOfToday();
   const todayEnd = endOfToday();
 
     const leadWhere =
-        tenant.role === 'sales_rep'
+        context.role === 'sales_rep'
             ? {
-                assigned_to_user_id: tenant.userId,
+                assigned_to_user_id: context.userId,
                 OR: [
                 { timeline_date: { gte: todayStart, lte: todayEnd } },
                 { status: { in: ['new', 'qualified', 'quoted'] } },
@@ -72,7 +70,7 @@ export async function fallbackFollowupsToday(
 
 export async function fallbackDraftReply(
   input: CopilotRequest,
-  tenant: CopilotTenantContext
+  context: CopilotRequestContext
 ): Promise<DraftReplyResponse> {
   if (!input.leadId) {
     return {
@@ -87,10 +85,10 @@ export async function fallbackDraftReply(
 
     const lead = await prisma.leads.findFirst({
     where:
-        tenant.role === 'sales_rep'
+        context.role === 'sales_rep'
         ? {
             id: input.leadId,
-            assigned_to_user_id: tenant.userId,
+            assigned_to_user_id: context.userId,
             }
         : {
             id: input.leadId,
@@ -123,12 +121,12 @@ export async function fallbackDraftReply(
 }
 
 export async function fallbackAtRiskDeals(
-  tenant: CopilotTenantContext
+  context: CopilotRequestContext
 ): Promise<AtRiskDealsResponse> {
     const dealWhere =
-    tenant.role === 'sales_rep'
+    context.role === 'sales_rep'
         ? {
-            owner_user_id: tenant.userId,
+            owner_user_id: context.userId,
             stage: { in: ['qualified', 'proposal_sent', 'negotiation'] },
         }
         : {

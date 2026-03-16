@@ -12,13 +12,9 @@ export async function GET() {
   if (sessionOrResponse instanceof NextResponse) {
     return sessionOrResponse;
   }
-  const session = sessionOrResponse;
-  if (!session.tenantId) {
-    return NextResponse.json({ ok: false, message: 'Tenant context missing.' }, { status: 422 });
-  }
 
   try {
-    const status = await getReconfigureModeStatus(session.tenantId);
+    const status = await getReconfigureModeStatus();
     return NextResponse.json({ ok: true, ...status });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to load reconfigure status.';
@@ -32,9 +28,6 @@ export async function POST(request: NextRequest) {
     return sessionOrResponse;
   }
   const session = sessionOrResponse;
-  if (!session.tenantId) {
-    return NextResponse.json({ ok: false, message: 'Tenant context missing.' }, { status: 422 });
-  }
 
   try {
     const body = (await request.json().catch(() => ({}))) as
@@ -44,7 +37,6 @@ export async function POST(request: NextRequest) {
     if (body.action === 'enable' || body.action === 'disable') {
       const enabled = body.action === 'enable';
       const result = await enableReconfigureMode({
-        tenantId: session.tenantId,
         actorUserId: session.sub,
         enabled,
         ttlMinutes: body.ttlMinutes,
@@ -61,7 +53,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ ok: false, message: 'Payload is required.' }, { status: 422 });
       }
       const result = await reconfigureInstalledSystem({
-        tenantId: session.tenantId,
         actorUserId: session.sub,
         payload: body.payload,
       });

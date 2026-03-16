@@ -17,12 +17,6 @@ export async function POST(request: NextRequest) {
     return sessionOrResponse;
   }
   const session = sessionOrResponse;
-  if (!session.tenantSlug) {
-    return NextResponse.json(
-      { ok: false, message: 'Missing tenant context.', requestId },
-      { status: 403 }
-    );
-  }
 
   try {
     const rawBody = await request.json();
@@ -55,8 +49,6 @@ export async function POST(request: NextRequest) {
           dryRun: input.dry_run,
           role: session.role,
           denied: true,
-          tenantId: session.tenantId ?? null,
-          tenantSlug: session.tenantSlug,
         },
       });
 

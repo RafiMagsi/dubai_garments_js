@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
       <Card className="w-full max-w-md">
         <h1 className="text-2xl font-bold text-[var(--color-text)]">Backoffice Login</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
-          Access the private admin and sales workspace.
+          Access the private admin and sales console.
         </p>
 
         {error ? <FieldError className="dg-alert-error">{error}</FieldError> : null}

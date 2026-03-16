@@ -11,7 +11,7 @@ Security, reliability, compliance and enterprise operational readiness.
 5. `OPS-P8-005` `ops` `M` Add SLO/SLI and alerting baseline (API latency, worker failures, queue depth).
 6. `OPS-P8-006` `ops` `S` Implement immutable audit retention policy and archival.
 7. `BE-P8-007` `backend` `S` Add security headers + rate limit strategy review.
-8. `AI-P8-008` `ai` `S` Add policy compliance checks for AI actions (tenant/legal rules).
+8. `AI-P8-008` `ai` `S` Add policy compliance checks for AI actions (workspace/legal rules).
 9. `AUT-P8-009` `automation` `S` Add idempotency keys for external side-effect workflows.
 10. `OPS-P8-010` `ops` `S` Finalize SOC-style operational runbooks and support playbook.
 
@@ -68,7 +68,7 @@ Security, reliability, compliance and enterprise operational readiness.
 ## Week 3 - Compliance and Operational Governance
 ### Day 11
 1. Implement `AI-P8-008` policy compliance checks for AI actions.
-2. Add tenant/legal policy hook points and decision logs.
+2. Add workspace/legal policy hook points and decision logs.
 
 ### Day 12
 1. Expand AI compliance tests for allow/block/escalate paths.

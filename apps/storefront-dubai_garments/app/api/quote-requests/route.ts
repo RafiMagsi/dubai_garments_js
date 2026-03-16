@@ -1,4 +1,4 @@
-import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
+import { fastApiFetch } from '@/lib/integrations/fastapi-proxy';
 import { NextResponse } from 'next/server';
 import { logApiEvent } from '@/lib/observability/logger';
 import { observeApiRequest } from '@/lib/observability/metrics';

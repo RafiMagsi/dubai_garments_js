@@ -30,7 +30,7 @@ Executive-level analytics and decision support.
 
 ### Day 3
 1. Start `BE-P7-002` analytics API contract implementation.
-2. Add time-window and tenant filters.
+2. Add time-window and workspace filters.
 3. Define stable response schema for chart compatibility.
 
 ### Day 4
@@ -59,7 +59,7 @@ Executive-level analytics and decision support.
 
 ### Day 9
 1. Implement `FE-P7-009` export flow (CSV/XLSX).
-2. Add role/tenant-aware export constraints.
+2. Add role/workspace-aware export constraints.
 3. Add export audit hooks.
 
 ### Day 10

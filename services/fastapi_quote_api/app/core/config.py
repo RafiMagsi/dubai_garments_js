@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "")
-DEFAULT_TENANT_SLUG = os.getenv("DEFAULT_TENANT_SLUG", "default").strip() or "default"
 
 
 def _as_bool(value: str | bool | None, default: bool = False) -> bool:
@@ -71,13 +70,10 @@ def _load_db_settings() -> Dict[str, str]:
                     """
                     SELECT ss.scope, ss.key, ss.value
                     FROM system_settings ss
-                    JOIN tenants t ON t.id = ss.tenant_id
                     WHERE ss.is_active = TRUE
                       AND ss.scope IN ('global', 'fastapi')
-                      AND t.slug = %s
                     ORDER BY CASE WHEN scope = 'global' THEN 0 ELSE 1 END
-                    """,
-                    (DEFAULT_TENANT_SLUG,),
+                    """
                 )
                 rows = cursor.fetchall()
     except Exception:

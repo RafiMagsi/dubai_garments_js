@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminSession } from '@/lib/auth/require-admin';
 import { getRuntimeSetting } from '@/lib/config/runtime-settings';
-import { fastApiFetch } from '@/lib/tenant/fastapi-proxy';
+import { fastApiFetch } from '@/lib/integrations/fastapi-proxy';
 
 type ScriptDefinition = {
   key: string;
@@ -107,12 +107,11 @@ const SCRIPT_DEFINITIONS: ScriptDefinition[] = [
   },
 ];
 
-async function fetchLastRun(workflowName: string, request: Request, tenantId?: string) {
+async function fetchLastRun(workflowName: string, request: Request) {
   const fastApiBaseUrl = await getRuntimeSetting({
     key: 'FASTAPI_BASE_URL',
     scope: 'storefront',
     defaultValue: process.env.NEXT_PUBLIC_FASTAPI_BASE_URL || 'http://localhost:8000',
-    tenantId,
   });
   const response = await fastApiFetch(
     request,
@@ -144,13 +143,13 @@ export async function GET(request: Request) {
   if (sessionOrResponse instanceof NextResponse) {
     return sessionOrResponse;
   }
-  const session = sessionOrResponse;
+  void sessionOrResponse;
 
   try {
     const items = await Promise.all(
       SCRIPT_DEFINITIONS.map(async (script) => ({
         ...script,
-        lastRun: script.workflowName ? await fetchLastRun(script.workflowName, request, session.tenantId) : null,
+        lastRun: script.workflowName ? await fetchLastRun(script.workflowName, request) : null,
       }))
     );
 

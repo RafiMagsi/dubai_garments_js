@@ -4,7 +4,7 @@
 Make platform marketplace-ready and easy to integrate.
 
 ## Tickets
-1. `DB-P6-001` `db` `M` Add tenant branding/settings schema for white-label controls.
+1. `DB-P6-001` `db` `M` Add workspace branding/settings schema for white-label controls.
 2. `FE-P6-002` `frontend` `M` Build white-label branding editor (logo/colors/fonts/theme presets).
 3. `BE-P6-003` `backend` `M` Build integration registry API (provider config, status, scopes, health).
 4. `AUT-P6-004` `automation` `S` Implement standardized integration handler interface.
@@ -20,8 +20,8 @@ Make platform marketplace-ready and easy to integrate.
 ## Week 1 - Data and API Foundations
 ### Day 1
 1. Define white-label and integration domain boundaries.
-2. Start `DB-P6-001` tenant branding/settings schema design.
-3. Define configuration precedence (tenant override vs defaults).
+2. Start `DB-P6-001` workspace branding/settings schema design.
+3. Define configuration precedence (workspace override vs defaults).
 
 ### Day 2
 1. Complete `DB-P6-001` migration and indexes.
@@ -49,7 +49,7 @@ Make platform marketplace-ready and easy to integrate.
 2. Add preview panel and save/publish state model.
 
 ### Day 7
-1. Complete `FE-P6-002` dynamic application of tenant branding in admin/storefront shell.
+1. Complete `FE-P6-002` dynamic application of workspace branding in admin/storefront shell.
 2. Validate persistence and fallback behavior.
 
 ### Day 8
@@ -94,6 +94,6 @@ Make platform marketplace-ready and easy to integrate.
 3. No open critical blocker carried without owner/date.
 
 ## Exit Criteria
-- Tenant-specific branding applied dynamically
+- workspace-specific branding applied dynamically
 - Integrations are plug-and-play with health visibility
 - API keys can be managed safely in UI

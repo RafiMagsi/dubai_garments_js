@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 type InstallStatus = {
   installed: boolean;
-  tenantSlug: string;
   installedAt: string | null;
   tokenRequired: boolean;
   tokenConsumed: boolean;
@@ -16,10 +15,6 @@ type InstallStatus = {
 type WizardData = {
   database: {
     databaseUrl: string;
-  };
-  tenant: {
-    name: string;
-    slug: string;
   };
   admin: {
     fullName: string;
@@ -60,10 +55,6 @@ type WizardData = {
 const INITIAL_DATA: WizardData = {
   database: {
     databaseUrl: '',
-  },
-  tenant: {
-    name: 'Default Tenant',
-    slug: 'default',
   },
   admin: {
     fullName: '',
@@ -136,7 +127,6 @@ function InstallPageInner() {
         if (response.ok) {
           setStatus({
             installed: Boolean(payload.installed),
-            tenantSlug: payload.tenantSlug || 'default',
             installedAt: payload.installedAt || null,
             tokenRequired: Boolean(payload.tokenRequired),
             tokenConsumed: Boolean(payload.tokenConsumed),
@@ -211,7 +201,6 @@ function InstallPageInner() {
       const payload = (await response.json()) as {
         ok?: boolean;
         message?: string;
-        tenant?: { slug?: string };
         completedAt?: string;
       };
       if (!response.ok || !payload.ok) {
@@ -220,7 +209,6 @@ function InstallPageInner() {
       }
       setStatus({
         installed: true,
-        tenantSlug: payload.tenant?.slug || data.tenant.slug || 'default',
         installedAt: payload.completedAt || new Date().toISOString(),
         tokenRequired: true,
         tokenConsumed: true,
@@ -304,8 +292,7 @@ function InstallPageInner() {
                 Installation complete
               </h1>
               <p className="dg-section-copy" style={{ marginTop: '0.6rem' }}>
-                Tenant: <strong>{status.tenantSlug}</strong>
-                {status.installedAt ? ` · Installed at ${new Date(status.installedAt).toLocaleString()}` : ''}
+                {status.installedAt ? `Installed at ${new Date(status.installedAt).toLocaleString()}` : ''}
               </p>
               <div className="dg-hero-actions" style={{ marginTop: '1.2rem' }}>
                 <Link href="/admin/login" className="dg-btn-primary">
@@ -365,26 +352,6 @@ function InstallPageInner() {
                     <span className="dg-help">
                       Wizard validates current runtime DB connection. URL here is stored in settings.
                     </span>
-                  </label>
-                  <label className="dg-field">
-                    <span className="dg-label">Tenant Name</span>
-                    <input
-                      className="dg-input"
-                      value={data.tenant.name}
-                      onChange={(event) =>
-                        setData((prev) => ({ ...prev, tenant: { ...prev.tenant, name: event.target.value } }))
-                      }
-                    />
-                  </label>
-                  <label className="dg-field">
-                    <span className="dg-label">Tenant Slug</span>
-                    <input
-                      className="dg-input"
-                      value={data.tenant.slug}
-                      onChange={(event) =>
-                        setData((prev) => ({ ...prev, tenant: { ...prev.tenant, slug: event.target.value } }))
-                      }
-                    />
                   </label>
                   <div className="dg-field" style={{ alignSelf: 'end' }}>
                     <button type="button" className="dg-btn-primary" onClick={handleValidateDb}>

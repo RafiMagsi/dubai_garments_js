@@ -57,14 +57,14 @@ Within storefront app:
 1. Public pages: home, products, product details, quote
 2. Admin pages: dashboard, leads, deals, quotes, analytics, observability, configuration
 3. API routes: admin/customer auth, proxy/BFF endpoints, install/reconfigure, observability proxy
-4. Tenant/session/auth logic and runtime settings provider
+4. workspace/session/auth logic and runtime settings provider
 
 Within FastAPI service:
 
 1. Routers: leads, deals, quotes, webhooks, automation, admin config
 2. Services: email, lead_ai, quote_pdf, storage, notifications
 3. Queue/worker integration
-4. Multi-tenant context and scoped data access
+4. Multi-workspace context and scoped data access
 5. API schemas and config module
 
 ## 4. Tooling Coverage (What Is Already Used)
@@ -124,7 +124,7 @@ Observability:
 
 1. Strong domain separation between storefront, backend, workers, and automations
 2. Explicit migration-based schema evolution
-3. Multi-tenant foundation is already in place
+3. Multi-workspace foundation is already in place
 4. Good deployment operability (scripts + docs + health checks)
 5. AI is isolated as a dedicated service (clean future provider switch path)
 
@@ -163,7 +163,7 @@ To stay aligned with current AI product market direction, prioritize these patte
 3. `Eval + observability` as mandatory production AI layer
 4. `Workflow-native AI` (inside CRM steps) rather than chatbot-only UX
 5. `Human approval checkpoints` for high-impact actions (quote send, discount, contract)
-6. `Data moat` through tenant-specific memory and feedback loops
+6. `Data moat` through workspace-specific memory and feedback loops
 
 Practical implication for this project:
 
@@ -197,8 +197,8 @@ Practical implication for this project:
 
 ### Phase D: Commercial Readiness
 
-1. White-label branding controls per tenant
-2. Metering/usage reports per tenant (AI + automation + notifications)
+1. White-label branding controls per workspace
+2. Metering/usage reports per workspace (AI + automation + notifications)
 3. Billing hooks (Stripe/Paddle) and plan-based feature flags
 4. Security and compliance package (audit trails, retention controls, DPA-ready docs)
 
@@ -219,7 +219,7 @@ Track these KPIs to validate AI/automation ROI:
 Recommended target architecture for scale:
 
 1. `Presentation` — Next.js storefront/admin + embeddable widgets
-2. `Core APIs` — FastAPI domain APIs + auth + tenant middleware
+2. `Core APIs` — FastAPI domain APIs + auth + workspace middleware
 3. `Async Layer` — Redis/RQ (or Celery) with dedicated queue partitions
 4. `AI Orchestration` — provider abstraction + prompts + eval + guardrails
 5. `Automation` — n8n workflows + scheduler + webhook dispatcher
@@ -233,7 +233,7 @@ Recommended target architecture for scale:
 2. Implement `ai_logs` + `ai_feedback` and connect admin review UI
 3. Add model/provider selection table with failover policy
 4. Add automation dead-letter + retry dashboard in admin
-5. Add deployment smoke-test script to CI (health + auth + DB + tenant checks)
+5. Add deployment smoke-test script to CI (health + auth + DB + workspace checks)
 
 ---
 

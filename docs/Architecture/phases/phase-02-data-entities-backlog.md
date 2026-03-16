@@ -1,10 +1,10 @@
 # Phase 2 Backlog - Data and Entity System Upgrade
 
 ## Objective
-Flexible tenant-aware entity model with custom fields and data portability.
+Flexible workspace-aware entity model with custom fields and data portability.
 
 ## Tickets
-1. `DB-P2-001` `db` `L` Create `custom_fields` and `custom_field_values` schema with tenant/entity scoping.
+1. `DB-P2-001` `db` `L` Create `custom_fields` and `custom_field_values` schema with workspace/entity scoping.
 2. `BE-P2-002` `backend` `L` Add custom field CRUD APIs with validation and type enforcement.
 3. `FE-P2-003` `frontend` `M` Build custom field builder UI in admin settings.
 4. `DB-P2-004` `db` `M` Add generic notes/attachments linkage tables and indexes.
@@ -13,25 +13,25 @@ Flexible tenant-aware entity model with custom fields and data portability.
 7. `FE-P2-007` `frontend` `M` Add import/export UX and progress indicators.
 8. `BE-P2-008` `backend` `M` Implement lead deduplication policy (email/phone/company fuzzy strategy).
 9. `DB-P2-009` `db` `S` Add uniqueness and search indexes supporting dedupe.
-10. `OPS-P2-010` `ops` `S` Create data migration/backfill playbook for existing tenants.
+10. `OPS-P2-010` `ops` `S` Create data migration/backfill playbook for existing workspaces.
 
 ## Week-by-Week Execution Board (Daily Order)
 
 ## Week 1 - Schema and API Foundations
 ### Day 1
 1. Finalize data-model scope for custom fields and dynamic values.
-2. Start `DB-P2-001` base schema migration (tables, keys, tenant/entity scoping).
+2. Start `DB-P2-001` base schema migration (tables, keys, workspace/entity scoping).
 3. Define allowed field types and constraints matrix.
 
 ### Day 2
 1. Complete `DB-P2-001` with indexes and integrity constraints.
-2. Add migration validation on existing tenant data.
+2. Add migration validation on existing workspace data.
 3. Draft API contract spec for custom field CRUD.
 
 ### Day 3
 1. Start `BE-P2-002` CRUD endpoints (create/list/update/delete) for custom field definitions.
 2. Implement type validation layer for field config and value payloads.
-3. Add tenant scoping checks to all routes.
+3. Add workspace scoping checks to all routes.
 
 ### Day 4
 1. Complete `BE-P2-002` value write/read logic with strict type enforcement.
@@ -46,7 +46,7 @@ Flexible tenant-aware entity model with custom fields and data portability.
 ## Week 2 - Notes/Attachments + Import/Export Pipeline
 ### Day 6
 1. Implement `DB-P2-004` notes/attachments linkage tables and required indexes.
-2. Add tenant/entity integrity constraints.
+2. Add workspace/entity integrity constraints.
 
 ### Day 7
 1. Start `BE-P2-005` import pipeline (CSV parse + validation + staging model).
@@ -80,7 +80,7 @@ Flexible tenant-aware entity model with custom fields and data portability.
 2. Add conflict handling UX hooks and API outcomes.
 
 ### Day 14
-1. Create `OPS-P2-010` data migration/backfill playbook for existing tenants.
+1. Create `OPS-P2-010` data migration/backfill playbook for existing workspaces.
 2. Document rollback and recovery path for data migration failures.
 
 ### Day 15
@@ -94,6 +94,6 @@ Flexible tenant-aware entity model with custom fields and data portability.
 3. No open critical blocker carried without owner/date.
 
 ## Exit Criteria
-- Tenant can define custom fields without code change
+- workspace can define custom fields without code change
 - Import/export stable for core entities
 - Dedupe prevents common duplicate creation paths

@@ -8,7 +8,6 @@ import { PageShell, Panel, Toolbar } from '@/components/ui';
 
 type WizardData = {
   database: { databaseUrl: string };
-  tenant: { name: string; slug: string };
   admin: { fullName: string; email: string; password: string };
   ai: { openaiApiKey: string; openaiModel: string };
   email: {
@@ -45,7 +44,6 @@ type ReconfigureStatus = {
 
 const DEFAULT_PAYLOAD: WizardData = {
   database: { databaseUrl: '' },
-  tenant: { name: 'Default Tenant', slug: 'default' },
   admin: { fullName: 'Admin User', email: 'admin@example.com', password: 'ChangeMe123!' },
   ai: { openaiApiKey: '', openaiModel: 'gpt-4o-mini' },
   email: {
@@ -236,22 +234,6 @@ export default function AdminReconfigurePage() {
                   value={form.database.databaseUrl}
                   onChange={(event) => setForm((prev) => ({ ...prev, database: { databaseUrl: event.target.value } }))}
                   placeholder="postgresql://user:pass@host:5432/db"
-                />
-              </label>
-              <label className="dg-field">
-                <span className="dg-label">Tenant Name</span>
-                <input
-                  className="dg-input"
-                  value={form.tenant.name}
-                  onChange={(event) => setForm((prev) => ({ ...prev, tenant: { ...prev.tenant, name: event.target.value } }))}
-                />
-              </label>
-              <label className="dg-field">
-                <span className="dg-label">Tenant Slug</span>
-                <input
-                  className="dg-input"
-                  value={form.tenant.slug}
-                  onChange={(event) => setForm((prev) => ({ ...prev, tenant: { ...prev.tenant, slug: event.target.value } }))}
                 />
               </label>
             </div>

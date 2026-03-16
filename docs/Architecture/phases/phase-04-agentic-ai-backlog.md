@@ -25,7 +25,7 @@ Controlled agentic execution with policy gates and auditability.
 
 ### Day 2
 1. Continue `AI-P4-001` with intent routing and tool resolution.
-2. Add base execution context model (tenant, actor, trace ID, policy mode).
+2. Add base execution context model (workspace, actor, trace ID, policy mode).
 3. Start `DB-P4-004` schema design for `ai_logs`.
 
 ### Day 3

@@ -7,10 +7,6 @@ export type InstallSettingsPayload = {
   database: {
     databaseUrl?: string;
   };
-  tenant: {
-    name?: string;
-    slug?: string;
-  };
   admin: {
     fullName: string;
     email: string;
@@ -49,7 +45,6 @@ export type InstallSettingsPayload = {
 
 export type InstallStatusResult = {
   installed: boolean;
-  tenantSlug: string;
   installedAt: string | null;
   tokenRequired: boolean;
   tokenConsumed: boolean;
@@ -70,33 +65,23 @@ function tokenEquals(actual: string | null | undefined) {
   return timingSafeEqual(provided, expected);
 }
 
-function normalizeSlug(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'default';
-}
-
 export async function assertInstallTables() {
-  const checks = await prisma.$queryRaw<Array<{ tenants_exists: boolean; settings_exists: boolean; users_exists: boolean }>>`
+  const checks = await prisma.$queryRaw<Array<{ settings_exists: boolean; users_exists: boolean }>>`
     SELECT
-      to_regclass('public.tenants') IS NOT NULL AS tenants_exists,
       to_regclass('public.system_settings') IS NOT NULL AS settings_exists,
       to_regclass('public.users') IS NOT NULL AS users_exists
   `;
   const row = checks[0];
-  if (!row?.tenants_exists || !row?.settings_exists || !row?.users_exists) {
-    throw new Error('Install tables are missing. Run DB migrations (including tenant migrations) first.');
+  if (!row?.settings_exists || !row?.users_exists) {
+    throw new Error('Install tables are missing. Run DB migrations first.');
   }
 }
 
 export async function getInstallStatus(input?: { token?: string | null }): Promise<InstallStatusResult> {
   await assertInstallTables();
 
-  const fallbackSlug = String(process.env.DEFAULT_TENANT_SLUG || 'default').trim() || 'default';
   const rows = await prisma.$queryRaw<
-    Array<{ installed: boolean; tenant_slug: string | null; installed_at: string | null; token_consumed: boolean }>
+    Array<{ installed: boolean; installed_at: string | null; token_consumed: boolean }>
   >`
     SELECT
       EXISTS (
@@ -107,17 +92,6 @@ export async function getInstallStatus(input?: { token?: string | null }): Promi
           AND ss.value = 'ready'
           AND ss.is_active = TRUE
       ) AS installed,
-      (
-        SELECT t.slug
-        FROM system_settings ss
-        JOIN tenants t ON t.id = ss.tenant_id
-        WHERE ss.scope = 'global'
-          AND ss.key = 'INSTALLATION_STATUS'
-          AND ss.value = 'ready'
-          AND ss.is_active = TRUE
-        ORDER BY ss.updated_at DESC
-        LIMIT 1
-      ) AS tenant_slug,
       (
         SELECT ss.value
         FROM system_settings ss
@@ -145,7 +119,6 @@ export async function getInstallStatus(input?: { token?: string | null }): Promi
 
   return {
     installed: Boolean(row?.installed),
-    tenantSlug: row?.tenant_slug || fallbackSlug,
     installedAt: row?.installed_at || null,
     tokenRequired: required,
     tokenConsumed: consumed,
@@ -158,30 +131,7 @@ export async function validateCurrentDatabaseConnection() {
   return true;
 }
 
-async function ensureTenant(name?: string, slug?: string) {
-  const tenantSlug = normalizeSlug(slug || process.env.DEFAULT_TENANT_SLUG || 'default');
-  const tenantName = (name || 'Default Tenant').trim();
-
-  const existing = await prisma.$queryRaw<Array<{ id: string; slug: string }>>`
-    SELECT id::text, slug
-    FROM tenants
-    WHERE slug = ${tenantSlug}
-    LIMIT 1
-  `;
-  if (existing[0]) {
-    return existing[0];
-  }
-
-  const inserted = await prisma.$queryRaw<Array<{ id: string; slug: string }>>`
-    INSERT INTO tenants (slug, name)
-    VALUES (${tenantSlug}, ${tenantName})
-    RETURNING id::text, slug
-  `;
-  return inserted[0];
-}
-
 async function upsertSystemSetting(input: {
-  tenantId: string;
   scope: Scope;
   key: string;
   value: string;
@@ -200,14 +150,12 @@ async function upsertSystemSetting(input: {
         description = ${input.description || null},
         updated_by_user_id = ${updatedByUserId}::uuid,
         updated_at = NOW()
-      WHERE tenant_id = ${input.tenantId}::uuid
-        AND scope = ${input.scope}
+      WHERE scope = ${input.scope}
         AND key = ${input.key}
       RETURNING id
     )
-    INSERT INTO system_settings (tenant_id, scope, key, value, is_secret, is_active, description, updated_by_user_id)
+    INSERT INTO system_settings (scope, key, value, is_secret, is_active, description, updated_by_user_id)
     SELECT
-      ${input.tenantId}::uuid,
       ${input.scope},
       ${input.key},
       ${input.value},
@@ -220,7 +168,6 @@ async function upsertSystemSetting(input: {
 }
 
 async function createOrUpdateAdminUser(input: {
-  tenantId: string;
   fullName: string;
   email: string;
   password: string;
@@ -234,10 +181,8 @@ async function createOrUpdateAdminUser(input: {
       password_hash = crypt(${input.password}, gen_salt('bf')),
       role = 'admin',
       is_active = TRUE,
-      tenant_id = ${input.tenantId}::uuid,
       updated_at = NOW()
     WHERE LOWER(email) = ${email}
-      AND tenant_id = ${input.tenantId}::uuid
     RETURNING id::text
   `;
   if (updated[0]) {
@@ -245,22 +190,20 @@ async function createOrUpdateAdminUser(input: {
   }
 
   const inserted = await prisma.$queryRaw<Array<{ id: string }>>`
-    INSERT INTO users (full_name, email, password_hash, role, is_active, tenant_id)
+    INSERT INTO users (full_name, email, password_hash, role, is_active)
     VALUES (
       ${input.fullName},
       ${email},
       crypt(${input.password}, gen_salt('bf')),
       'admin',
-      TRUE,
-      ${input.tenantId}::uuid
+      TRUE
     )
     RETURNING id::text
   `;
   return inserted[0].id;
 }
 
-async function applySettingsForTenant(input: {
-  tenantId: string;
+async function applySettings(input: {
   actorUserId: string;
   payload: InstallSettingsPayload;
   markInstalled: boolean;
@@ -291,7 +234,6 @@ async function applySettingsForTenant(input: {
           },
         ]
       : []),
-    { scope: 'global', key: 'TENANT_SLUG', value: input.payload.tenant.slug || 'default', isSecret: false, description: 'Primary tenant slug' },
     { scope: 'storefront', key: 'FASTAPI_BASE_URL', value: process.env.FASTAPI_BASE_URL || process.env.NEXT_PUBLIC_FASTAPI_BASE_URL || 'http://localhost:8000', isSecret: false, description: 'FastAPI base URL for storefront proxy' },
     { scope: 'storefront', key: 'AUTH_SESSION_SECRET', value: process.env.AUTH_SESSION_SECRET || '', isSecret: true, description: 'Session secret for storefront auth' },
     { scope: 'fastapi', key: 'OPENAI_API_KEY', value: input.payload.ai.openaiApiKey || '', isSecret: true, description: 'OpenAI API key' },
@@ -349,7 +291,6 @@ async function applySettingsForTenant(input: {
 
   for (const setting of settings) {
     await upsertSystemSetting({
-      tenantId: input.tenantId,
       scope: setting.scope,
       key: setting.key,
       value: setting.value,
@@ -380,34 +321,26 @@ export async function completeInstallation(payload: InstallSettingsPayload, inst
 
   await validateCurrentDatabaseConnection();
 
-  const tenant = await ensureTenant(payload.tenant.name, payload.tenant.slug);
   const adminUserId = await createOrUpdateAdminUser({
-    tenantId: tenant.id,
     fullName: payload.admin.fullName.trim(),
     email: payload.admin.email,
     password: payload.admin.password,
   });
 
-  await applySettingsForTenant({
-    tenantId: tenant.id,
+  await applySettings({
     actorUserId: adminUserId,
-    payload: {
-      ...payload,
-      tenant: { ...payload.tenant, slug: tenant.slug },
-    },
+    payload,
     markInstalled: true,
     markTokenConsumed: tokenRequired(),
   });
 
   return {
-    tenant,
     adminUserId,
     completedAt: new Date().toISOString(),
   };
 }
 
 export async function enableReconfigureMode(input: {
-  tenantId: string;
   actorUserId: string;
   enabled: boolean;
   ttlMinutes?: number;
@@ -415,7 +348,6 @@ export async function enableReconfigureMode(input: {
   const ttlMinutes = Math.max(5, Math.min(120, Number(input.ttlMinutes || 30)));
   const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
   await upsertSystemSetting({
-    tenantId: input.tenantId,
     scope: 'global',
     key: 'RECONFIGURE_MODE',
     value: input.enabled ? 'true' : 'false',
@@ -424,7 +356,6 @@ export async function enableReconfigureMode(input: {
     updatedByUserId: input.actorUserId,
   });
   await upsertSystemSetting({
-    tenantId: input.tenantId,
     scope: 'global',
     key: 'RECONFIGURE_MODE_EXPIRES_AT',
     value: input.enabled ? expiresAt : '',
@@ -435,12 +366,11 @@ export async function enableReconfigureMode(input: {
   return { enabled: input.enabled, expiresAt: input.enabled ? expiresAt : null };
 }
 
-export async function getReconfigureModeStatus(tenantId: string) {
+export async function getReconfigureModeStatus() {
   const rows = await prisma.$queryRaw<Array<{ key: string; value: string }>>`
     SELECT key, value
     FROM system_settings
-    WHERE tenant_id = ${tenantId}::uuid
-      AND scope = 'global'
+    WHERE scope = 'global'
       AND key IN ('RECONFIGURE_MODE', 'RECONFIGURE_MODE_EXPIRES_AT')
       AND is_active = TRUE
   `;
@@ -455,7 +385,6 @@ export async function getReconfigureModeStatus(tenantId: string) {
 }
 
 export async function reconfigureInstalledSystem(input: {
-  tenantId: string;
   actorUserId: string;
   payload: InstallSettingsPayload;
 }) {
@@ -463,18 +392,16 @@ export async function reconfigureInstalledSystem(input: {
   if (!status.installed) {
     throw new Error('System is not installed yet.');
   }
-  const mode = await getReconfigureModeStatus(input.tenantId);
+  const mode = await getReconfigureModeStatus();
   if (!mode.enabled) {
     throw new Error('Reconfigure mode is disabled or expired.');
   }
-  await applySettingsForTenant({
-    tenantId: input.tenantId,
+  await applySettings({
     actorUserId: input.actorUserId,
     payload: input.payload,
     markInstalled: false,
   });
   await enableReconfigureMode({
-    tenantId: input.tenantId,
     actorUserId: input.actorUserId,
     enabled: false,
   });

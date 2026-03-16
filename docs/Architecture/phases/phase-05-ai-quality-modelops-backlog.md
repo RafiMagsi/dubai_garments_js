@@ -5,7 +5,7 @@ Continuously improve AI quality, reliability, and cost.
 
 ## Tickets
 1. `AI-P5-001` `ai` `M` Build prompt registry with versioning and rollback.
-2. `DB-P5-002` `db` `S` Add `ai_feedback` table with tenant/user/use-case links.
+2. `DB-P5-002` `db` `S` Add `ai_feedback` table with workspace/user/use-case links.
 3. `FE-P5-003` `frontend` `M` Build prompt management and feedback UI.
 4. `AI-P5-004` `ai` `M` Implement model routing strategy (default/fallback/use-case).
 5. `BE-P5-005` `backend` `S` Expose AI KPI endpoints (acceptance, correction, latency, cost).
@@ -34,7 +34,7 @@ Continuously improve AI quality, reliability, and cost.
 3. Add failover behavior when primary model/provider is unavailable.
 
 ### Day 4
-1. Implement `DB-P5-002` `ai_feedback` table with tenant/user/use-case links.
+1. Implement `DB-P5-002` `ai_feedback` table with workspace/user/use-case links.
 2. Add indexes for query/reporting paths.
 3. Integrate feedback write API surface.
 
@@ -50,11 +50,11 @@ Continuously improve AI quality, reliability, and cost.
 
 ### Day 7
 1. Complete `FE-P5-003` feedback capture UI and moderation states.
-2. Validate tenant-scoped visibility for feedback data.
+2. Validate workspace-scoped visibility for feedback data.
 
 ### Day 8
 1. Implement `BE-P5-005` AI KPI endpoints (acceptance, correction, latency, cost).
-2. Add time-window and tenant filters.
+2. Add time-window and workspace filters.
 3. Add endpoint contract tests.
 
 ### Day 9

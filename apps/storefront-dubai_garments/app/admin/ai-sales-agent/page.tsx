@@ -13,7 +13,7 @@ export default function AdminAiSalesAgentPage() {
       <PageShell>
         <AdminPageHeader
           title="Ai Sales Agent"
-          subtitle="Visible AI workspace for lead intelligence, guided responses, quote copilots, and lead-to-close agent flow."
+          subtitle="Visible AI console for lead intelligence, guided responses, quote copilots, and lead-to-close agent flow."
           actions={
             <Toolbar>
                 <Link key="leads" href="/admin/leads" className="dg-btn dg-btn-secondary">

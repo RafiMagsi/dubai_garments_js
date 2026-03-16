@@ -718,7 +718,7 @@ export default function AdminConfigurationPage() {
       <Panel>
           <div className="dg-admin-head">
             <div>
-              <h2 className="dg-title-sm">Observability Workspace</h2>
+              <h2 className="dg-title-sm">Observability Console</h2>
               <p className="dg-muted-sm">Use the dedicated observability page for service health and metric probes.</p>
             </div>
             <Link href="/admin/observability" className="ui-btn ui-btn-primary ui-btn-md">

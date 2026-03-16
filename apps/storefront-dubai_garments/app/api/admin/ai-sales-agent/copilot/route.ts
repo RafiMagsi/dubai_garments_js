@@ -29,15 +29,7 @@ export async function POST(request: NextRequest) {
     return sessionOrResponse;
   }
   const session = sessionOrResponse;
-  if (!session.tenantSlug) {
-    return NextResponse.json(
-      { ok: false, message: 'Missing tenant context.', requestId },
-      { status: 403 }
-    );
-  }
-  const tenantCtx = {
-    tenantId: session.tenantId ?? null,
-    tenantSlug: session.tenantSlug,
+  const requestCtx = {
     userId: session.sub,
     role: session.role,
   };
@@ -81,7 +73,7 @@ export async function POST(request: NextRequest) {
         data = validated.data;
       } else {
         fallbackReason = fallbackReason ?? 'Model output failed FollowupsToday schema validation.';
-        data = await fallbackFollowupsToday(tenantCtx);
+        data = await fallbackFollowupsToday(requestCtx);
       }
     } else if (input.intent === 'draft_reply') {
       const validated = DraftReplyResponseSchema.safeParse(modelPayload);
@@ -91,7 +83,7 @@ export async function POST(request: NextRequest) {
         data = validated.data;
       } else {
         fallbackReason = fallbackReason ?? 'Model output failed DraftReply schema validation.';
-        data = await fallbackDraftReply(input, tenantCtx);
+        data = await fallbackDraftReply(input, requestCtx);
       }
     } else {
       const validated = AtRiskDealsResponseSchema.safeParse(modelPayload);
@@ -101,7 +93,7 @@ export async function POST(request: NextRequest) {
         data = validated.data;
       } else {
         fallbackReason = fallbackReason ?? 'Model output failed AtRiskDeals schema validation.';
-        data = await fallbackAtRiskDeals(tenantCtx);
+        data = await fallbackAtRiskDeals(requestCtx);
       }
     }
 

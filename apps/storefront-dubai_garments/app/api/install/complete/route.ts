@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       message: 'System ready.',
-      tenant: result.tenant,
       completedAt: result.completedAt,
     });
   } catch (error) {
