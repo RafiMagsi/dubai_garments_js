@@ -2815,6 +2815,8 @@ html[data-dg-theme='twenty'] {
   box-shadow: var(--shadow-card);
   padding: 1.25rem;
   color: var(--dg-card-text);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .ui-card-title {
@@ -3452,6 +3454,12 @@ html[data-dg-theme='twenty'] {
   .dg-ai-intel-root {
     display: grid;
     gap: 0.5rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .dg-ai-intel-root > * {
+    min-width: 0;
   }
 
   .dg-ai-intel-hero {
@@ -3910,6 +3918,69 @@ html[data-dg-theme='twenty'] {
     display: grid;
     gap: 0.625rem;
     transition: box-shadow 180ms ease, transform 180ms ease;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .dg-ai-intel-body > * {
+    min-width: 0;
+  }
+
+  .dg-ai-intel-draft-card {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .dg-ai-intel-action-rail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .dg-ai-intel-action-help {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #64748b;
+    line-height: 1.35;
+  }
+
+  .dg-ai-intel-draft-subject {
+    margin-top: 0.25rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+  }
+
+  .dg-ai-intel-draft-body {
+    margin-top: 0.75rem;
+    border-radius: 0.75rem;
+    padding: 0.9rem;
+    background: rgba(139, 92, 246, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.12);
+    max-width: 100%;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .dg-ai-intel-prewrap {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #262626;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-break: anywhere;
+    max-width: 100%;
+    min-width: 0;
+    inline-size: 100%;
+  }
+
+  .dg-ai-intel-wrap {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .dg-ai-intel-body:hover {

@@ -2,8 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Card, CardText, CardTitle } from '@/components/ui';
-import { runLeadTriage } from '@/features/admin/ai-sales-agent/api';
+import { Button, Card, CardText, CardTitle } from '@/components/ui';
+// import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
+import {
+  draftReplyFromLeadIntelligence,
+  convertLeadFromIntelligence,
+  prioritizeLeadFromIntelligence,
+  runLeadTriage,
+  writeLeadIntelligenceAudit,
+} from '@/features/admin/ai-sales-agent/api';
 
 type LeadAiReasoning = {
   summary?: string;
@@ -181,6 +188,15 @@ export default function LeadIntelligenceCards({
   const [triageBusy, setTriageBusy] = useState(false);
   const [triageStatus, setTriageStatus] = useState<string | null>(null);
   const [triageError, setTriageError] = useState<string | null>(null);
+    const [actionBusy, setActionBusy] = useState<null | 'draft' | 'convert' | 'prioritize'>(null);
+    const [actionStatus, setActionStatus] = useState<string | null>(null);
+    const [actionError, setActionError] = useState<string | null>(null);
+    const [draftReplyPreview, setDraftReplyPreview] = useState<{
+    subject?: string;
+    message: string;
+    rationale?: string;
+    suggestedNextAction?: string;
+    } | null>(null);
 
   if (!lead) return null;
   const leadId = lead.id;
@@ -264,6 +280,133 @@ export default function LeadIntelligenceCards({
       setTriageBusy(false);
     }
   }
+
+  async function handleDraftReply() {
+    try {
+        setActionError(null);
+        setActionStatus(null);
+        setActionBusy('draft');
+
+        const result = await draftReplyFromLeadIntelligence({
+        leadId,
+        tone: 'professional',
+        channel: 'email',
+        });
+
+        const draftData = (result as any).data;
+        setDraftReplyPreview({
+        subject: draftData?.subject,
+        message: draftData?.message || '',
+        rationale: draftData?.rationale,
+        suggestedNextAction: draftData?.suggestedNextAction,
+        });
+
+        await writeLeadIntelligenceAudit({
+        leadId,
+        action: 'draft_reply',
+        outcome: 'success',
+        details: 'Draft reply generated from lead intelligence.',
+        metadata: {
+            source: (result as any).source ?? null,
+            schemaValid: (result as any).schemaValid ?? null,
+        },
+        });
+
+        setActionStatus('Draft reply generated successfully.');
+    } catch (error) {
+        const message =
+        error instanceof Error ? error.message : 'Failed to generate draft reply.';
+        setActionError(message);
+
+        try {
+        await writeLeadIntelligenceAudit({
+            leadId,
+            action: 'draft_reply',
+            outcome: 'failure',
+            details: message,
+        });
+        } catch {}
+
+    } finally {
+        setActionBusy(null);
+    }
+    }
+
+    async function handleConvertLead() {
+    try {
+        setActionError(null);
+        setActionStatus(null);
+        setActionBusy('convert');
+
+        const result = await convertLeadFromIntelligence(leadId);
+
+        await writeLeadIntelligenceAudit({
+        leadId,
+        action: 'convert',
+        outcome: 'success',
+        details: 'Lead converted to deal from intelligence card.',
+        metadata: {
+            result,
+        },
+        });
+
+        setActionStatus('Lead converted to deal successfully.');
+    } catch (error) {
+        const message =
+        error instanceof Error ? error.message : 'Failed to convert lead.';
+        setActionError(message);
+
+        try {
+        await writeLeadIntelligenceAudit({
+            leadId,
+            action: 'convert',
+            outcome: 'failure',
+            details: message,
+        });
+        } catch {}
+
+    } finally {
+        setActionBusy(null);
+    }
+    }
+
+    async function handlePrioritizeLead() {
+    try {
+        setActionError(null);
+        setActionStatus(null);
+        setActionBusy('prioritize');
+
+        const result = await prioritizeLeadFromIntelligence(leadId);
+
+        await writeLeadIntelligenceAudit({
+        leadId,
+        action: 'prioritize',
+        outcome: 'success',
+        details: 'Lead prioritized from intelligence card.',
+        metadata: {
+            result,
+        },
+        });
+
+        setActionStatus('Lead prioritized successfully.');
+    } catch (error) {
+        const message =
+        error instanceof Error ? error.message : 'Failed to prioritize lead.';
+        setActionError(message);
+
+        try {
+        await writeLeadIntelligenceAudit({
+            leadId,
+            action: 'prioritize',
+            outcome: 'failure',
+            details: message,
+        });
+        } catch {}
+
+    } finally {
+        setActionBusy(null);
+    }
+    }
 
   return (
     <div className="dg-ai-intel-root">
@@ -357,6 +500,40 @@ export default function LeadIntelligenceCards({
       </div>
 
       <Card className="dg-ai-intel-body">
+        <div className="dg-ai-intel-action-rail">
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleDraftReply}
+            disabled={actionBusy !== null}
+          >
+            {actionBusy === 'draft' ? 'Drafting...' : 'Draft Reply'}
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleConvertLead}
+            disabled={actionBusy !== null}
+          >
+            {actionBusy === 'convert' ? 'Converting...' : 'Convert to Deal'}
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handlePrioritizeLead}
+            disabled={actionBusy !== null}
+          >
+            {actionBusy === 'prioritize' ? 'Prioritizing...' : 'Prioritize Lead'}
+          </Button>
+        </div>
+        <p className="dg-ai-intel-action-help">
+          Convert to Deal creates a deal from this lead. Prioritize Lead updates lead status to Qualified.
+        </p>
+
+        <div className="dg-ai-intel-divider" />
+
         <div className="dg-ai-intel-summary-block">
           <div className="dg-ai-intel-section-title">Strategic Summary</div>
           <div className="dg-ai-intel-copy">{summary}</div>
@@ -419,6 +596,105 @@ export default function LeadIntelligenceCards({
             <SignalTile label="Score" value={scoreLabel} tone="score" />
           </div>
         )}
+
+        <Card>
+        <CardTitle>Explainability</CardTitle>
+        <CardText>
+            Why the AI rated this lead the way it did.
+        </CardText>
+
+        <div className="dg-mt-4 dg-grid dg-grid-cols-2 dg-gap-4">
+            <div
+            className="dg-rounded-xl dg-p-4"
+            style={{
+                background: 'rgba(99,102,241,0.05)',
+                border: '1px solid rgba(99,102,241,0.12)',
+            }}
+            >
+            <div className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
+                Confidence
+            </div>
+            <div className="dg-mt-2 dg-text-sm dg-text-neutral-800">
+                {confidenceLabel}
+            </div>
+            <div className="dg-mt-2 dg-text-xs dg-text-neutral-500">
+                Higher confidence means the triage had stronger signal quality from the lead content.
+            </div>
+            </div>
+
+            <div
+            className="dg-rounded-xl dg-p-4"
+            style={{
+                background: 'rgba(245,158,11,0.05)',
+                border: '1px solid rgba(245,158,11,0.12)',
+            }}
+            >
+            <div className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
+                Reason
+            </div>
+            <div className="dg-mt-2 dg-text-sm dg-text-neutral-800">
+                {reasoning?.summary || 'No detailed reason available yet.'}
+            </div>
+            {reasoning?.failureReason ? (
+                <div className="dg-mt-2 dg-text-xs dg-text-amber-700">
+                Fallback reason: {reasoning.failureReason}
+                </div>
+            ) : null}
+            </div>
+        </div>
+        </Card>
+
+        {actionStatus ? (
+        <Card
+            style={{
+            border: '1px solid #a7f3d0',
+            background: '#ecfdf5',
+            }}
+        >
+            <CardTitle>Action Status</CardTitle>
+            <CardText>{actionStatus}</CardText>
+        </Card>
+        ) : null}
+
+        {actionError ? (
+        <Card
+            style={{
+            border: '1px solid #fecaca',
+            background: '#fef2f2',
+            }}
+        >
+            <CardTitle>Action Error</CardTitle>
+            <CardText>{actionError}</CardText>
+        </Card>
+        ) : null}
+
+        {draftReplyPreview ? (
+        <Card className="dg-ai-intel-draft-card">
+            <CardTitle>Draft Reply Preview</CardTitle>
+            {draftReplyPreview.subject ? (
+            <CardText className="dg-ai-intel-draft-subject dg-ai-intel-wrap">
+                <strong>Subject:</strong> {draftReplyPreview.subject}
+            </CardText>
+            ) : null}
+            <div className="dg-ai-intel-draft-body">
+            <pre className="dg-ai-intel-prewrap dg-ai-intel-wrap">
+                {draftReplyPreview.message}
+            </pre>
+            </div>
+
+            {draftReplyPreview.rationale ? (
+            <div className="dg-mt-3 dg-text-sm dg-text-neutral-600 dg-ai-intel-wrap">
+                <strong>Rationale:</strong> {draftReplyPreview.rationale}
+            </div>
+            ) : null}
+
+            {draftReplyPreview.suggestedNextAction ? (
+            <div className="dg-mt-2 dg-text-sm dg-text-neutral-600 dg-ai-intel-wrap">
+                <strong>Suggested next action:</strong> {draftReplyPreview.suggestedNextAction}
+            </div>
+            ) : null}
+        </Card>
+        ) : null}
 
         <div className="dg-ai-intel-divider" />
 
