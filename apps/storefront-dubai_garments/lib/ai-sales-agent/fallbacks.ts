@@ -6,6 +6,13 @@ import type {
   FollowupsTodayResponse,
 } from './contracts';
 
+type CopilotTenantContext = {
+  tenantId?: string | null;
+  tenantSlug: string;
+  userId: string;
+  role: string;
+};
+
 function startOfToday() {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -16,20 +23,33 @@ function endOfToday() {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 }
 
-export async function fallbackFollowupsToday(): Promise<FollowupsTodayResponse> {
+export async function fallbackFollowupsToday(
+  tenant: CopilotTenantContext
+): Promise<FollowupsTodayResponse> {
   const todayStart = startOfToday();
   const todayEnd = endOfToday();
 
-  const leads = await prisma.leads.findMany({
-    where: {
-      OR: [
-        { timeline_date: { gte: todayStart, lte: todayEnd } },
-        { status: { in: ['new', 'qualified', 'quoted'] } },
-      ],
-    },
-    orderBy: { created_at: 'desc' },
-    take: 10,
-  });
+    const leadWhere =
+        tenant.role === 'sales_rep'
+            ? {
+                assigned_to_user_id: tenant.userId,
+                OR: [
+                { timeline_date: { gte: todayStart, lte: todayEnd } },
+                { status: { in: ['new', 'qualified', 'quoted'] } },
+                ],
+            }
+            : {
+                OR: [
+                { timeline_date: { gte: todayStart, lte: todayEnd } },
+                { status: { in: ['new', 'qualified', 'quoted'] } },
+                ],
+            };
+
+        const leads = await prisma.leads.findMany({
+            where: leadWhere,
+            orderBy: { created_at: 'desc' },
+            take: 10,
+    });
 
   return {
     summary: `Found ${leads.length} lead follow-ups requiring attention today.`,
@@ -50,7 +70,10 @@ export async function fallbackFollowupsToday(): Promise<FollowupsTodayResponse> 
   };
 }
 
-export async function fallbackDraftReply(input: CopilotRequest): Promise<DraftReplyResponse> {
+export async function fallbackDraftReply(
+  input: CopilotRequest,
+  tenant: CopilotTenantContext
+): Promise<DraftReplyResponse> {
   if (!input.leadId) {
     return {
       channel: input.channel ?? 'email',
@@ -62,9 +85,17 @@ export async function fallbackDraftReply(input: CopilotRequest): Promise<DraftRe
     };
   }
 
-  const lead = await prisma.leads.findUnique({
-    where: { id: input.leadId },
-  });
+    const lead = await prisma.leads.findFirst({
+    where:
+        tenant.role === 'sales_rep'
+        ? {
+            id: input.leadId,
+            assigned_to_user_id: tenant.userId,
+            }
+        : {
+            id: input.leadId,
+            },
+    });
 
   if (!lead) {
     return {
@@ -91,14 +122,24 @@ export async function fallbackDraftReply(input: CopilotRequest): Promise<DraftRe
   };
 }
 
-export async function fallbackAtRiskDeals(): Promise<AtRiskDealsResponse> {
-  const deals = await prisma.deals.findMany({
-    where: {
-      stage: { in: ['qualified', 'proposal_sent', 'negotiation'] },
-    },
+export async function fallbackAtRiskDeals(
+  tenant: CopilotTenantContext
+): Promise<AtRiskDealsResponse> {
+    const dealWhere =
+    tenant.role === 'sales_rep'
+        ? {
+            owner_user_id: tenant.userId,
+            stage: { in: ['qualified', 'proposal_sent', 'negotiation'] },
+        }
+        : {
+            stage: { in: ['qualified', 'proposal_sent', 'negotiation'] },
+        };
+
+    const deals = await prisma.deals.findMany({
+    where: dealWhere,
     orderBy: { updated_at: 'asc' },
     take: 10,
-  });
+    });
 
   return {
     summary: `Found ${deals.length} deals that may need attention.`,

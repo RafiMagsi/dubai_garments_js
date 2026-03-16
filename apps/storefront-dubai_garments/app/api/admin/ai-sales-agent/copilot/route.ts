@@ -10,6 +10,7 @@ import {
   fallbackDraftReply,
   fallbackFollowupsToday,
 } from '@/lib/ai-sales-agent/fallbacks';
+import { requireAdminApiAccess } from '@/lib/auth/require-admin';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -23,6 +24,24 @@ async function runModelIntent(_input: unknown): Promise<unknown> {
 
 export async function POST(request: NextRequest) {
   const requestId = request.headers.get('x-request-id');
+  const sessionOrResponse = await requireAdminApiAccess(request);
+  if (sessionOrResponse instanceof NextResponse) {
+    return sessionOrResponse;
+  }
+  const session = sessionOrResponse;
+  if (!session.tenantSlug) {
+    return NextResponse.json(
+      { ok: false, message: 'Missing tenant context.', requestId },
+      { status: 403 }
+    );
+  }
+  const tenantCtx = {
+    tenantId: session.tenantId ?? null,
+    tenantSlug: session.tenantSlug,
+    userId: session.sub,
+    role: session.role,
+  };
+
 
   try {
     const rawBody = await request.json();
@@ -62,7 +81,7 @@ export async function POST(request: NextRequest) {
         data = validated.data;
       } else {
         fallbackReason = fallbackReason ?? 'Model output failed FollowupsToday schema validation.';
-        data = await fallbackFollowupsToday();
+        data = await fallbackFollowupsToday(tenantCtx);
       }
     } else if (input.intent === 'draft_reply') {
       const validated = DraftReplyResponseSchema.safeParse(modelPayload);
@@ -72,7 +91,7 @@ export async function POST(request: NextRequest) {
         data = validated.data;
       } else {
         fallbackReason = fallbackReason ?? 'Model output failed DraftReply schema validation.';
-        data = await fallbackDraftReply(input);
+        data = await fallbackDraftReply(input, tenantCtx);
       }
     } else {
       const validated = AtRiskDealsResponseSchema.safeParse(modelPayload);
@@ -82,7 +101,7 @@ export async function POST(request: NextRequest) {
         data = validated.data;
       } else {
         fallbackReason = fallbackReason ?? 'Model output failed AtRiskDeals schema validation.';
-        data = await fallbackAtRiskDeals();
+        data = await fallbackAtRiskDeals(tenantCtx);
       }
     }
 

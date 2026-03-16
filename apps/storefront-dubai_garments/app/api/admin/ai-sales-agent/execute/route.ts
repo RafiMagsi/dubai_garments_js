@@ -5,34 +5,26 @@ import {
   executeCopilotAction,
 } from '@/lib/ai-sales-agent/actions';
 import { writeCopilotAuditLog } from '@/lib/ai-sales-agent/audit';
-import { verifySessionToken } from '@/lib/auth/session';
+import { requireAdminApiAccess } from '@/lib/auth/require-admin';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-async function getSessionFromRequest(request: NextRequest) {
-  const token =
-    request.cookies.get('app_session')?.value ||
-    request.cookies.get('session')?.value ||
-    null;
-
-  if (!token) return null;
-  return verifySessionToken(token);
-}
-
 export async function POST(request: NextRequest) {
   const requestId = request.headers.get('x-request-id');
+  const sessionOrResponse = await requireAdminApiAccess(request);
+  if (sessionOrResponse instanceof NextResponse) {
+    return sessionOrResponse;
+  }
+  const session = sessionOrResponse;
+  if (!session.tenantSlug) {
+    return NextResponse.json(
+      { ok: false, message: 'Missing tenant context.', requestId },
+      { status: 403 }
+    );
+  }
 
   try {
-    const session = await getSessionFromRequest(request);
-
-    if (!session) {
-      return NextResponse.json(
-        { ok: false, message: 'Unauthorized.', requestId },
-        { status: 401 }
-      );
-    }
-
     const rawBody = await request.json();
     const parsed = CopilotExecuteRequestSchema.safeParse(rawBody);
 
@@ -63,6 +55,8 @@ export async function POST(request: NextRequest) {
           dryRun: input.dry_run,
           role: session.role,
           denied: true,
+          tenantId: session.tenantId ?? null,
+          tenantSlug: session.tenantSlug,
         },
       });
 

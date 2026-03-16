@@ -14,6 +14,8 @@ type Props = {
   compact?: boolean;
 };
 
+type CopilotUiState = 'idle' | 'loading' | 'success' | 'empty' | 'error' | 'executing';
+
 const intentChips: Array<{ label: string; intent: CopilotIntent; prompt: string }> = [
   {
     label: 'Follow-ups',
@@ -45,60 +47,87 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<CopilotEnvelope | null>(null);
+  const [uiState, setUiState] = useState<CopilotUiState>('idle');
 
   function applyIntent(intent: CopilotIntent, prompt: string) {
     setActiveIntent(intent);
     if (!userNotes.trim()) setUserNotes(prompt);
   }
 
-  async function handleRunQuery() {
-    try {
-      setError(null);
-      setIsLoading(true);
-      const result = await queryCopilot({
-        intent: activeIntent,
-        leadId: leadId.trim() || undefined,
-        dealId: dealId.trim() || undefined,
-        channel,
-        context: {
-          tone,
-          userNotes: userNotes.trim() || undefined,
-        },
-      });
-      setResponse(result);
-      setExpanded(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to run copilot.');
-      setResponse(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    async function handleRunQuery() {
+        try {
+            setError(null);
+            setIsLoading(true);
+            setUiState('loading');
 
-  async function handleExecute(input: Partial<CopilotExecuteRequest>) {
-    try {
-      setError(null);
-      setIsExecuting(true);
-      const result = await executeCopilot({
-        action: input.action!,
-        leadId: input.leadId ?? (leadId.trim() || undefined),
-        dealId: input.dealId ?? (dealId.trim() || undefined),
-        channel: input.channel ?? channel,
-        dry_run: dryRun,
-        payload: {
-          tone,
-          userNotes: userNotes.trim() || undefined,
-          ...(input.payload ?? {}),
-        },
-      });
-      setResponse(result);
-      setExpanded(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to execute copilot action.');
-    } finally {
-      setIsExecuting(false);
+            const result = await queryCopilot({
+                intent: activeIntent,
+                leadId: leadId.trim() || undefined,
+                dealId: dealId.trim() || undefined,
+                channel,
+                    context: {
+                        tone,
+                        userNotes: userNotes.trim() || undefined,
+                    },
+            });
+
+            const hasFollowupItems =
+            result.intent === 'followups_today' &&
+            Array.isArray((result as any).data?.items) &&
+            (result as any).data.items.length > 0;
+
+            const hasDraftReply =
+            result.intent === 'draft_reply' &&
+            !!(result as any).data?.message;
+
+            const hasAtRiskDeals =
+            result.intent === 'at_risk_deals' &&
+            Array.isArray((result as any).data?.deals) &&
+            (result as any).data.deals.length > 0;
+
+            const hasData = hasFollowupItems || hasDraftReply || hasAtRiskDeals;
+
+            setResponse(result);
+            setUiState(hasData ? 'success' : 'empty');
+            setExpanded(true);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to run copilot.');
+            setResponse(null);
+            setUiState('error');
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }
+
+    async function handleExecute(input: Partial<CopilotExecuteRequest>) {
+        try {
+            setError(null);
+            setIsExecuting(true);
+            setUiState('executing');
+
+            const result = await executeCopilot({
+            action: input.action!,
+            leadId: input.leadId ?? (leadId.trim() || undefined),
+            dealId: input.dealId ?? (dealId.trim() || undefined),
+            channel: input.channel ?? channel,
+            dry_run: dryRun,
+            payload: {
+                tone,
+                userNotes: userNotes.trim() || undefined,
+                ...(input.payload ?? {}),
+            },
+            });
+
+            setResponse(result);
+            setUiState('success');
+            setExpanded(true);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to execute copilot action.');
+            setUiState('error');
+        } finally {
+            setIsExecuting(false);
+        }
+    }
 
   return (
     <Card className="copilot-root" style={{ padding: 0 }}>
@@ -213,31 +242,66 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             </small>
           </div>
 
-          {error ? (
-            <div
-              style={{
-                border: '1px solid #fecdd3',
-                background: '#fff1f2',
-                color: '#be123c',
-                borderRadius: 10,
-                padding: '10px 12px',
-                fontSize: 13,
-              }}
-            >
-              {error}
+          {uiState === 'loading' ? (
+            <div className="dg-mt-4 dg-rounded-2xl dg-border dg-border-indigo-200 dg-bg-indigo-50 dg-p-4">
+                <div className="dg-flex dg-items-center dg-gap-3">
+                <span
+                    className="dg-inline-flex h-3 w-3 dg-rounded-full"
+                    style={{
+                    background: '#6366f1',
+                    boxShadow: '0 0 16px rgba(99,102,241,0.8)',
+                    animation: 'ai-pulse 1.3s infinite',
+                    }}
+                />
+                <div>
+                    <div className="dg-text-sm dg-font-semibold">Ai Sales Agent is analyzing...</div>
+                    <div className="dg-text-xs dg-text-neutral-600">
+                    Running {activeIntent} with {dryRun ? 'safe demo mode' : 'live mode'}.
+                    </div>
+                </div>
+                </div>
             </div>
-          ) : null}
+            ) : null}
 
-          {response ? (
-            <div className="copilot-results">
-              <AiSalesAgentActionCards
+            {uiState === 'empty' ? (
+            <div className="dg-mt-4 dg-rounded-2xl dg-border dg-border-neutral-200 dg-bg-white dg-p-5">
+                <div className="dg-text-sm dg-font-semibold">No results found</div>
+                <div className="dg-mt-1 dg-text-sm dg-text-neutral-600">
+                Try a different intent, provide a lead/deal ID, or add more guidance in the input.
+                </div>
+            </div>
+            ) : null}
+
+            {uiState === 'error' && error ? (
+            <div className="dg-mt-4 dg-rounded-2xl dg-border dg-border-rose-200 dg-bg-rose-50 dg-p-4">
+                <div className="dg-text-sm dg-font-semibold dg-text-rose-700">Copilot failed</div>
+                <div className="dg-mt-1 dg-text-sm dg-text-rose-600">{error}</div>
+            </div>
+            ) : null}
+
+            {response?.ok ? (
+            <div className="dg-mt-4 dg-flex dg-flex-wrap dg-gap-2">
+                {'source' in response && response.source ? (
+                <span className="dg-badge">Source: {response.source}</span>
+                ) : null}
+                {'schemaValid' in response && typeof response.schemaValid === 'boolean' ? (
+                <span className="dg-badge">Schema: {response.schemaValid ? 'valid' : 'fallback'}</span>
+                ) : null}
+                {response.requestId ? <span className="dg-badge">Request: {response.requestId}</span> : null}
+                {response.auditId ? <span className="dg-badge">Audit: {response.auditId}</span> : null}
+            </div>
+            ) : null}
+
+            {response ? (
+            <div className="dg-mt-4">
+                <AiSalesAgentActionCards
                 response={response}
                 onExecute={handleExecute}
                 isExecuting={isExecuting}
                 dryRun={dryRun}
-              />
+                />
             </div>
-          ) : null}
+            ) : null}
         </div>
       ) : null}
       <style jsx>{`
@@ -302,6 +366,20 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             opacity: 1;
             transform: translateY(0) scaleY(1);
           }
+        }
+        @keyframes ai-pulse {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.85;
+            }
+            50% {
+                transform: scale(1.08);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.95);
+                opacity: 0.85;
+            }
         }
         @media (prefers-reduced-motion: reduce) {
           .copilot-root,
