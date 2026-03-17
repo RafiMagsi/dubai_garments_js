@@ -29,6 +29,12 @@ async function login(page: Page, role: RoleKey) {
   await expect(page).toHaveURL(/\/admin\/dashboard/);
 }
 
+async function expectVisibleByTestId(page: Page, testId: string) {
+  const locator = page.getByTestId(testId);
+  await locator.scrollIntoViewIfNeeded();
+  await expect(locator).toBeVisible();
+}
+
 async function createLeadViaIntake(page: Page) {
   const productsResponse = await page.request.get('/api/products');
   expect(productsResponse.ok()).toBeTruthy();
@@ -70,21 +76,21 @@ test.describe.serial('AI Sales Agent regression', () => {
 
     // Start from AI Sales Agent page (primary workflow for this regression)
     await page.goto('/admin/ai-sales-agent');
-    await expect(page.getByTestId('ai-sales-agent-lead-preview-input')).toBeVisible();
+    await expectVisibleByTestId(page, 'ai-sales-agent-lead-preview-input');
     await page.getByTestId('ai-sales-agent-lead-preview-input').fill(leadId);
-    await expect(page.getByTestId('ai-sales-agent-lead-preview-cards')).toBeVisible();
-    await expect(page.getByTestId('ai-sales-agent-lead-intelligence-preview')).toBeVisible();
+    await expectVisibleByTestId(page, 'ai-sales-agent-lead-preview-cards');
+    await expectVisibleByTestId(page, 'ai-sales-agent-lead-intelligence-preview');
 
     // Then validate lead detail rendering + actions
     await page.goto(`/admin/leads/${leadId}`);
-    await expect(page.getByTestId('lead-detail-intelligence-section')).toBeVisible();
-    await expect(page.getByTestId('lead-intelligence-cards')).toBeVisible();
-    await expect(page.getByTestId('lead-intelligence-classification-badge')).toBeVisible();
-    await expect(page.getByTestId('lead-intelligence-fallback-badge')).toBeVisible();
-    await expect(page.getByTestId('lead-intelligence-last-analyzed-badge')).toBeVisible();
-    await expect(page.getByTestId('lead-intelligence-provider-badge')).toBeVisible();
-    await expect(page.getByTestId('lead-intelligence-confidence-block')).toBeVisible();
-    await expect(page.getByTestId('lead-intelligence-reason-block')).toBeVisible();
+    await expectVisibleByTestId(page, 'lead-detail-intelligence-section');
+    await expectVisibleByTestId(page, 'lead-intelligence-cards');
+    await expectVisibleByTestId(page, 'lead-intelligence-classification-badge');
+    await expectVisibleByTestId(page, 'lead-intelligence-fallback-badge');
+    await expectVisibleByTestId(page, 'lead-intelligence-last-analyzed-badge');
+    await expectVisibleByTestId(page, 'lead-intelligence-provider-badge');
+    await expectVisibleByTestId(page, 'lead-intelligence-confidence-block');
+    await expectVisibleByTestId(page, 'lead-intelligence-reason-block');
 
     await page.getByTestId('lead-intelligence-triage-btn').click();
     await expect(page.getByText(/Lead triage completed/i)).toBeVisible();
@@ -99,9 +105,9 @@ test.describe.serial('AI Sales Agent regression', () => {
     await expect(page.getByText(/prioritized/i)).toBeVisible();
 
     await page.goto('/admin/ai-sales-agent');
-    await expect(page.getByTestId('ai-sales-agent-lead-intelligence-preview')).toBeVisible();
+    await expectVisibleByTestId(page, 'ai-sales-agent-lead-intelligence-preview');
     await page.getByTestId('ai-sales-agent-lead-preview-input').fill(leadId);
-    await expect(page.getByTestId('ai-sales-agent-lead-preview-cards')).toBeVisible();
+    await expectVisibleByTestId(page, 'ai-sales-agent-lead-preview-cards');
   });
 
   test('Role behavior matrix validation (API + page visibility)', async ({ page }) => {

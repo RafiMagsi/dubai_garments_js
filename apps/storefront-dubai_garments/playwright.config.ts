@@ -13,9 +13,9 @@ export default defineConfig({
   ],
   use: {
     baseURL,
+    viewport: { width: 1720, height: 1400 },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
 });
-
