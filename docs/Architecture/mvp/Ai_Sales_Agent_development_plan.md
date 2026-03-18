@@ -105,7 +105,7 @@ Primary outcomes:
 3. Freeze Week 2 output.
 
 ## Week 3 - Agent Flow (Signature Feature)
-### Day 11
+### Day 11 - done
 1. Implement `AIA-008` stage model for lead-to-close flow.
 2. Define 11-stage canonical flow and completion rules.
 3. Map flow states from existing lead/deal/quote/automation data.
