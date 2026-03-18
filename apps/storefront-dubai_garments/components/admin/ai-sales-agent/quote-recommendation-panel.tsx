@@ -10,7 +10,13 @@ import type {
 } from '@/features/admin/ai-sales-agent/types';
 import { AisFieldLabel } from './reusable';
 
-export default function QuoteRecommendationPanel() {
+type QuoteRecommendationPanelProps = {
+  onRecommendationLoaded?: (payload: QuoteRecommendationEnvelope) => void;
+};
+
+export default function QuoteRecommendationPanel({
+  onRecommendationLoaded,
+}: QuoteRecommendationPanelProps) {
   const [leadId, setLeadId] = useState('');
   const [dealId, setDealId] = useState('');
   const [quoteId, setQuoteId] = useState('');
@@ -45,6 +51,7 @@ export default function QuoteRecommendationPanel() {
       });
 
       setResponse(result);
+      onRecommendationLoaded?.(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to run quote recommendation.');
       setResponse(null);
@@ -120,7 +127,7 @@ export default function QuoteRecommendationPanel() {
       {response?.ok ? (
         <>
           <Card className="qrec-card" data-testid="quote-recommendation-summary-card">
-            <CardTitle>Recommendation Summary</CardTitle>
+            <CardTitle>Quote Recommendation Output</CardTitle>
             <CardText>{response.data.summary}</CardText>
 
             <div className="qrec-badges">

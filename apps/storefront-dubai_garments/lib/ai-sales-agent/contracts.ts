@@ -253,3 +253,54 @@ export const QuoteRecommendationResponseSchema = z.object({
 export type QuoteRecommendationRequest = z.infer<typeof QuoteRecommendationRequestSchema>;
 export type QuoteRecommendationPayload = z.infer<typeof QuoteRecommendationPayloadSchema>;
 export type QuoteRecommendationResponse = z.infer<typeof QuoteRecommendationResponseSchema>;
+
+export const QuoteCopilotAcceptedItemSchema = z.object({
+  productId: z.string().uuid().nullable(),
+  productName: z.string(),
+  suggestedQuantity: z.number().nullable(),
+  suggestedVariant: z.string().nullable(),
+});
+
+export const QuoteCopilotRequestSchema = z.object({
+  leadId: z.string().uuid(),
+  dealId: z.string().uuid().optional(),
+  quoteId: z.string().uuid().optional(),
+  acceptedRecommendations: z.array(QuoteCopilotAcceptedItemSchema).default([]),
+  dry_run: z.boolean().optional().default(false),
+});
+
+export const QuoteCopilotSummarySchema = z.object({
+  summaryTitle: z.string(),
+  summaryText: z.string(),
+  acceptedCount: z.number(),
+  acceptedItems: z.array(z.string()),
+  generationMode: z.enum(['selected_recommendations', 'lead_context_only']),
+  canProceed: z.boolean(),
+  suggestedNextAction: z.string(),
+});
+
+export const QuoteCopilotUpsellSchema = z.object({
+  title: z.string(),
+  type: z.enum(['upsell', 'cross_sell']),
+  rationale: z.string(),
+});
+
+export const QuoteCopilotResponseSchema = z.object({
+  ok: z.literal(true),
+  leadId: z.string(),
+  dealId: z.string().nullable(),
+  quoteId: z.string().nullable(),
+  source: z.enum(['model', 'fallback']),
+  provider: z.string(),
+  fallbackUsed: z.boolean(),
+  failureReason: z.string().nullable(),
+  dryRun: z.boolean(),
+  data: z.object({
+    summary: QuoteCopilotSummarySchema,
+    upsellSuggestions: z.array(QuoteCopilotUpsellSchema),
+  }),
+  requestId: z.string().nullable(),
+});
+
+export type QuoteCopilotRequest = z.infer<typeof QuoteCopilotRequestSchema>;
+export type QuoteCopilotResponse = z.infer<typeof QuoteCopilotResponseSchema>;

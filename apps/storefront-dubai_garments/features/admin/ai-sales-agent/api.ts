@@ -221,3 +221,31 @@ export async function runQuoteRecommendation(input: {
 
   return json;
 }
+
+export async function runQuoteCopilot(input: {
+  leadId: string;
+  dealId?: string;
+  quoteId?: string;
+  acceptedRecommendations: Array<{
+    productId: string | null;
+    productName: string;
+    suggestedQuantity: number | null;
+    suggestedVariant: string | null;
+  }>;
+  dry_run?: boolean;
+}) {
+  const response = await fetch('/api/admin/ai-sales-agent/quote-copilot', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to run quote copilot.');
+  }
+
+  return json;
+}

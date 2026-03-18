@@ -213,3 +213,49 @@ export type QuoteRecommendationEnvelope = {
   };
   requestId?: string | null;
 };
+
+export type QuoteCopilotAcceptedItem = {
+  productId: string | null;
+  productName: string;
+  suggestedQuantity: number | null;
+  suggestedVariant: string | null;
+};
+
+export type QuoteCopilotRequest = {
+  leadId: string;
+  dealId?: string;
+  quoteId?: string;
+  acceptedRecommendations: QuoteCopilotAcceptedItem[];
+  dry_run?: boolean;
+};
+
+export type QuoteCopilotUpsell = {
+  title: string;
+  type: 'upsell' | 'cross_sell';
+  rationale: string;
+};
+
+export type QuoteCopilotEnvelope = {
+  ok: true;
+  leadId: string;
+  dealId: string | null;
+  quoteId: string | null;
+  source: 'model' | 'fallback';
+  provider: string;
+  fallbackUsed: boolean;
+  failureReason: string | null;
+  dryRun: boolean;
+  data: {
+    summary: {
+      summaryTitle: string;
+      summaryText: string;
+      acceptedCount: number;
+      acceptedItems: string[];
+      generationMode: 'selected_recommendations' | 'lead_context_only';
+      canProceed: boolean;
+      suggestedNextAction: string;
+    };
+    upsellSuggestions: QuoteCopilotUpsell[];
+  };
+  requestId?: string | null;
+};
