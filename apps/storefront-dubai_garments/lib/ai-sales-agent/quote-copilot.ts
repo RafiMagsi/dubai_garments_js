@@ -5,6 +5,62 @@ type QuoteCopilotContext = {
   role: string;
 };
 
+type PriceTier = {
+  minQty: number;
+  maxQty: number | null;
+  unitPrice: number;
+};
+
+function normalizeText(value: string | null | undefined) {
+  return (value || '').trim();
+}
+
+function parseRequestedDiscountPct(texts: string[]): number | null {
+  const text = texts.join(' ').toLowerCase();
+  const match = text.match(/\b(\d{1,2})\s*%\s*(off|discount)?\b/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value)) return null;
+  return Math.min(60, Math.max(0, value));
+}
+
+function parsePriceTiers(raw: unknown): PriceTier[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const row = item as Record<string, unknown>;
+      const minQtyRaw = Number(row.min_qty ?? row.minQty ?? row.min);
+      const maxQtyRaw = row.max_qty ?? row.maxQty ?? row.max;
+      const unitRaw = Number(row.unit_price ?? row.unitPrice ?? row.unitPriceAED);
+      if (!Number.isFinite(minQtyRaw) || !Number.isFinite(unitRaw)) return null;
+      const max = maxQtyRaw == null ? null : Number(maxQtyRaw);
+      return {
+        minQty: minQtyRaw,
+        maxQty: Number.isFinite(max) ? max : null,
+        unitPrice: unitRaw,
+      } as PriceTier;
+    })
+    .filter((item): item is PriceTier => !!item)
+    .sort((a, b) => a.minQty - b.minQty);
+}
+
+function selectTierPrice(tiers: PriceTier[], qty: number | null): number | null {
+  if (tiers.length === 0) return null;
+  if (!qty || qty <= 0) return tiers[0].unitPrice;
+  for (const tier of tiers) {
+    if (qty >= tier.minQty && (tier.maxQty == null || qty <= tier.maxQty)) {
+      return tier.unitPrice;
+    }
+  }
+  return tiers[tiers.length - 1]?.unitPrice ?? null;
+}
+
+function toNumber(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export async function runQuoteCopilot(input: {
   leadId: string;
   dealId?: string;
@@ -81,6 +137,94 @@ export async function runQuoteCopilot(input: {
   const fallbackUsed = true;
   const failureReason = 'Quote Copilot is currently using deterministic quote summary generation.';
 
+  const requestedDiscountPct = parseRequestedDiscountPct([
+    normalizeText(lead.notes),
+    normalizeText(deal?.notes),
+    normalizeText(quote?.notes),
+  ]);
+
+  const productIds = input.acceptedRecommendations
+    .map((item) => item.productId)
+    .filter((id): id is string => !!id);
+
+  const products = productIds.length
+    ? await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: {
+          id: true,
+          minOrderQty: true,
+          priceTiers: true,
+        },
+      })
+    : [];
+
+  const productsById = new Map(products.map((p) => [p.id, p]));
+  const pricingRiskHints: string[] = [];
+  let estimatedSubtotalAED = 0;
+
+  for (const item of input.acceptedRecommendations) {
+    if (!item.productId) {
+      pricingRiskHints.push(`No catalog ID found for "${item.productName}", so pricing precision is limited.`);
+      continue;
+    }
+    const product = productsById.get(item.productId);
+    if (!product) {
+      pricingRiskHints.push(`Product "${item.productName}" could not be resolved in catalog.`);
+      continue;
+    }
+
+    const qty = toNumber(item.suggestedQuantity);
+    if (qty && qty < product.minOrderQty) {
+      pricingRiskHints.push(
+        `"${item.productName}" quantity (${qty}) is below MOQ (${product.minOrderQty}).`,
+      );
+    }
+    if (!qty) {
+      pricingRiskHints.push(`"${item.productName}" has no quantity, so subtotal is estimated conservatively.`);
+      continue;
+    }
+
+    const tiers = parsePriceTiers(product.priceTiers);
+    const tierUnit = selectTierPrice(tiers, qty);
+    if (!tierUnit) {
+      pricingRiskHints.push(`"${item.productName}" has no valid price tier data.`);
+      continue;
+    }
+    const discountedUnit =
+      requestedDiscountPct != null ? tierUnit * (1 - requestedDiscountPct / 100) : tierUnit;
+    estimatedSubtotalAED += discountedUnit * qty;
+  }
+
+  const maxSafeDiscountPct = acceptedCount > 0 ? 12 : 8;
+  const suggestedDiscountPct =
+    requestedDiscountPct != null
+      ? Math.min(requestedDiscountPct, maxSafeDiscountPct)
+      : acceptedCount > 1
+      ? 6
+      : 4;
+  const estimatedGrossMarginPct =
+    requestedDiscountPct != null
+      ? Math.max(8, Math.round(34 - requestedDiscountPct * 1.8))
+      : 32;
+
+  const marginSafetyStatus =
+    estimatedGrossMarginPct >= 24 ? 'safe' : estimatedGrossMarginPct >= 16 ? 'watch' : 'risk';
+  const marginGuidance =
+    marginSafetyStatus === 'safe'
+      ? 'Margin profile looks healthy for this quote configuration.'
+      : marginSafetyStatus === 'watch'
+      ? 'Margin is tightening. Keep discounts controlled and validate costs before sending.'
+      : 'Margin risk is high. Revisit discount level or product mix before final quote.';
+
+  if (requestedDiscountPct != null && requestedDiscountPct > maxSafeDiscountPct) {
+    pricingRiskHints.push(
+      `Requested discount ${requestedDiscountPct}% is above recommended safe limit ${maxSafeDiscountPct}%.`,
+    );
+  }
+  if (pricingRiskHints.length === 0) {
+    pricingRiskHints.push('No immediate pricing risks detected for current inputs.');
+  }
+
   if (!input.dryRun) {
     await prisma.activities.create({
       data: {
@@ -100,6 +244,24 @@ export async function runQuoteCopilot(input: {
           canProceed,
           suggestedNextAction,
           upsellSuggestions,
+          quoteIntelligence: {
+            estimatedSubtotalAED: estimatedSubtotalAED > 0 ? Number(estimatedSubtotalAED.toFixed(2)) : null,
+            marginSafety: {
+              status: marginSafetyStatus,
+              estimatedGrossMarginPct,
+              guidance: marginGuidance,
+            },
+            discountGuidance: {
+              requestedDiscountPct,
+              suggestedDiscountPct,
+              maxSafeDiscountPct,
+              reason:
+                requestedDiscountPct != null
+                  ? 'Discount guidance was tuned against requested discount signal from lead/deal context.'
+                  : 'No explicit discount requested; using conservative default discount recommendation.',
+            },
+            pricingRiskHints,
+          },
         },
       },
     });
@@ -125,6 +287,24 @@ export async function runQuoteCopilot(input: {
         suggestedNextAction,
       },
       upsellSuggestions,
+      quoteIntelligence: {
+        estimatedSubtotalAED: estimatedSubtotalAED > 0 ? Number(estimatedSubtotalAED.toFixed(2)) : null,
+        marginSafety: {
+          status: marginSafetyStatus,
+          estimatedGrossMarginPct,
+          guidance: marginGuidance,
+        },
+        discountGuidance: {
+          requestedDiscountPct,
+          suggestedDiscountPct,
+          maxSafeDiscountPct,
+          reason:
+            requestedDiscountPct != null
+              ? 'Discount guidance was tuned against requested discount signal from lead/deal context.'
+              : 'No explicit discount requested; using conservative default discount recommendation.',
+        },
+        pricingRiskHints,
+      },
     },
   };
 }

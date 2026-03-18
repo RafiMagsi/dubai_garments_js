@@ -151,7 +151,7 @@ Primary outcomes:
 2. Add recommendation acceptance actions and quote summary generation.
 3. Add upsell/cross-sell suggestion block.
 
-### Day 20
+### Day 20 - done
 1. End-to-end check: lead -> reply studio -> quote copilot path.
 2. Tune latency and fallback messaging for user trust.
 3. Implement `AIA-025` quote intelligence checks (margin safety + discount guidance).
@@ -261,3 +261,11 @@ Primary outcomes:
 2. Empty/error/loading states added across flow panels (decision, signals, stage matrix, execution evidence).
 3. Deep links from stage cards and next move panel mapped to related actions.
 4. Frozen on March 18, 2026.
+
+### Week 4 Freeze - done
+1. Reply Studio and Quote Copilot path validated end-to-end in regression flow.
+2. Trust messaging improved with latency + fallback badges in Reply Studio and Quote Copilot.
+3. `AIA-025` quote intelligence checks delivered:
+   - margin safety status
+   - discount guidance
+   - pricing risk hints

@@ -169,6 +169,7 @@ export type ReplyStudioEnvelope = {
   fallbackUsed: boolean;
   failureReason: string | null;
   dryRun: boolean;
+  processingMs?: number;
   data: ReplyStudioDraft;
   requestId?: string | null;
 };
@@ -203,6 +204,7 @@ export type QuoteRecommendationEnvelope = {
   fallbackUsed: boolean;
   failureReason: string | null;
   dryRun: boolean;
+  processingMs?: number;
   data: {
     summary: string;
     recommendations: QuoteRecommendationItem[];
@@ -245,6 +247,7 @@ export type QuoteCopilotEnvelope = {
   fallbackUsed: boolean;
   failureReason: string | null;
   dryRun: boolean;
+  processingMs?: number;
   data: {
     summary: {
       summaryTitle: string;
@@ -256,6 +259,21 @@ export type QuoteCopilotEnvelope = {
       suggestedNextAction: string;
     };
     upsellSuggestions: QuoteCopilotUpsell[];
+    quoteIntelligence: {
+      estimatedSubtotalAED: number | null;
+      marginSafety: {
+        status: 'safe' | 'watch' | 'risk';
+        estimatedGrossMarginPct: number | null;
+        guidance: string;
+      };
+      discountGuidance: {
+        requestedDiscountPct: number | null;
+        suggestedDiscountPct: number | null;
+        maxSafeDiscountPct: number | null;
+        reason: string;
+      };
+      pricingRiskHints: string[];
+    };
   };
   requestId?: string | null;
 };

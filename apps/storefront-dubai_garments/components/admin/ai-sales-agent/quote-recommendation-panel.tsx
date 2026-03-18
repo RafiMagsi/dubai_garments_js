@@ -131,6 +131,10 @@ export default function QuoteRecommendationPanel({
             <CardText>{response.data.summary}</CardText>
 
             <div className="qrec-badges">
+              <span className="dg-ai-badge dg-ai-badge-blue">Latency: {response.processingMs ?? 0}ms</span>
+              <span className={`dg-ai-badge ${response.fallbackUsed ? 'dg-ai-badge-amber' : 'dg-ai-badge-green'}`}>
+                {response.fallbackUsed ? 'Fallback Active' : 'Primary Path'}
+              </span>
               <span className="dg-badge">Provider: {response.provider}</span>
               <span className="dg-badge">
                 {response.fallbackUsed ? 'Fallback' : 'Primary'}

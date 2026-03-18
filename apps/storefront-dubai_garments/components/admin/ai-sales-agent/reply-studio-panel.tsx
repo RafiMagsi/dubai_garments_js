@@ -212,7 +212,7 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
           </label>
 
           <Button type="button" onClick={handleRun} disabled={loading}>
-            {loading ? 'Generating...' : 'Run Reply Studio'}
+            {loading ? 'Generating trusted draft...' : 'Run Reply Studio'}
           </Button>
         </div>
       </Card>
@@ -228,10 +228,35 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
         <div className="ars-output-area">
           <Card className="ars-card ars-output-card" data-testid="reply-studio-draft-output-card">
             <CardTitle>Draft Output</CardTitle>
-            <CardText>
-              Source: {response.source} · Provider: {response.provider} ·
-              {response.fallbackUsed ? ' Fallback' : ' Primary'}
-            </CardText>
+            <div className="ars-badges">
+              <span className="dg-ai-badge dg-ai-badge-blue">Latency: {response.processingMs ?? 0}ms</span>
+              <span className={`dg-ai-badge ${response.fallbackUsed ? 'dg-ai-badge-amber' : 'dg-ai-badge-green'}`}>
+                {response.fallbackUsed ? 'Fallback Active' : 'Primary Path'}
+              </span>
+              <span className="dg-ai-badge dg-ai-badge-slate">Provider: {response.provider}</span>
+              <span className="dg-ai-badge dg-ai-badge-slate">Source: {response.source}</span>
+            </div>
+
+            <div
+            className="dg-mt-4 dg-rounded-xl dg-border dg-p-4"
+            style={{
+                borderColor: response.fallbackUsed ? '#fed7aa' : '#bfdbfe',
+                background: response.fallbackUsed ? '#fff7ed' : '#eff6ff',
+            }}
+            >
+            <div className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide">
+                Draft Trust Status
+            </div>
+            <div className="dg-mt-2 dg-text-sm">
+                Provider: {response.provider} · Source: {response.source} ·
+                {response.fallbackUsed ? ' Fallback mode used.' : ' Primary path used.'}
+            </div>
+            {response.failureReason ? (
+                <div className="dg-mt-2 dg-text-sm dg-text-neutral-600">
+                Reason: {response.failureReason}
+                </div>
+            ) : null}
+            </div>
 
             {response.data.subject ? (
                 <div className="ars-subject-block">

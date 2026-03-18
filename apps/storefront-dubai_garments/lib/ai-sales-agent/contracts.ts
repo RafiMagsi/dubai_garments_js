@@ -197,6 +197,7 @@ export const ReplyStudioResponseSchema = z.object({
   fallbackUsed: z.boolean(),
   failureReason: z.string().nullable(),
   dryRun: z.boolean(),
+  processingMs: z.number().optional(),
   data: ReplyStudioDraftSchema,
   requestId: z.string().nullable(),
 });
@@ -246,6 +247,7 @@ export const QuoteRecommendationResponseSchema = z.object({
   fallbackUsed: z.boolean(),
   failureReason: z.string().nullable(),
   dryRun: z.boolean(),
+  processingMs: z.number().optional(),
   data: QuoteRecommendationPayloadSchema,
   requestId: z.string().nullable(),
 });
@@ -279,6 +281,19 @@ export const QuoteCopilotSummarySchema = z.object({
   suggestedNextAction: z.string(),
 });
 
+export const QuoteCopilotMarginSafetySchema = z.object({
+  status: z.enum(['safe', 'watch', 'risk']),
+  estimatedGrossMarginPct: z.number().nullable(),
+  guidance: z.string(),
+});
+
+export const QuoteCopilotDiscountGuidanceSchema = z.object({
+  requestedDiscountPct: z.number().nullable(),
+  suggestedDiscountPct: z.number().nullable(),
+  maxSafeDiscountPct: z.number().nullable(),
+  reason: z.string(),
+});
+
 export const QuoteCopilotUpsellSchema = z.object({
   title: z.string(),
   type: z.enum(['upsell', 'cross_sell']),
@@ -298,7 +313,14 @@ export const QuoteCopilotResponseSchema = z.object({
   data: z.object({
     summary: QuoteCopilotSummarySchema,
     upsellSuggestions: z.array(QuoteCopilotUpsellSchema),
+    quoteIntelligence: z.object({
+      estimatedSubtotalAED: z.number().nullable(),
+      marginSafety: QuoteCopilotMarginSafetySchema,
+      discountGuidance: QuoteCopilotDiscountGuidanceSchema,
+      pricingRiskHints: z.array(z.string()),
+    }),
   }),
+  processingMs: z.number().optional(),
   requestId: z.string().nullable(),
 });
 

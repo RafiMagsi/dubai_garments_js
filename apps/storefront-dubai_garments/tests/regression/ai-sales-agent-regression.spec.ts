@@ -219,4 +219,28 @@ test.describe.serial('AI Sales Agent regression', () => {
     expect(Array.isArray(payload.data?.missingData)).toBeTruthy();
     expect(typeof payload.data?.canCreateQuote === 'boolean').toBeTruthy();
   });
+
+  test('Day 20 end-to-end lead -> reply studio -> quote copilot path', async ({ page }) => {
+    await login(page, 'admin');
+    const leadId = await createLeadViaIntake(page);
+
+    await page.goto('/admin/ai-sales-agent');
+    await page.getByRole('button', { name: 'Reply Studio' }).click();
+
+    await expectVisibleByTestId(page, 'reply-studio-lead-id-input');
+    await page.getByTestId('reply-studio-lead-id-input').fill(leadId);
+    await page.getByRole('button', { name: 'Run Reply Studio' }).click();
+    await expectVisibleByTestId(page, 'reply-studio-draft-output-card');
+    await expect(page.getByText(/Latency:/i)).toBeVisible();
+
+    await page.getByRole('button', { name: 'Quote Copilot' }).click();
+    await expectVisibleByTestId(page, 'quote-recommendation-lead-id-input');
+    await page.getByTestId('quote-recommendation-lead-id-input').fill(leadId);
+    await page.getByRole('button', { name: 'Run Quote Recommendation' }).click();
+
+    await expectVisibleByTestId(page, 'quote-recommendation-summary-card');
+    await page.getByRole('button', { name: 'Generate Quote Copilot Summary' }).click();
+    await expectVisibleByTestId(page, 'quote-copilot-summary-card');
+    await expectVisibleByTestId(page, 'quote-copilot-intelligence-card');
+  });
 });

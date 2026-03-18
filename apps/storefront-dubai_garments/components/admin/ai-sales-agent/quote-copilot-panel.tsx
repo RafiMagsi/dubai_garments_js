@@ -156,6 +156,12 @@ export default function QuoteCopilotPanel() {
             <CardText>{copilotResponse.data.summary.summaryText}</CardText>
 
             <div className="qcop-badges">
+              <span className="dg-ai-badge dg-ai-badge-blue">
+                Latency: {copilotResponse.processingMs ?? 0}ms
+              </span>
+              <span className={`dg-ai-badge ${copilotResponse.fallbackUsed ? 'dg-ai-badge-amber' : 'dg-ai-badge-green'}`}>
+                {copilotResponse.fallbackUsed ? 'Fallback Active' : 'Primary Path'}
+              </span>
               <span className="dg-ai-badge dg-ai-badge-slate">
                 Accepted: {copilotResponse.data.summary.acceptedCount}
               </span>
@@ -181,6 +187,50 @@ export default function QuoteCopilotPanel() {
             <div className="qcop-next-action">
               Next action: {copilotResponse.data.summary.suggestedNextAction}
             </div>
+          </Card>
+
+          <Card className="qcop-card" data-testid="quote-copilot-intelligence-card">
+            <CardTitle>Quote Intelligence Checks</CardTitle>
+            <CardText className="qcop-muted">
+              Margin safety, discount guidance, and pricing risk hints before quote handoff.
+            </CardText>
+
+            <div className="qcop-badges">
+              <span className={`dg-ai-badge ${
+                copilotResponse.data.quoteIntelligence.marginSafety.status === 'safe'
+                  ? 'dg-ai-badge-green'
+                  : copilotResponse.data.quoteIntelligence.marginSafety.status === 'watch'
+                  ? 'dg-ai-badge-amber'
+                  : 'dg-ai-badge-red'
+              }`}>
+                Margin Safety: {copilotResponse.data.quoteIntelligence.marginSafety.status.toUpperCase()}
+              </span>
+              <span className="dg-ai-badge dg-ai-badge-slate">
+                Est. Margin: {copilotResponse.data.quoteIntelligence.marginSafety.estimatedGrossMarginPct ?? 'n/a'}%
+              </span>
+              <span className="dg-ai-badge dg-ai-badge-slate">
+                Max Safe Discount: {copilotResponse.data.quoteIntelligence.discountGuidance.maxSafeDiscountPct ?? 'n/a'}%
+              </span>
+              <span className="dg-ai-badge dg-ai-badge-slate">
+                Suggested Discount: {copilotResponse.data.quoteIntelligence.discountGuidance.suggestedDiscountPct ?? 'n/a'}%
+              </span>
+              <span className="dg-ai-badge dg-ai-badge-slate">
+                Est. Subtotal AED: {copilotResponse.data.quoteIntelligence.estimatedSubtotalAED ?? 'n/a'}
+              </span>
+            </div>
+
+            <div className="qcop-next-action">
+              {copilotResponse.data.quoteIntelligence.marginSafety.guidance}
+            </div>
+            <div className="qcop-next-action">
+              Discount guidance: {copilotResponse.data.quoteIntelligence.discountGuidance.reason}
+            </div>
+
+            <ul className="qcop-risk-list">
+              {copilotResponse.data.quoteIntelligence.pricingRiskHints.map((hint, index) => (
+                <li key={`${hint}-${index}`}>{hint}</li>
+              ))}
+            </ul>
           </Card>
 
           <Card className="qcop-card" data-testid="quote-copilot-upsell-card">

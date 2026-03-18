@@ -5,6 +5,8 @@ import type {
   CopilotRequest,
   ReplyStudioRequest,
   ReplyStudioEnvelope,
+  QuoteCopilotEnvelope,
+  QuoteRecommendationEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -205,7 +207,7 @@ export async function runQuoteRecommendation(input: {
   dealId?: string;
   quoteId?: string;
   dry_run?: boolean;
-}) {
+}): Promise<QuoteRecommendationEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/quote-recommendation', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -219,7 +221,7 @@ export async function runQuoteRecommendation(input: {
     throw new Error(json.message || 'Failed to run quote recommendation.');
   }
 
-  return json;
+  return json as QuoteRecommendationEnvelope;
 }
 
 export async function runQuoteCopilot(input: {
@@ -233,7 +235,7 @@ export async function runQuoteCopilot(input: {
     suggestedVariant: string | null;
   }>;
   dry_run?: boolean;
-}) {
+}): Promise<QuoteCopilotEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/quote-copilot', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -247,5 +249,5 @@ export async function runQuoteCopilot(input: {
     throw new Error(json.message || 'Failed to run quote copilot.');
   }
 
-  return json;
+  return json as QuoteCopilotEnvelope;
 }

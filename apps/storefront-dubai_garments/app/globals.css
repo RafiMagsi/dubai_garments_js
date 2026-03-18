@@ -5532,6 +5532,16 @@ html[data-dg-theme='twenty'] {
     overflow-wrap: anywhere;
   }
 
+  .dg-admin-main .qcop-risk-list,
+  .qcop-scope .qcop-risk-list {
+    margin: 0.18rem 0 0;
+    padding-left: 1rem;
+    display: grid;
+    gap: 0.22rem;
+    font-size: 0.78rem;
+    color: #334155;
+  }
+
   @keyframes aflow-brand-glow {
     0%, 100% {
       box-shadow: 0 0 0 0 rgba(var(--brand-rgb), 0);

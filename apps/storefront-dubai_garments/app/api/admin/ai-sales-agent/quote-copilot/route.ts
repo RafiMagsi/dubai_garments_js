@@ -9,6 +9,7 @@ export const revalidate = 0;
 
 export async function POST(request: NextRequest) {
   const requestId = request.headers.get('x-request-id');
+  const startedAt = Date.now();
 
   try {
     const sessionOrResponse = await requireAdminApiAccess(request);
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
       failureReason: result.failureReason,
       dryRun: result.dryRun,
       data: result.data,
+      processingMs: Date.now() - startedAt,
       requestId,
     });
   } catch (error) {
