@@ -110,7 +110,7 @@ Primary outcomes:
 2. Define 11-stage canonical flow and completion rules.
 3. Map flow states from existing lead/deal/quote/automation data.
 
-### Day 12
+### Day 12 - done
 1. Build Agent Flow timeline/stepper UI with status coloring.
 2. Show completed, active, pending, blocked states.
 3. Add blockers and recommended next move panel.
