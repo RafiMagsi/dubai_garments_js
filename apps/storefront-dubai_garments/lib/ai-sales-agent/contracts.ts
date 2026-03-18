@@ -326,3 +326,48 @@ export const QuoteCopilotResponseSchema = z.object({
 
 export type QuoteCopilotRequest = z.infer<typeof QuoteCopilotRequestSchema>;
 export type QuoteCopilotResponse = z.infer<typeof QuoteCopilotResponseSchema>;
+
+export const PipelineInsightRequestSchema = z.object({
+  leadId: z.string().uuid().optional(),
+  dealId: z.string().uuid().optional(),
+  dry_run: z.boolean().optional().default(true),
+});
+
+export const PipelineInsightReasonSchema = z.object({
+  label: z.string(),
+  impact: z.enum(['low', 'medium', 'high']),
+});
+
+export const PipelineInsightQueueItemSchema = z.object({
+  title: z.string(),
+  urgency: z.enum(['low', 'medium', 'high', 'critical']),
+  reason: z.string(),
+});
+
+export const PipelineInsightPayloadSchema = z.object({
+  summary: z.string(),
+  stalled: z.boolean(),
+  stageAgeDays: z.number(),
+  inactivityDays: z.number(),
+  riskScore: z.number().min(0).max(100),
+  riskReasons: z.array(PipelineInsightReasonSchema),
+  urgencyQueue: z.array(PipelineInsightQueueItemSchema),
+  nextAction: z.string(),
+});
+
+export const PipelineInsightResponseSchema = z.object({
+  ok: z.literal(true),
+  leadId: z.string().nullable(),
+  dealId: z.string().nullable(),
+  source: z.enum(['model', 'fallback']),
+  provider: z.string(),
+  fallbackUsed: z.boolean(),
+  failureReason: z.string().nullable(),
+  dryRun: z.boolean(),
+  data: PipelineInsightPayloadSchema,
+  processingMs: z.number().optional(),
+  requestId: z.string().nullable(),
+});
+
+export type PipelineInsightRequest = z.infer<typeof PipelineInsightRequestSchema>;
+export type PipelineInsightResponse = z.infer<typeof PipelineInsightResponseSchema>;

@@ -10,3 +10,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 # Prod (existing behavior):
 docker compose up -d --build
+
+# New Features/Integration
+People can add custom projects for their integration
+Public exposed API that can give products for website integration with API token
+Lead for should have required fields as minimum to receive it as lead, so the admin panel will be useful.
+Make a tap for "AI Sales Copilot" or adjust it in a tab

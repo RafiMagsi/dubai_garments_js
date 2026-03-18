@@ -158,7 +158,7 @@ Primary outcomes:
 4. Freeze Week 4 output.
 
 ## Week 5 - Pipeline Insights and Automation Transparency
-### Day 21
+### Day 21 - done
 1. Implement `AIA-012` pipeline insight service (stalled, risk, next action).
 2. Define risk score reasons and urgency queues.
 3. Add stage-aging and inactivity heuristics.

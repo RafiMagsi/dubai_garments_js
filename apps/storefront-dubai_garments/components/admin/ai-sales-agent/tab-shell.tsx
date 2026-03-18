@@ -13,6 +13,7 @@ import {
   AisSectionEyebrow,
 } from './reusable';
 import QuoteCopilotPanel from '@/components/admin/ai-sales-agent/quote-copilot-panel';
+import PipelineInsightsPanel from '@/components/admin/ai-sales-agent/pipeline-insights-panel';
 
 type AgentTabKey =
   | 'lead-intelligence'
@@ -203,7 +204,11 @@ export default function AiSalesAgentTabShell() {
                   <div className="dg-mt-4">
                     <ReplyStudioPanel showHeading={false} />
                   </div>
-                ) : (
+                ) : currentTab.key === 'pipeline-insights' ? (
+                  <div className="dg-mt-4">
+                    <PipelineInsightsPanel />
+                  </div>
+                ): (
                   <div className="dg-mt-4 dg-grid dg-grid-cols-3 dg-gap-4">
                     {currentTab.features.map((feature, index) => (
                       <AisFeatureCard

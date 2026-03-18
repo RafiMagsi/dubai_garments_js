@@ -277,3 +277,37 @@ export type QuoteCopilotEnvelope = {
   };
   requestId?: string | null;
 };
+
+export type PipelineInsightReason = {
+  label: string;
+  impact: 'low' | 'medium' | 'high';
+};
+
+export type PipelineInsightQueueItem = {
+  title: string;
+  urgency: 'low' | 'medium' | 'high' | 'critical';
+  reason: string;
+};
+
+export type PipelineInsightEnvelope = {
+  ok: true;
+  leadId: string | null;
+  dealId: string | null;
+  source: 'model' | 'fallback';
+  provider: string;
+  fallbackUsed: boolean;
+  failureReason: string | null;
+  dryRun: boolean;
+  processingMs?: number;
+  data: {
+    summary: string;
+    stalled: boolean;
+    stageAgeDays: number;
+    inactivityDays: number;
+    riskScore: number;
+    riskReasons: PipelineInsightReason[];
+    urgencyQueue: PipelineInsightQueueItem[];
+    nextAction: string;
+  };
+  requestId?: string | null;
+};
