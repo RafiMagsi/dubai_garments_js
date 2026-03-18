@@ -6,6 +6,12 @@ import LeadIntelligenceCards from './lead-intelligence-cards';
 import { useLeadById } from '@/features/admin/leads';
 import AgentFlowView from '@/components/admin/ai-sales-agent/agent-flow-view';
 import ReplyStudioPanel from '@/components/admin/ai-sales-agent/reply-studio-panel';
+import {
+  AisEmptyState,
+  AisFeatureCard,
+  AisKpiPill,
+  AisSectionEyebrow,
+} from './reusable';
 
 type AgentTabKey =
   | 'lead-intelligence'
@@ -167,38 +173,19 @@ export default function AiSalesAgentTabShell() {
           <div style={{ display: 'grid', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
               <div>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 11,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    color: '#64748b',
-                    fontWeight: 700,
-                  }}
-                >
-                  {currentTab.eyebrow}
-                </p>
+                <AisSectionEyebrow>{currentTab.eyebrow}</AisSectionEyebrow>
                 <CardTitle style={{ marginTop: 6 }}>{currentTab.title}</CardTitle>
                 <CardText style={{ marginTop: 8 }}>{currentTab.description}</CardText>
               </div>
 
-              <div
-                style={{
-                  border: `1px solid ${healthStyles.border}`,
-                  background: healthStyles.bg,
-                  color: healthStyles.fg,
-                  borderRadius: 10,
-                  padding: '10px 12px',
-                  minWidth: 140,
-                }}
-              >
-                <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {currentTab.kpiLabel}
-                </p>
-                <p style={{ margin: '6px 0 0', fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{currentTab.kpiValue}</p>
-                <p style={{ margin: '6px 0 0', fontSize: 12, color: '#475569' }}>{currentTab.kpiDelta}</p>
-              </div>
+              <AisKpiPill
+                label={currentTab.kpiLabel}
+                value={currentTab.kpiValue}
+                delta={currentTab.kpiDelta}
+                border={healthStyles.border}
+                bg={healthStyles.bg}
+                fg={healthStyles.fg}
+              />
             </div>
 
             {expanded ? (
@@ -214,12 +201,11 @@ export default function AiSalesAgentTabShell() {
                 ) : (
                   <div className="dg-mt-4 dg-grid dg-grid-cols-3 dg-gap-4">
                     {currentTab.features.map((feature, index) => (
-                      <Card key={`${currentTab.key}-feature-${index}`} className="ais-feature-card">
-                        <CardTitle>{feature}</CardTitle>
-                        <CardText>
-                          Operational capability for {currentTab.label.toLowerCase()}.
-                        </CardText>
-                      </Card>
+                      <AisFeatureCard
+                        key={`${currentTab.key}-feature-${index}`}
+                        title={feature}
+                        text={`Operational capability for ${currentTab.label.toLowerCase()}.`}
+                      />
                     ))}
                   </div>
                 )}
@@ -232,18 +218,7 @@ export default function AiSalesAgentTabShell() {
           <Card>
             <div style={{ display: 'grid', gap: 10 }}>
               <div>
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: 11,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    color: '#64748b',
-                    fontWeight: 700,
-                  }}
-                >
-                  Lead Intelligence Preview
-                </p>
+                <AisSectionEyebrow>Lead Intelligence Preview</AisSectionEyebrow>
                 <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
                   Paste a Lead ID to load the same intelligence cards used on Lead Detail page.
                 </p>
@@ -276,18 +251,7 @@ export default function AiSalesAgentTabShell() {
                   />
                 </div>
               ) : (
-                <div
-                  style={{
-                    border: '1px dashed var(--color-border)',
-                    borderRadius: 12,
-                    padding: 14,
-                    fontSize: 13,
-                    color: '#64748b',
-                    background: '#f8fafc',
-                  }}
-                >
-                  No lead loaded yet. Enter a valid lead ID to preview intelligence output.
-                </div>
+                <AisEmptyState message="No lead loaded yet. Enter a valid lead ID to preview intelligence output." />
               )}
             </div>
           </Card>

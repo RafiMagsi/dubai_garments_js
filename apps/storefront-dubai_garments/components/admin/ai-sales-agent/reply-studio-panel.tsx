@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button, Card, CardText, CardTitle, SelectField, TextField } from '@/components/ui';
 import { runReplyStudio } from '@/features/admin/ai-sales-agent/api';
 import type { ReplyStudioEnvelope } from '@/features/admin/ai-sales-agent/types';
+import { AisFieldLabel } from './reusable';
 
 type ReplyStudioPanelProps = {
   showHeading?: boolean;
@@ -63,9 +64,7 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
 
         <div className="ars-grid">
           <div>
-            <label className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
-              Lead ID
-            </label>
+            <AisFieldLabel>Lead ID</AisFieldLabel>
             <TextField
               value={leadId}
               onChange={(event) => setLeadId(event.target.value)}
@@ -75,9 +74,7 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
           </div>
 
           <div>
-            <label className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
-              Mode
-            </label>
+            <AisFieldLabel>Mode</AisFieldLabel>
             <SelectField
               value={mode}
               onChange={(event) =>
@@ -92,9 +89,7 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
           </div>
 
           <div>
-            <label className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
-              Tone
-            </label>
+            <AisFieldLabel>Tone</AisFieldLabel>
             <SelectField
               value={tone}
               onChange={(event) =>
@@ -109,9 +104,7 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
           </div>
 
           <div>
-            <label className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
-              Channel
-            </label>
+            <AisFieldLabel>Channel</AisFieldLabel>
             <SelectField
               value={channel}
               onChange={(event) =>
@@ -126,9 +119,7 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
         </div>
 
         <div className="ars-notes">
-          <label className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">
-            Notes
-          </label>
+          <AisFieldLabel>Notes</AisFieldLabel>
           <textarea
             value={userNotes}
             onChange={(event) => setUserNotes(event.target.value)}

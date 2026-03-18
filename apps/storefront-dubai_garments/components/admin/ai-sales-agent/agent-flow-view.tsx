@@ -10,6 +10,7 @@ import {
   runLeadTriage,
 } from '@/features/admin/ai-sales-agent/api';
 import type { AgentFlowResponse } from '@/features/admin/ai-sales-agent/types';
+import { AisFieldLabel } from './reusable';
 
 type AgentFlowViewProps = {
   showHeader?: boolean;
@@ -300,7 +301,7 @@ export default function AgentFlowView({
 
         <div className="aflow-query-grid">
           <div>
-            <label className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">Lead ID</label>
+            <AisFieldLabel>Lead ID</AisFieldLabel>
             <TextField
               value={leadId}
               onChange={(event) => setLeadId(event.target.value)}
@@ -310,7 +311,7 @@ export default function AgentFlowView({
           </div>
 
           <div>
-            <label className="dg-text-xs dg-font-semibold dg-uppercase dg-tracking-wide dg-text-neutral-500">Deal ID</label>
+            <AisFieldLabel>Deal ID</AisFieldLabel>
             <TextField
               value={dealId}
               onChange={(event) => setDealId(event.target.value)}
