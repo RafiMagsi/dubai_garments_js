@@ -5,6 +5,7 @@ import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
 import LeadIntelligenceCards from './lead-intelligence-cards';
 import { useLeadById } from '@/features/admin/leads';
 import AgentFlowView from '@/components/admin/ai-sales-agent/agent-flow-view';
+import ReplyStudioPanel from '@/components/admin/ai-sales-agent/reply-studio-panel';
 
 type AgentTabKey =
   | 'lead-intelligence'
@@ -205,6 +206,10 @@ export default function AiSalesAgentTabShell() {
                 {currentTab.key === 'agent-flow' ? (
                   <div className="dg-mt-4">
                     <AgentFlowView showHeader={false} />
+                  </div>
+                ) : currentTab.key === 'reply-studio' ? (
+                  <div className="dg-mt-4">
+                    <ReplyStudioPanel showHeading={false} />
                   </div>
                 ) : (
                   <div className="dg-mt-4 dg-grid dg-grid-cols-3 dg-gap-4">

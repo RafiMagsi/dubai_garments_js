@@ -10,6 +10,7 @@ import {
   fallbackDraftReply,
   fallbackFollowupsToday,
 } from '@/lib/ai-sales-agent/fallbacks';
+import { getAiPayloadValidationMessage } from '@/lib/ai-sales-agent/validation-messages';
 import { requireAdminApiAccess } from '@/lib/auth/require-admin';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           ok: false,
-          message: 'Invalid copilot request payload.',
+          message: getAiPayloadValidationMessage(parsed.error, 'Invalid copilot request payload.'),
           issues: parsed.error.flatten(),
           requestId,
         },

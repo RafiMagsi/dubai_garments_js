@@ -153,3 +153,54 @@ export const LeadTriageResponseSchema = z.object({
 export type LeadTriageRequest = z.infer<typeof LeadTriageRequestSchema>;
 export type LeadTriageOutput = z.infer<typeof LeadTriageOutputSchema>;
 export type LeadTriageResponse = z.infer<typeof LeadTriageResponseSchema>;
+
+export const ReplyStudioModeSchema = z.enum([
+  'first_reply',
+  'followup_reply',
+  'clarification_questions',
+]);
+
+export const ReplyStudioToneSchema = z.enum([
+  'concise',
+  'formal',
+  'persuasive',
+]);
+
+export const ReplyStudioRequestSchema = z.object({
+  leadId: z.string().uuid(),
+  mode: ReplyStudioModeSchema,
+  tone: ReplyStudioToneSchema.optional().default('formal'),
+  channel: z.enum(['email', 'whatsapp']).optional().default('email'),
+  userNotes: z.string().max(2000).optional(),
+  dry_run: z.boolean().optional().default(false),
+});
+
+export const ReplyStudioDraftSchema = z.object({
+  mode: ReplyStudioModeSchema,
+  tone: ReplyStudioToneSchema,
+  channel: z.enum(['email', 'whatsapp']),
+  subject: z.string().nullable(),
+  message: z.string(),
+  rationale: z.string(),
+  suggestedNextAction: z.string(),
+  confidence: z.number().min(0).max(100),
+  questions: z.array(z.string()).default([]),
+});
+
+export const ReplyStudioResponseSchema = z.object({
+  ok: z.literal(true),
+  leadId: z.string(),
+  source: z.enum(['model', 'fallback']),
+  provider: z.string(),
+  fallbackUsed: z.boolean(),
+  failureReason: z.string().nullable(),
+  dryRun: z.boolean(),
+  data: ReplyStudioDraftSchema,
+  requestId: z.string().nullable(),
+});
+
+export type ReplyStudioMode = z.infer<typeof ReplyStudioModeSchema>;
+export type ReplyStudioTone = z.infer<typeof ReplyStudioToneSchema>;
+export type ReplyStudioRequest = z.infer<typeof ReplyStudioRequestSchema>;
+export type ReplyStudioDraft = z.infer<typeof ReplyStudioDraftSchema>;
+export type ReplyStudioResponse = z.infer<typeof ReplyStudioResponseSchema>;

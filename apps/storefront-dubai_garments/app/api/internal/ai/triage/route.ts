@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LeadTriageRequestSchema } from '@/lib/ai-sales-agent/contracts';
 import { runLeadTriage } from '@/lib/ai-sales-agent/triage';
+import { getAiPayloadValidationMessage } from '@/lib/ai-sales-agent/validation-messages';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           ok: false,
-          message: 'Invalid triage payload.',
+          message: getAiPayloadValidationMessage(parsed.error, 'Invalid triage payload.'),
           issues: parsed.error.flatten(),
           requestId,
         },

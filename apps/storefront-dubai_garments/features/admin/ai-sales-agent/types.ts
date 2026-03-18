@@ -127,3 +127,37 @@ export type AgentFlowResponse = {
   riskHints: string[];
   requestId?: string | null;
 };
+
+export type ReplyStudioMode =
+  | 'first_reply'
+  | 'followup_reply'
+  | 'clarification_questions';
+
+export type ReplyStudioTone =
+  | 'concise'
+  | 'formal'
+  | 'persuasive';
+
+export type ReplyStudioDraft = {
+  mode: ReplyStudioMode;
+  tone: ReplyStudioTone;
+  channel: 'email' | 'whatsapp';
+  subject: string | null;
+  message: string;
+  rationale: string;
+  suggestedNextAction: string;
+  confidence: number;
+  questions: string[];
+};
+
+export type ReplyStudioEnvelope = {
+  ok: true;
+  leadId: string;
+  source: 'model' | 'fallback';
+  provider: string;
+  fallbackUsed: boolean;
+  failureReason: string | null;
+  dryRun: boolean;
+  data: ReplyStudioDraft;
+  requestId?: string | null;
+};

@@ -5,6 +5,7 @@ import {
   executeCopilotAction,
 } from '@/lib/ai-sales-agent/actions';
 import { writeCopilotAuditLog } from '@/lib/ai-sales-agent/audit';
+import { getAiPayloadValidationMessage } from '@/lib/ai-sales-agent/validation-messages';
 import { requireAdminApiAccess } from '@/lib/auth/require-admin';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           ok: false,
-          message: 'Invalid execute payload.',
+          message: getAiPayloadValidationMessage(parsed.error, 'Invalid execute payload.'),
           issues: parsed.error.flatten(),
           requestId,
         },

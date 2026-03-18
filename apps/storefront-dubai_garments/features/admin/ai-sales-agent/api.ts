@@ -150,3 +150,27 @@ export async function getAgentFlow(input: { leadId?: string; dealId?: string }) 
 
   return json;
 }
+
+export async function runReplyStudio(input: {
+  leadId: string;
+  mode: 'first_reply' | 'followup_reply' | 'clarification_questions';
+  tone?: 'concise' | 'formal' | 'persuasive';
+  channel?: 'email' | 'whatsapp';
+  userNotes?: string;
+  dry_run?: boolean;
+}) {
+  const response = await fetch('/api/admin/ai-sales-agent/reply-studio', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = (await response.json()) as any;
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to run Reply Studio.');
+  }
+
+  return json;
+}
