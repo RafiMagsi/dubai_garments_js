@@ -5011,18 +5011,8 @@ html[data-dg-theme='twenty'] {
     gap: 0.32rem;
   }
 
-  .dg-admin-main .ars-subject-box {
-    border: 1px solid color-mix(in srgb, var(--color-brand-100) 64%, var(--color-border));
-    background: color-mix(in srgb, var(--color-brand-50) 36%, #fff);
-    border-radius: 0.68rem;
-    padding: 0.52rem 0.62rem;
-    font-size: 0.84rem;
-    font-weight: 600;
-    line-height: 1.45;
-    color: #0f172a;
-    min-height: 2.05rem;
-    display: flex;
-    align-items: center;
+  .dg-admin-main .ars-subject-input {
+    margin-top: 0.12rem;
   }
 
   .dg-admin-main .ars-output-block {
@@ -5037,6 +5027,31 @@ html[data-dg-theme='twenty'] {
     padding: 0.62rem 0.7rem;
     max-width: 100%;
     overflow: hidden;
+  }
+
+  .dg-admin-main .ars-message-editor {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    max-width: 100%;
+    min-height: 7.5rem;
+    resize: vertical;
+    overflow: auto;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #1f2937;
+    outline: 0;
+  }
+
+  .dg-admin-main .ars-message-editor:focus-visible {
+    outline: 0;
+  }
+
+  .dg-admin-main .ars-message-box-editable:focus-within {
+    border-color: color-mix(in srgb, var(--color-brand-500) 60%, var(--color-border));
+    box-shadow: 0 0 0 2px rgba(var(--brand-rgb), 0.12);
   }
 
   .dg-admin-main .ars-pre {
@@ -5078,6 +5093,50 @@ html[data-dg-theme='twenty'] {
     display: flex;
     flex-wrap: wrap;
     gap: 0.45rem;
+  }
+
+  .dg-admin-main .ars-send-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    column-gap: 0.85rem;
+    row-gap: 0.5rem;
+    flex-wrap: wrap;
+    padding-top: 0.2rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-border) 70%, white);
+  }
+
+  .dg-admin-main .ars-send-actions .ars-send-btn {
+    min-width: 8.75rem;
+  }
+
+  .dg-admin-main .ars-send-actions .ars-send-btn-primary {
+    margin-inline-start: 0.1rem;
+  }
+
+  .dg-admin-main .ars-send-status {
+    margin-top: 0.16rem;
+    border: 1px solid #a7f3d0;
+    background: #ecfdf5;
+    color: #047857;
+    border-radius: 0.62rem;
+    padding: 0.42rem 0.56rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .dg-admin-main .ars-questions-card .ui-card-title {
+    margin-bottom: 0.08rem;
+  }
+
+  .dg-admin-main .ars-question-list {
+    margin: 0.14rem 0 0;
+    padding-left: 1rem;
+    display: grid;
+    gap: 0.24rem;
+    font-size: 0.82rem;
+    color: #1f2937;
   }
 
   @keyframes aflow-brand-glow {

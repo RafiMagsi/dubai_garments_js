@@ -131,12 +131,12 @@ Primary outcomes:
 3. Freeze Week 3 output.
 
 ## Week 4 - Reply Studio and Quote Copilot
-### Day 16
+### Day 16 - done
 1. Implement `AIA-009` reply studio service and UI actions.
 2. Add first reply draft, follow-up draft, clarification questions.
 3. Add rewrite tones (concise, formal, persuasive).
 
-### Day 17
+### Day 17 - done
 1. Connect reply studio with lead/deal/quote contexts.
 2. Add "approve and send" flow with audit events.
 3. Add manual edit + regenerate controls.

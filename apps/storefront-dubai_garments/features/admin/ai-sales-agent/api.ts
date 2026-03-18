@@ -3,6 +3,8 @@ import type {
   LeadTriageEnvelope,
   CopilotExecuteRequest,
   CopilotRequest,
+  ReplyStudioRequest,
+  ReplyStudioEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -151,16 +153,39 @@ export async function getAgentFlow(input: { leadId?: string; dealId?: string }) 
   return json;
 }
 
-export async function runReplyStudio(input: {
-  leadId: string;
-  mode: 'first_reply' | 'followup_reply' | 'clarification_questions';
-  tone?: 'concise' | 'formal' | 'persuasive';
-  channel?: 'email' | 'whatsapp';
-  userNotes?: string;
-  dry_run?: boolean;
-}) {
+export async function runReplyStudio(input: ReplyStudioRequest): Promise<ReplyStudioEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/reply-studio', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json: unknown = await response.json();
+
+  if (!response.ok) {
+    const message =
+      typeof json === 'object' &&
+      json !== null &&
+      'message' in json &&
+      typeof (json as { message?: unknown }).message === 'string'
+        ? (json as { message: string }).message
+        : 'Failed to run Reply Studio.';
+
+    throw new Error(message);
+  }
+
+  return json as ReplyStudioEnvelope;
+}
+
+export async function approveAndSendReplyStudio(input: {
+  leadId: string;
+  subject?: string | null;
+  message: string;
+  channel?: 'email' | 'whatsapp';
+}) {
+  const response = await fetch('/api/admin/ai-sales-agent/reply-studio', {
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
     credentials: 'include',
@@ -169,7 +194,7 @@ export async function runReplyStudio(input: {
   const json = (await response.json()) as any;
 
   if (!response.ok) {
-    throw new Error(json.message || 'Failed to run Reply Studio.');
+    throw new Error(json.message || 'Failed to approve and send reply.');
   }
 
   return json;

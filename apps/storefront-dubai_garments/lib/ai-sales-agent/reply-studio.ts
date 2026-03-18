@@ -14,13 +14,27 @@ function normalizeText(value: string | null | undefined) {
   return (value || '').trim();
 }
 
-function buildLeadContext(lead: any) {
+function buildReplyStudioContext(params: {
+  lead: any;
+  deal?: any | null;
+  quote?: any | null;
+}) {
+  const { lead, deal, quote } = params;
+
   return [
-    normalizeText(lead.company_name),
-    normalizeText(lead.contact_name),
-    normalizeText(lead.email),
-    normalizeText(lead.notes),
-    normalizeText(lead.ai_product),
+    normalizeText(lead?.company_name),
+    normalizeText(lead?.contact_name),
+    normalizeText(lead?.email),
+    normalizeText(lead?.notes),
+    normalizeText(lead?.ai_product),
+
+    normalizeText(deal?.stage),
+    normalizeText(deal?.notes),
+    typeof deal?.value === 'number' ? `Deal value: ${deal.value}` : '',
+
+    normalizeText(quote?.status),
+    normalizeText(quote?.notes),
+    typeof quote?.total_amount === 'number' ? `Quote total: ${quote.total_amount}` : '',
   ]
     .filter(Boolean)
     .join(' | ');
@@ -105,6 +119,8 @@ function buildClarificationQuestions(
 
 export async function runReplyStudio(input: {
   leadId: string;
+  dealId?: string;
+  quoteId?: string;
   mode: ReplyStudioMode;
   tone: ReplyStudioTone;
   channel: 'email' | 'whatsapp';
@@ -123,7 +139,27 @@ export async function runReplyStudio(input: {
     throw new Error('Lead not found or not accessible.');
   }
 
-  const contextText = buildLeadContext(lead);
+    const deal = input.dealId
+    ? await prisma.deals.findFirst({
+        where:
+            input.context.role === 'sales_rep'
+            ? { id: input.dealId, owner_user_id: input.context.userId }
+            : { id: input.dealId },
+        })
+    : null;
+
+    const quote = input.quoteId
+    ? await prisma.quotes.findFirst({
+        where: { id: input.quoteId },
+        })
+    : null;
+  
+  const contextText = buildReplyStudioContext({
+    lead,
+    deal,
+    quote,
+  });
+  
   let data: ReplyStudioDraft;
 
   switch (input.mode) {

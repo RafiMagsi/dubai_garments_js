@@ -138,6 +138,17 @@ export type ReplyStudioTone =
   | 'formal'
   | 'persuasive';
 
+export type ReplyStudioRequest = {
+  leadId: string;
+  dealId?: string;
+  quoteId?: string;
+  mode: ReplyStudioMode;
+  tone?: ReplyStudioTone;
+  channel?: 'email' | 'whatsapp';
+  userNotes?: string;
+  dry_run?: boolean;
+};
+
 export type ReplyStudioDraft = {
   mode: ReplyStudioMode;
   tone: ReplyStudioTone;

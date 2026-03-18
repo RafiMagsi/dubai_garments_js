@@ -168,6 +168,8 @@ export const ReplyStudioToneSchema = z.enum([
 
 export const ReplyStudioRequestSchema = z.object({
   leadId: z.string().uuid(),
+  dealId: z.string().uuid().optional(),
+  quoteId: z.string().uuid().optional(),
   mode: ReplyStudioModeSchema,
   tone: ReplyStudioToneSchema.optional().default('formal'),
   channel: z.enum(['email', 'whatsapp']).optional().default('email'),

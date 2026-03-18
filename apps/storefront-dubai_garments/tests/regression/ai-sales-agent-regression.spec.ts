@@ -67,6 +67,15 @@ async function createLeadViaIntake(page: Page) {
   return leadId as string;
 }
 
+async function convertLeadToDeal(page: Page, leadId: string) {
+  const response = await page.request.post(`/api/admin/leads/${leadId}/convert-to-deal`, {
+    data: {},
+  });
+  expect(response.ok()).toBeTruthy();
+  const payload = (await response.json()) as { item?: { id?: string } };
+  return payload.item?.id ?? null;
+}
+
 let leadId = '';
 
 test.describe.serial('AI Sales Agent regression', () => {
@@ -132,5 +141,49 @@ test.describe.serial('AI Sales Agent regression', () => {
       });
       expect(copilotResponse.status()).toBe(200);
     }
+  });
+
+  test('Day 17 Reply Studio integration (context + edit/regenerate + approve/send audit)', async ({ page }) => {
+    await login(page, 'admin');
+    const leadId = await createLeadViaIntake(page);
+    const dealId = await convertLeadToDeal(page, leadId);
+
+    await page.goto('/admin/ai-sales-agent');
+    await page.getByRole('button', { name: 'Reply Studio' }).click();
+
+    await page.getByTestId('reply-studio-panel').scrollIntoViewIfNeeded();
+    await page.getByTestId('reply-studio-lead-id-input').fill(leadId);
+    if (dealId) {
+      await page.getByTestId('reply-studio-deal-id-input').fill(dealId);
+    }
+    await page.getByTestId('reply-studio-notes-input').fill('Day 17 integration test notes');
+    await page.getByRole('button', { name: 'Run Reply Studio' }).click();
+
+    await expect(page.getByTestId('reply-studio-draft-output-card')).toBeVisible();
+    const messageInput = page.getByTestId('reply-studio-message-input');
+    await expect(messageInput).toBeVisible();
+
+    const testSuffix = '\n\n[manual edit marker]';
+    await messageInput.fill(`${await messageInput.inputValue()}${testSuffix}`);
+    await page.getByTestId('reply-studio-regenerate-btn').click();
+
+    await expect(page.getByTestId('reply-studio-draft-output-card')).toBeVisible();
+    await expect(messageInput).not.toHaveValue(new RegExp('\\[manual edit marker\\]'));
+
+    await page.getByTestId('reply-studio-approve-send-btn').click();
+    await expect(page.getByTestId('reply-studio-send-status')).toContainText('Draft approved and sent');
+
+    const currentMessage = await messageInput.inputValue();
+    const directAuditResponse = await page.request.patch('/api/admin/ai-sales-agent/reply-studio', {
+      data: {
+        leadId,
+        subject: 'Audit probe',
+        message: currentMessage,
+        channel: 'email',
+      },
+    });
+    expect(directAuditResponse.ok()).toBeTruthy();
+    const directAuditPayload = (await directAuditResponse.json()) as { activityId?: string };
+    expect(!!directAuditPayload.activityId).toBeTruthy();
   });
 });
