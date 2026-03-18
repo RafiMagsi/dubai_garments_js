@@ -96,6 +96,7 @@ export type AgentFlowStage = {
   status: AgentFlowStageStatus;
   completed: boolean;
   evidence: string[];
+  blockerReason?: string | null;
 };
 
 export type AgentFlowResponse = {
@@ -106,5 +107,7 @@ export type AgentFlowResponse = {
   activeStageKey: AgentFlowStageKey;
   completionPercent: number;
   summary: string;
+  blockers: string[];
+  recommendedNextMove: string;
   requestId?: string | null;
 };

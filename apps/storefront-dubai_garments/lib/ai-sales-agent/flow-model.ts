@@ -23,6 +23,7 @@ export type AgentFlowStage = {
   status: AgentFlowStageStatus;
   completed: boolean;
   evidence: string[];
+  blockerReason?: string | null;
 };
 
 export type AgentFlowResult = {
@@ -32,6 +33,8 @@ export type AgentFlowResult = {
   activeStageKey: AgentFlowStageKey;
   completionPercent: number;
   summary: string;
+  blockers: string[];
+  recommendedNextMove: string;
 };
 
 type FlowRequestContext = {
@@ -70,7 +73,7 @@ const CANONICAL_STAGE_DEFS: Array<{
   {
     key: 'reply_prepared',
     label: 'Reply Prepared',
-    description: 'A draft reply or first response has been generated.',
+    description: 'Prepare a draft reply or first response for the lead.',
   },
   {
     key: 'human_review',
@@ -111,6 +114,53 @@ const CANONICAL_STAGE_DEFS: Array<{
 
 function hasActivity(activities: any[], activityType: string) {
   return activities.some((item) => item.activity_type === activityType);
+}
+
+function stageBlockingReason(
+  key: AgentFlowStageKey,
+  source: FlowSourceData
+): string | null {
+  const lead = source.lead;
+  const deal = source.deal;
+  const quote = source.quote;
+  const automationRuns = source.automationRuns;
+
+  switch (key) {
+    case 'ai_analysis': {
+      const failedLeadAiRun = automationRuns.find(
+        (run) =>
+          run?.workflow_name === 'lead_ai_processing' &&
+          ['failed', 'error', 'cancelled'].includes(String(run?.status || '').toLowerCase()) &&
+          (run?.trigger_entity_id === lead?.id || !run?.trigger_entity_id)
+      );
+      if (!lead?.ai_processed_at && failedLeadAiRun) {
+        return 'Latest lead AI processing run failed/cancelled.';
+      }
+      return null;
+    }
+
+    case 'followup_automation': {
+      const failedFollowupRun = automationRuns.find(
+        (run) =>
+          ['failed', 'error', 'cancelled'].includes(String(run?.status || '').toLowerCase()) &&
+          (run?.trigger_entity_id === lead?.id || run?.trigger_entity_id === deal?.id)
+      );
+      if (failedFollowupRun) {
+        return 'Automation execution has failed for this opportunity.';
+      }
+      return null;
+    }
+
+    case 'quote_sent': {
+      if (quote?.status && ['cancelled', 'rejected', 'expired'].includes(String(quote.status).toLowerCase())) {
+        return `Quote is ${String(quote.status).toLowerCase()}.`;
+      }
+      return null;
+    }
+
+    default:
+      return null;
+  }
 }
 
 function stageCompleted(
@@ -250,6 +300,7 @@ function stageCompleted(
 function buildStages(source: FlowSourceData): AgentFlowStage[] {
   const preliminary = CANONICAL_STAGE_DEFS.map((stageDef, index) => {
     const result = stageCompleted(stageDef.key, source);
+    const blockerReason = stageBlockingReason(stageDef.key, source);
 
     return {
       key: stageDef.key,
@@ -258,24 +309,102 @@ function buildStages(source: FlowSourceData): AgentFlowStage[] {
       description: stageDef.description,
       status: 'pending' as AgentFlowStageStatus,
       completed: result.completed,
-      evidence: result.evidence,
+      evidence: blockerReason ? [blockerReason, ...result.evidence] : result.evidence,
+      blockerReason,
     };
   });
 
-  const firstPendingIndex = preliminary.findIndex((stage) => !stage.completed);
+  const firstActionableIndex = preliminary.findIndex(
+    (stage) => !stage.completed && !stage.blockerReason
+  );
 
   return preliminary.map((stage, index) => {
     if (stage.completed) {
       return { ...stage, status: 'completed' };
     }
 
-    if (firstPendingIndex === index) {
+    if (stage.blockerReason) {
+      return { ...stage, status: 'blocked' };
+    }
+
+    if (firstActionableIndex === index) {
       return { ...stage, status: 'active' };
     }
 
     return { ...stage, status: 'pending' };
   });
 }
+
+function deriveBlockers(stages: AgentFlowStage[]): string[] {
+  const blockers: string[] = [];
+
+  const activeStage = stages.find((stage) => stage.status === 'active');
+  const blockedStages = stages.filter((stage) => stage.status === 'blocked');
+
+  if (blockedStages.length > 0) {
+    blockedStages.forEach((stage) => {
+      if (stage.evidence.length > 0) {
+        blockers.push(`${stage.label}: ${stage.evidence[0]}`);
+      } else {
+        blockers.push(`${stage.label}: blocked without explicit evidence.`);
+      }
+    });
+  }
+
+  if (activeStage && activeStage.evidence.length === 0) {
+    blockers.push(`${activeStage.label}: missing evidence to move forward.`);
+  }
+
+  if (!stages.find((stage) => stage.key === 'ai_analysis')?.completed) {
+    blockers.push('AI Analysis: lead has not been analyzed yet.');
+  }
+
+  if (!stages.find((stage) => stage.key === 'reply_prepared')?.completed) {
+    blockers.push('Reply Prepared: no reply draft or email activity detected.');
+  }
+
+  if (!stages.find((stage) => stage.key === 'quote_sent')?.completed) {
+    blockers.push('Quote Sent: no sent quote evidence found yet.');
+  }
+
+  return Array.from(new Set(blockers)).slice(0, 5);
+}
+
+function deriveRecommendedNextMove(stages: AgentFlowStage[]): string {
+  const activeStage = stages.find((stage) => stage.status === 'active');
+
+  if (!activeStage) {
+    return 'Review the opportunity data and re-run the flow analysis.';
+  }
+
+  switch (activeStage.key) {
+    case 'lead_received':
+      return 'Review the lead and start AI analysis / triage.';
+    case 'ai_analysis':
+      return 'Run lead triage so the system can generate intelligence and scoring.';
+    case 'qualification':
+      return 'Qualify the lead and confirm commercial readiness.';
+    case 'reply_prepared':
+      return 'Generate or send the first reply from the intelligence workflow.';
+    case 'human_review':
+      return 'Have a sales operator review the lead and confirm next action.';
+    case 'quote_preparation':
+      return 'Prepare a deal or quote based on the current lead requirements.';
+    case 'quote_sent':
+      return 'Send the quote and record the commercial handoff.';
+    case 'followup_automation':
+      return 'Schedule or verify follow-up automation for the opportunity.';
+    case 'negotiation':
+      return 'Advance negotiation with pricing, scope, or timing clarification.';
+    case 'decision':
+      return 'Record the final outcome as won or lost.';
+    case 'post_outcome_intelligence':
+      return 'Capture post-outcome reasoning and lessons for future AI guidance.';
+    default:
+      return 'Review the active stage and move the lead forward manually.';
+  }
+}
+
 
 function summarizeFlow(stages: AgentFlowStage[]) {
   const completedCount = stages.filter((stage) => stage.completed).length;
@@ -366,12 +495,17 @@ export async function resolveAgentFlow(input: {
     (stages.filter((stage) => stage.completed).length / stages.length) * 100
   );
 
-  return {
-    leadId: lead?.id ?? null,
-    dealId: deal?.id ?? null,
-    stages,
-    activeStageKey: activeStage.key,
-    completionPercent,
-    summary: summarizeFlow(stages),
-  };
+    const blockers = deriveBlockers(stages);
+    const recommendedNextMove = deriveRecommendedNextMove(stages);
+
+    return {
+        leadId: lead?.id ?? null,
+        dealId: deal?.id ?? null,
+        stages,
+        activeStageKey: activeStage.key,
+        completionPercent,
+        summary: summarizeFlow(stages),
+        blockers,
+        recommendedNextMove,
+    };
 }
