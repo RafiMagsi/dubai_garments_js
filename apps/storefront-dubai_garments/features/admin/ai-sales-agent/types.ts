@@ -72,3 +72,39 @@ export type LeadTriageEnvelope = {
 };
 
 export type AiSalesAgentEnvelope = CopilotEnvelope | LeadTriageEnvelope;
+
+export type AgentFlowStageKey =
+  | 'lead_received'
+  | 'ai_analysis'
+  | 'qualification'
+  | 'reply_prepared'
+  | 'human_review'
+  | 'quote_preparation'
+  | 'quote_sent'
+  | 'followup_automation'
+  | 'negotiation'
+  | 'decision'
+  | 'post_outcome_intelligence';
+
+export type AgentFlowStageStatus = 'completed' | 'active' | 'pending' | 'blocked';
+
+export type AgentFlowStage = {
+  key: AgentFlowStageKey;
+  order: number;
+  label: string;
+  description: string;
+  status: AgentFlowStageStatus;
+  completed: boolean;
+  evidence: string[];
+};
+
+export type AgentFlowResponse = {
+  ok: true;
+  leadId?: string | null;
+  dealId?: string | null;
+  stages: AgentFlowStage[];
+  activeStageKey: AgentFlowStageKey;
+  completionPercent: number;
+  summary: string;
+  requestId?: string | null;
+};

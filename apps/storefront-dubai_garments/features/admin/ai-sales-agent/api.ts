@@ -133,3 +133,20 @@ export async function writeLeadIntelligenceAudit(input: {
 
   return json;
 }
+
+export async function getAgentFlow(input: { leadId?: string; dealId?: string }) {
+  const response = await fetch('/api/admin/ai-sales-agent/flow', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load agent flow.');
+  }
+
+  return json;
+}

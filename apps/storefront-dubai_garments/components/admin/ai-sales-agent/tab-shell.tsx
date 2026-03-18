@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
 import LeadIntelligenceCards from './lead-intelligence-cards';
 import { useLeadById } from '@/features/admin/leads';
+import AgentFlowView from '@/components/admin/ai-sales-agent/agent-flow-view';
 
 type AgentTabKey =
   | 'lead-intelligence'
@@ -114,7 +115,7 @@ const tabs: AgentTab[] = [
   },
 ];
 
-const flowSteps = ['Lead Intake', 'AI Analysis', 'Reply Draft', 'Deal Guidance', 'Quote Assist', 'Close Loop'];
+// const flowSteps = ['Lead Intake', 'AI Analysis', 'Reply Draft', 'Deal Guidance', 'Quote Assist', 'Close Loop'];
 
 export default function AiSalesAgentTabShell() {
   const [activeTab, setActiveTab] = useState<AgentTabKey>('lead-intelligence');
@@ -142,7 +143,10 @@ export default function AiSalesAgentTabShell() {
                 key={tab.key}
                 size="sm"
                 variant={isActive ? 'primary' : 'secondary'}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setExpanded(true);
+                }}
                 className="ais-tab-btn"
                 style={{ animationDelay: `${60 + index * 35}ms`, ...(isActive ? { boxShadow: '0 8px 16px rgba(37,99,235,0.16)' } : undefined) }}
               >
@@ -198,80 +202,22 @@ export default function AiSalesAgentTabShell() {
 
             {expanded ? (
               <>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                    gap: 8,
-                  }}
-                >
-                  {flowSteps.map((step, index) => {
-                    const active = index <= (tabs.findIndex((t) => t.key === activeTab) % flowSteps.length);
-                    return (
-                <div
-                  className="ais-flow-step"
-                  key={step}
-                  style={{
-                    border: `1px solid ${active ? 'rgba(59,130,246,0.30)' : 'var(--color-border)'}`,
-                    background: active ? 'rgba(59,130,246,0.08)' : '#fff',
-                    borderRadius: 10,
-                    padding: '10px 12px',
-                    animationDelay: `${80 + index * 35}ms`,
-                  }}
-                >
-                        <p
-                          style={{
-                            margin: 0,
-                            fontSize: 11,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            color: '#64748b',
-                            fontWeight: 700,
-                          }}
-                        >
-                          Step {index + 1}
-                        </p>
-                        <p style={{ margin: '4px 0 0', fontSize: 12, fontWeight: 600, color: '#1e293b' }}>{step}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
-                    gap: 8,
-                  }}
-                >
-                  {currentTab.features.map((feature, index) => (
-                    <div
-                      className="ais-feature-card"
-                      key={feature}
-                      style={{
-                        border: '1px solid var(--color-border)',
-                        borderRadius: 10,
-                        background: '#fff',
-                        padding: '10px 12px',
-                        animationDelay: `${120 + index * 45}ms`,
-                      }}
-                    >
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 999,
-                            background: '#3b82f6',
-                            display: 'inline-block',
-                            flexShrink: 0,
-                          }}
-                        />
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#1e293b' }}>{feature}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                {currentTab.key === 'agent-flow' ? (
+                  <div className="dg-mt-4">
+                    <AgentFlowView showHeader={false} />
+                  </div>
+                ) : (
+                  <div className="dg-mt-4 dg-grid dg-grid-cols-3 dg-gap-4">
+                    {currentTab.features.map((feature, index) => (
+                      <Card key={`${currentTab.key}-feature-${index}`} className="ais-feature-card">
+                        <CardTitle>{feature}</CardTitle>
+                        <CardText>
+                          Operational capability for {currentTab.label.toLowerCase()}.
+                        </CardText>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </>
             ) : null}
           </div>
