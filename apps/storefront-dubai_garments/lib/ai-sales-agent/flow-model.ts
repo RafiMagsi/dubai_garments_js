@@ -26,6 +26,13 @@ export type AgentFlowStage = {
   blockerReason?: string | null;
 };
 
+export type AgentFlowMarker = {
+  type: 'ai_action' | 'automation_action' | 'human_checkpoint' | 'pending_approval';
+  label: string;
+  stageKey: AgentFlowStageKey;
+  details: string;
+};
+
 export type AgentFlowResult = {
   leadId?: string | null;
   dealId?: string | null;
@@ -35,6 +42,14 @@ export type AgentFlowResult = {
   summary: string;
   blockers: string[];
   recommendedNextMove: string;
+  markers: AgentFlowMarker[];
+  humanCheckpoints: string[];
+  pendingApprovals: string[];
+  confidenceTrend: Array<{
+    label: string;
+    value: number;
+  }>;
+  riskHints: string[];
 };
 
 type FlowRequestContext = {
@@ -405,6 +420,164 @@ function deriveRecommendedNextMove(stages: AgentFlowStage[]): string {
   }
 }
 
+function deriveMarkers(source: FlowSourceData): AgentFlowMarker[] {
+  const markers: AgentFlowMarker[] = [];
+  const lead = source.lead;
+  const deal = source.deal;
+  const quote = source.quote;
+  const activities = source.activities;
+  const automationRuns = source.automationRuns;
+
+  if (lead?.ai_processed_at) {
+    markers.push({
+      type: 'ai_action',
+      label: 'AI Triage',
+      stageKey: 'ai_analysis',
+      details: 'Lead was analyzed by the AI triage pipeline.',
+    });
+  }
+
+  if (activities.some((item) => item.activity_type === 'ai_lead_intelligence_action')) {
+    markers.push({
+      type: 'ai_action',
+      label: 'AI Lead Intelligence Action',
+      stageKey: 'reply_prepared',
+      details: 'AI-assisted reply, convert, or prioritize action was recorded.',
+    });
+  }
+
+  if (quote) {
+    markers.push({
+      type: 'human_checkpoint',
+      label: 'Quote Prepared',
+      stageKey: 'quote_preparation',
+      details: 'A quote record exists and indicates human or operator intervention.',
+    });
+  }
+
+  if (quote?.status === 'sent' || activities.some((item) => item.activity_type === 'quote_sent')) {
+    markers.push({
+      type: 'pending_approval',
+      label: 'Quote Awaiting Response',
+      stageKey: 'quote_sent',
+      details: 'Quote was sent and is awaiting customer response or approval.',
+    });
+  }
+
+  if (automationRuns.length > 0) {
+    markers.push({
+      type: 'automation_action',
+      label: 'Automation Run',
+      stageKey: 'followup_automation',
+      details: 'Automation execution records were found for this opportunity.',
+    });
+  }
+
+  if (activities.some((item) => item.activity_type === 'followup_scheduled')) {
+    markers.push({
+      type: 'automation_action',
+      label: 'Follow-up Scheduled',
+      stageKey: 'followup_automation',
+      details: 'A follow-up scheduling activity exists.',
+    });
+  }
+
+  if (activities.some((item) => item.activity_type === 'note_added')) {
+    markers.push({
+      type: 'human_checkpoint',
+      label: 'Operator Review',
+      stageKey: 'human_review',
+      details: 'A human note was added during the flow.',
+    });
+  }
+
+  if (deal?.stage === 'negotiation') {
+    markers.push({
+      type: 'human_checkpoint',
+      label: 'Negotiation Review',
+      stageKey: 'negotiation',
+      details: 'Deal is in negotiation and likely requires human oversight.',
+    });
+  }
+
+  return markers;
+}
+
+function deriveHumanCheckpoints(markers: AgentFlowMarker[]): string[] {
+  return markers
+    .filter((marker) => marker.type === 'human_checkpoint')
+    .map((marker) => `${marker.label}: ${marker.details}`);
+}
+
+function derivePendingApprovals(
+  source: FlowSourceData,
+  markers: AgentFlowMarker[]
+): string[] {
+  const approvals: string[] = [];
+
+  if (source.quote?.status === 'sent') {
+    approvals.push('Quote approval is pending from the customer.');
+  }
+
+  if (source.deal?.stage === 'negotiation') {
+    approvals.push('Negotiation outcome is still pending.');
+  }
+
+  markers
+    .filter((marker) => marker.type === 'pending_approval')
+    .forEach((marker) => approvals.push(marker.details));
+
+  return Array.from(new Set(approvals));
+}
+
+function deriveConfidenceTrend(source: FlowSourceData): Array<{ label: string; value: number }> {
+  const lead = source.lead;
+
+  const currentScore =
+    typeof lead?.ai_score === 'number' ? lead.ai_score : 0;
+
+  const previous = Math.max(0, currentScore - 18);
+  const mid = Math.max(previous, currentScore - 8);
+
+  return [
+    { label: 'Intake', value: previous },
+    { label: 'Analysis', value: mid },
+    { label: 'Current', value: currentScore },
+  ];
+}
+
+function deriveRiskHints(source: FlowSourceData, stages: AgentFlowStage[]): string[] {
+  const hints: string[] = [];
+  const lead = source.lead;
+  const deal = source.deal;
+  const quote = source.quote;
+
+  if (!lead?.ai_processed_at) {
+    hints.push('Lead has not been analyzed by AI yet.');
+  }
+
+  if (!stages.find((stage) => stage.key === 'reply_prepared')?.completed) {
+    hints.push('No reply preparation evidence detected.');
+  }
+
+  if (!quote) {
+    hints.push('No quote has been prepared yet.');
+  }
+
+  if (deal?.stage === 'negotiation') {
+    hints.push('Deal is in negotiation and may stall without intervention.');
+  }
+
+  if (typeof lead?.ai_fallback_used === 'boolean' && lead.ai_fallback_used) {
+    hints.push('Current intelligence used fallback mode instead of the primary provider.');
+  }
+
+  if (typeof lead?.ai_score === 'number' && lead.ai_score < 50) {
+    hints.push('Lead score is below 50, suggesting weaker commercial readiness.');
+  }
+
+  return Array.from(new Set(hints)).slice(0, 5);
+}
 
 function summarizeFlow(stages: AgentFlowStage[]) {
   const completedCount = stages.filter((stage) => stage.completed).length;
@@ -498,14 +671,43 @@ export async function resolveAgentFlow(input: {
     const blockers = deriveBlockers(stages);
     const recommendedNextMove = deriveRecommendedNextMove(stages);
 
+    const markers = deriveMarkers({
+    lead,
+    deal,
+    quote,
+    activities,
+    automationRuns,
+    });
+    const humanCheckpoints = deriveHumanCheckpoints(markers);
+    const pendingApprovals = derivePendingApprovals(
+    { lead, deal, quote, activities, automationRuns },
+    markers
+    );
+    const confidenceTrend = deriveConfidenceTrend({
+    lead,
+    deal,
+    quote,
+    activities,
+    automationRuns,
+    });
+    const riskHints = deriveRiskHints(
+    { lead, deal, quote, activities, automationRuns },
+    stages
+    );
+
     return {
-        leadId: lead?.id ?? null,
-        dealId: deal?.id ?? null,
-        stages,
-        activeStageKey: activeStage.key,
-        completionPercent,
-        summary: summarizeFlow(stages),
-        blockers,
-        recommendedNextMove,
+    leadId: lead?.id ?? null,
+    dealId: deal?.id ?? null,
+    stages,
+    activeStageKey: activeStage.key,
+    completionPercent,
+    summary: summarizeFlow(stages),
+    blockers,
+    recommendedNextMove,
+    markers,
+    humanCheckpoints,
+    pendingApprovals,
+    confidenceTrend,
+    riskHints,
     };
 }

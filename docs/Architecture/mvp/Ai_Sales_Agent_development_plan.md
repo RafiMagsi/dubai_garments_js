@@ -115,7 +115,7 @@ Primary outcomes:
 2. Show completed, active, pending, blocked states.
 3. Add blockers and recommended next move panel.
 
-### Day 13
+### Day 13 - done
 1. Add AI action markers and automation action markers in flow.
 2. Add human intervention checkpoints and pending approvals.
 3. Show confidence trend and risk hints in flow sidebar.

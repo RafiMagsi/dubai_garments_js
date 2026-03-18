@@ -99,6 +99,13 @@ export type AgentFlowStage = {
   blockerReason?: string | null;
 };
 
+export type AgentFlowMarker = {
+  type: 'ai_action' | 'automation_action' | 'human_checkpoint' | 'pending_approval';
+  label: string;
+  stageKey: AgentFlowStageKey;
+  details: string;
+};
+
 export type AgentFlowResponse = {
   ok: true;
   leadId?: string | null;
@@ -109,5 +116,13 @@ export type AgentFlowResponse = {
   summary: string;
   blockers: string[];
   recommendedNextMove: string;
+  markers: AgentFlowMarker[];
+  humanCheckpoints: string[];
+  pendingApprovals: string[];
+  confidenceTrend: Array<{
+    label: string;
+    value: number;
+  }>;
+  riskHints: string[];
   requestId?: string | null;
 };

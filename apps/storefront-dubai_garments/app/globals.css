@@ -4291,6 +4291,222 @@ html[data-dg-theme='twenty'] {
     align-items: start;
   }
 
+  .dg-admin-main .aflow-signals-card,
+  .aflow-signals-card {
+    border: 1px solid #dbe3f3;
+    border-color: color-mix(in srgb, var(--color-border) 86%, var(--color-brand-100));
+    background: #f8fbff;
+    background: color-mix(in srgb, var(--dg-card-bg) 94%, var(--color-surface-soft));
+  }
+
+  .dg-admin-main .aflow-signals-head,
+  .aflow-signals-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .dg-admin-main .aflow-signals-grid,
+  .aflow-signals-grid {
+    margin-top: 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .dg-admin-main .aflow-signals-panel,
+  .aflow-signals-panel {
+    border: 1px solid #dde5f0;
+    border-color: color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 0.62rem;
+    padding: 0.5rem 0.56rem;
+    background: #fff;
+    min-width: 0;
+  }
+
+  .aflow-signals-panel.is-markers {
+    background: color-mix(in srgb, var(--color-brand-50) 40%, #fff);
+  }
+
+  .aflow-signals-panel.is-human {
+    background: color-mix(in srgb, #eff6ff 58%, #fff);
+  }
+
+  .aflow-signals-panel.is-confidence {
+    background: color-mix(in srgb, #f8fafc 78%, #fff);
+  }
+
+  .aflow-signals-panel.is-risk {
+    background: color-mix(in srgb, #fef2f2 65%, #fff);
+  }
+
+  .aflow-signals-list {
+    margin: 0.28rem 0 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .dg-admin-main .aflow-signal-item,
+  .aflow-signal-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.44rem;
+    align-items: start;
+    border: 1px solid #e2e8f0;
+    border-color: color-mix(in srgb, var(--color-border) 92%, white);
+    border-radius: 0.5rem;
+    padding: 0.42rem;
+    background: #fdfefe;
+    background: color-mix(in srgb, #fff 92%, var(--color-brand-50));
+    min-width: 0;
+  }
+
+  .aflow-signal-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-size: 0.63rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 0.1rem 0.38rem;
+    line-height: 1.2;
+    border: 1px solid transparent;
+  }
+
+  .aflow-signal-tag.is-ai {
+    color: #4338ca;
+    background: #ede9fe;
+    border-color: #c4b5fd;
+  }
+
+  .aflow-signal-tag.is-auto {
+    color: #0f766e;
+    background: #ccfbf1;
+    border-color: #99f6e4;
+  }
+
+  .aflow-signal-tag.is-human {
+    color: #1d4ed8;
+    background: #dbeafe;
+    border-color: #bfdbfe;
+  }
+
+  .aflow-signal-tag.is-approval {
+    color: #9a3412;
+    background: #ffedd5;
+    border-color: #fed7aa;
+  }
+
+  .aflow-signal-tag.is-neutral {
+    color: #334155;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+
+  .aflow-signal-copy {
+    min-width: 0;
+  }
+
+  .aflow-signal-title {
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.3;
+    font-weight: 670;
+    color: #0f172a;
+  }
+
+  .aflow-signal-text {
+    margin: 0.15rem 0 0 0;
+    font-size: 0.72rem;
+    color: #334155;
+    line-height: 1.35;
+  }
+
+  .aflow-signal-meta {
+    margin: 0.14rem 0 0 0;
+    font-size: 0.67rem;
+    color: #64748b;
+  }
+
+  .aflow-mini-stack {
+    margin-top: 0.28rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .aflow-mini-card {
+    border: 1px solid color-mix(in srgb, var(--color-border) 92%, white);
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.45rem;
+    background: #fff;
+  }
+
+  .aflow-mini-title {
+    margin: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #475569;
+    font-weight: 700;
+  }
+
+  .aflow-mini-list {
+    margin: 0.28rem 0 0 0;
+    padding-left: 1rem;
+    display: grid;
+    gap: 0.2rem;
+    font-size: 0.72rem;
+    color: #334155;
+    line-height: 1.35;
+  }
+
+  .aflow-mini-list.is-risk {
+    color: #9f1239;
+  }
+
+  .aflow-confidence-list {
+    margin-top: 0.28rem;
+    display: grid;
+    gap: 0.34rem;
+  }
+
+  .aflow-confidence-row {
+    border: 1px solid color-mix(in srgb, var(--color-border) 92%, white);
+    border-radius: 0.48rem;
+    padding: 0.38rem 0.44rem;
+    background: #fff;
+  }
+
+  .aflow-confidence-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.36rem;
+    margin-bottom: 0.22rem;
+    font-size: 0.69rem;
+    color: #475569;
+    font-weight: 600;
+  }
+
+  .aflow-confidence-track {
+    height: 0.34rem;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .aflow-confidence-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #60a5fa, #6366f1);
+  }
+
   .aflow-decision-title {
     margin: 0;
     font-size: 1.05rem;
@@ -4732,6 +4948,10 @@ html[data-dg-theme='twenty'] {
     }
 
     .aflow-summary-top {
+      grid-template-columns: 1fr;
+    }
+
+    .aflow-signals-grid {
       grid-template-columns: 1fr;
     }
 

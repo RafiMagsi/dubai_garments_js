@@ -71,6 +71,21 @@ function normalizeEvidence(
   return [];
 }
 
+function markerTypeMeta(type: AgentFlowResponse['markers'][number]['type']) {
+  switch (type) {
+    case 'ai_action':
+      return { label: 'AI', cls: 'is-ai' };
+    case 'automation_action':
+      return { label: 'Auto', cls: 'is-auto' };
+    case 'human_checkpoint':
+      return { label: 'Human', cls: 'is-human' };
+    case 'pending_approval':
+      return { label: 'Approval', cls: 'is-approval' };
+    default:
+      return { label: 'Signal', cls: 'is-neutral' };
+  }
+}
+
 export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps) {
   const [leadId, setLeadId] = useState('');
   const [dealId, setDealId] = useState('');
@@ -371,6 +386,101 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
                   {nextMoveStatus ? <p className="aflow-next-move-status">{nextMoveStatus}</p> : null}
                   {nextMoveError ? <p className="aflow-next-move-error">{nextMoveError}</p> : null}
                 </div>
+              </section>
+            </div>
+          </Card>
+
+          <Card className="aflow-signals-card">
+            <div className="aflow-signals-head">
+              <div>
+                <CardTitle>Flow Signals Sidebar</CardTitle>
+                <CardText>Compact AI + automation + human oversight signals.</CardText>
+              </div>
+              <span className="dg-ai-badge dg-ai-badge-slate">{flow.markers.length} signals</span>
+            </div>
+
+            <div className="aflow-signals-grid">
+              <section className="aflow-signals-panel is-markers">
+                <p className="aflow-kicker">Action Markers</p>
+                {flow.markers.length > 0 ? (
+                  <ul className="aflow-signals-list">
+                    {flow.markers.map((marker, index) => {
+                      const meta = markerTypeMeta(marker.type);
+                      return (
+                        <li className="aflow-signal-item" key={`marker-${index}`}>
+                          <span className={`aflow-signal-tag ${meta.cls}`}>{meta.label}</span>
+                          <div className="aflow-signal-copy">
+                            <p className="aflow-signal-title">{marker.label}</p>
+                            <p className="aflow-signal-text">{marker.details}</p>
+                            <p className="aflow-signal-meta">Stage: {toTitle(marker.stageKey)}</p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="aflow-empty">No flow markers detected.</p>
+                )}
+              </section>
+
+              <section className="aflow-signals-panel is-human">
+                <p className="aflow-kicker">Human + Approvals</p>
+                <div className="aflow-mini-stack">
+                  <div className="aflow-mini-card">
+                    <p className="aflow-mini-title">Human Checkpoints</p>
+                    {flow.humanCheckpoints.length > 0 ? (
+                      <ul className="aflow-mini-list">
+                        {flow.humanCheckpoints.map((item, index) => (
+                          <li key={`checkpoint-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="aflow-empty">No human checkpoints detected yet.</p>
+                    )}
+                  </div>
+                  <div className="aflow-mini-card">
+                    <p className="aflow-mini-title">Pending Approvals</p>
+                    {flow.pendingApprovals.length > 0 ? (
+                      <ul className="aflow-mini-list">
+                        {flow.pendingApprovals.map((item, index) => (
+                          <li key={`approval-${index}`}>{item}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="aflow-empty">No pending approvals detected.</p>
+                    )}
+                  </div>
+                </div>
+              </section>
+
+              <section className="aflow-signals-panel is-confidence">
+                <p className="aflow-kicker">Confidence Trend</p>
+                <div className="aflow-confidence-list">
+                  {flow.confidenceTrend.map((point, index) => (
+                    <div className="aflow-confidence-row" key={`confidence-${index}`}>
+                      <div className="aflow-confidence-top">
+                        <span>{point.label}</span>
+                        <span>{point.value}%</span>
+                      </div>
+                      <div className="aflow-confidence-track">
+                        <div className="aflow-confidence-fill" style={{ width: `${point.value}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="aflow-signals-panel is-risk">
+                <p className="aflow-kicker">Risk Hints</p>
+                {flow.riskHints.length > 0 ? (
+                  <ul className="aflow-mini-list is-risk">
+                    {flow.riskHints.map((hint, index) => (
+                      <li key={`risk-${index}`}>{hint}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="aflow-empty">No major risk hints detected.</p>
+                )}
               </section>
             </div>
           </Card>
