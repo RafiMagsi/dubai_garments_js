@@ -850,6 +850,26 @@
         padding: 0.95rem;
     }
 
+    .dg-lead-detail-page .dg-lead-detail-sections {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .dg-lead-detail-page .dg-lead-detail-section-head {
+        margin-top: 0.25rem;
+        margin-bottom: 0.9rem;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .dg-lead-detail-page .dg-lead-detail-section-head .dg-eyebrow {
+        margin: 0;
+    }
+
+    .dg-lead-detail-page .dg-lead-detail-section-head .dg-muted-sm {
+        margin: 0;
+    }
+
     .dg-deal-detail-page .dg-two-col-grid > .dg-card,
     .dg-deal-detail-page .dg-side-stack > .dg-card,
     .dg-deal-detail-page .dg-card.dg-summary-card {

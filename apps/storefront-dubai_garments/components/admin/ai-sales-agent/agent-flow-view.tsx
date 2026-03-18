@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, CardText, CardTitle, TextField } from '@/components/ui';
 import { getAgentFlow } from '@/features/admin/ai-sales-agent/api';
 import {
@@ -13,6 +13,9 @@ import type { AgentFlowResponse } from '@/features/admin/ai-sales-agent/types';
 
 type AgentFlowViewProps = {
   showHeader?: boolean;
+  initialLeadId?: string;
+  initialDealId?: string;
+  compact?: boolean;
 };
 
 function toTitle(value: string) {
@@ -86,9 +89,14 @@ function markerTypeMeta(type: AgentFlowResponse['markers'][number]['type']) {
   }
 }
 
-export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps) {
-  const [leadId, setLeadId] = useState('');
-  const [dealId, setDealId] = useState('');
+export default function AgentFlowView({
+  showHeader = true,
+  initialLeadId = '',
+  initialDealId = '',
+  compact = false,
+}: AgentFlowViewProps) {
+  const [leadId, setLeadId] = useState(initialLeadId);
+  const [dealId, setDealId] = useState(initialDealId);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [flow, setFlow] = useState<AgentFlowResponse | null>(null);
@@ -117,6 +125,13 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if ((!initialLeadId && !initialDealId) || flow || loading) return;
+    void handleLoadFlow();
+    // intentionally keyed to initial ids only for first-load hydration
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialLeadId, initialDealId]);
 
   async function runStageAction(stageKey: AgentFlowResponse['activeStageKey']) {
     if (!flow) {
@@ -216,6 +231,39 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
     }
   }
 
+  function getStageDeepLink(stageKey: AgentFlowResponse['activeStageKey']) {
+    if (!flow?.leadId && !flow?.dealId && !flow?.quoteId) return null;
+
+    switch (stageKey) {
+      case 'lead_received':
+      case 'ai_analysis':
+      case 'qualification':
+      case 'reply_prepared':
+      case 'human_review':
+        return flow.leadId ? `/admin/leads/${flow.leadId}` : null;
+
+      case 'quote_preparation':
+      case 'quote_sent':
+        if (flow.quoteId) return `/admin/quotes/${flow.quoteId}`;
+        if (flow.dealId) return `/admin/deals/${flow.dealId}`;
+        return flow.leadId ? `/admin/leads/${flow.leadId}` : null;
+
+      case 'negotiation':
+      case 'decision':
+        if (flow.dealId) return `/admin/deals/${flow.dealId}`;
+        return flow.leadId ? `/admin/leads/${flow.leadId}` : null;
+
+      case 'followup_automation':
+        return '/admin/automations';
+
+      case 'post_outcome_intelligence':
+        return '/admin/activities';
+
+      default:
+        return flow.leadId ? `/admin/leads/${flow.leadId}` : null;
+    }
+  }
+
   const completedCount = flow?.stages.filter((stage) => stage.status === 'completed').length ?? 0;
   const activeStage = flow?.stages.find((stage) => stage.status === 'active') ?? null;
   const pendingCount = flow?.stages.filter((stage) => stage.status === 'pending').length ?? 0;
@@ -230,6 +278,7 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
 
   const completionPercent = flow?.completionPercent ?? 0;
   const activeStageEvidence = activeStage ? normalizeEvidence(activeStage.evidence, activeStage.label) : [];
+  const showPanelLoading = loading && !flow;
 
   return (
     <div className="aflow-stack">
@@ -283,6 +332,19 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
         <Card className="aflow-error-card">
           <CardTitle>Flow Error</CardTitle>
           <CardText>{error}</CardText>
+        </Card>
+      ) : null}
+
+      {showPanelLoading ? (
+        <Card className="aflow-shell aflow-shell-embedded">
+          <CardTitle>Loading Flow Panels</CardTitle>
+          <CardText>Resolving blockers, signals, stage map, and execution evidence...</CardText>
+          <div className="aflow-signals-grid">
+            <div className="aflow-signals-panel"><p className="aflow-empty">Loading decision panel...</p></div>
+            <div className="aflow-signals-panel"><p className="aflow-empty">Loading signals panel...</p></div>
+            <div className="aflow-signals-panel"><p className="aflow-empty">Loading stage matrix...</p></div>
+            <div className="aflow-signals-panel"><p className="aflow-empty">Loading execution evidence...</p></div>
+          </div>
         </Card>
       ) : null}
 
@@ -386,6 +448,17 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
                   {nextMoveStatus ? <p className="aflow-next-move-status">{nextMoveStatus}</p> : null}
                   {nextMoveError ? <p className="aflow-next-move-error">{nextMoveError}</p> : null}
                 </div>
+
+                {flow.activeStageKey && getStageDeepLink(flow.activeStageKey) ? (
+                    <div className="dg-mt-4">
+                        <a
+                        href={getStageDeepLink(flow.activeStageKey)!}
+                        className="ui-btn ui-btn-primary ui-btn-sm"
+                        >
+                        Open Next Action
+                        </a>
+                    </div>
+                ) : null}
               </section>
             </div>
           </Card>
@@ -455,19 +528,23 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
 
               <section className="aflow-signals-panel is-confidence">
                 <p className="aflow-kicker">Confidence Trend</p>
-                <div className="aflow-confidence-list">
-                  {flow.confidenceTrend.map((point, index) => (
-                    <div className="aflow-confidence-row" key={`confidence-${index}`}>
-                      <div className="aflow-confidence-top">
-                        <span>{point.label}</span>
-                        <span>{point.value}%</span>
+                {flow.confidenceTrend.length > 0 ? (
+                  <div className="aflow-confidence-list">
+                    {flow.confidenceTrend.map((point, index) => (
+                      <div className="aflow-confidence-row" key={`confidence-${index}`}>
+                        <div className="aflow-confidence-top">
+                          <span>{point.label}</span>
+                          <span>{point.value}%</span>
+                        </div>
+                        <div className="aflow-confidence-track">
+                          <div className="aflow-confidence-fill" style={{ width: `${point.value}%` }} />
+                        </div>
                       </div>
-                      <div className="aflow-confidence-track">
-                        <div className="aflow-confidence-fill" style={{ width: `${point.value}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="aflow-empty">No confidence trend points available.</p>
+                )}
               </section>
 
               <section className="aflow-signals-panel is-risk">
@@ -486,30 +563,45 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
           </Card>
 
           <Card className="aflow-track-card">
-            <div className="aflow-track aflow-track-matrix">
-              {flow.stages.map((stage) => (
-                <article key={stage.key} className={`aflow-stage is-${stage.status}`}>
-                  <div className="aflow-stage-top">
-                    <span className="aflow-stage-step">Step {stage.order}</span>
-                    <span className={`aflow-stage-status is-${stage.status}`}>{toTitle(stage.status)}</span>
-                  </div>
-                  <div className="aflow-stage-node">
-                    <span className={`aflow-stage-dot is-${stage.status}`} aria-hidden="true" />
-                    <p className="aflow-stage-key">{toTitle(stage.key)}</p>
-                  </div>
-                  <h4 className="aflow-stage-title">{stage.label}</h4>
-                  <p className="aflow-stage-text">{stage.description}</p>
-                  <div className="aflow-stage-meter">
-                    <span className={`aflow-stage-meter-fill is-${stage.status}`} style={{ width: `${stageMeterPercent(stage.status)}%` }} />
-                  </div>
-                  {stage.evidence[0] ? (
-                    <p className="aflow-stage-evidence">{stage.evidence[0]}</p>
-                  ) : (
-                    <p className="aflow-stage-evidence is-muted">Waiting for evidence</p>
-                  )}
-                </article>
-              ))}
-            </div>
+            {flow.stages.length > 0 ? (
+              <div className="aflow-track aflow-track-matrix">
+                {flow.stages.map((stage) => (
+                  <article key={stage.key} className={`aflow-stage is-${stage.status}`}>
+                    <div className="aflow-stage-top">
+                      <span className="aflow-stage-step">Step {stage.order}</span>
+                      <span className={`aflow-stage-status is-${stage.status}`}>{toTitle(stage.status)}</span>
+                    </div>
+                    <div className="aflow-stage-node">
+                      <span className={`aflow-stage-dot is-${stage.status}`} aria-hidden="true" />
+                      <p className="aflow-stage-key">{toTitle(stage.key)}</p>
+                    </div>
+                    <h4 className="aflow-stage-title">{stage.label}</h4>
+                    <p className="aflow-stage-text">{stage.description}</p>
+                    <div className="aflow-stage-meter">
+                      <span className={`aflow-stage-meter-fill is-${stage.status}`} style={{ width: `${stageMeterPercent(stage.status)}%` }} />
+                    </div>
+                    {stage.evidence[0] ? (
+                      <p className="aflow-stage-evidence">{stage.evidence[0]}</p>
+                    ) : (
+                      <p className="aflow-stage-evidence is-muted">Waiting for evidence</p>
+                    )}
+
+                    {getStageDeepLink(stage.key) ? (
+                      <div className="dg-mt-4">
+                          <a
+                          href={getStageDeepLink(stage.key)!}
+                          className="ui-btn ui-btn-secondary ui-btn-sm"
+                          >
+                          Open Related Action
+                          </a>
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="aflow-empty">No flow stages were returned for this query.</p>
+            )}
           </Card>
 
           {activeStage ? (
@@ -551,7 +643,12 @@ export default function AgentFlowView({ showHeader = true }: AgentFlowViewProps)
                 ))}
               </div>
             </Card>
-          ) : null}
+          ) : (
+            <Card className="aflow-active-card">
+              <p className="aflow-kicker">Execution Evidence</p>
+              <CardText>No active stage selected yet. Run flow query to inspect current execution evidence.</CardText>
+            </Card>
+          )}
         </>
       ) : null}
     </div>

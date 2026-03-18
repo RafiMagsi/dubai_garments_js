@@ -15,6 +15,7 @@ import {
   titleCase,
 } from '@/features/admin/shared/view-format';
 import LeadIntelligenceCards from '@/components/admin/ai-sales-agent/lead-intelligence-cards';
+import AgentFlowView from '@/components/admin/ai-sales-agent/agent-flow-view';
 
 const statusOptions: LeadStatus[] = ['new', 'qualified', 'quoted', 'won', 'lost'];
 
@@ -291,13 +292,8 @@ export default function AdminLeadDetailsPage() {
           </div>
         ) : null}
 
-        {lead ? (
-          <div className="dg-mb-6" data-testid="lead-detail-intelligence-section">
-            <LeadIntelligenceCards lead={lead} title="Lead Intelligence" />
-          </div>
-        ) : null}
-
         {lead && (
+          <div className="dg-lead-detail-sections">
           <div className="dg-record-detail-grid">
             <div className="dg-side-stack">
               <div className="dg-card">
@@ -533,6 +529,31 @@ export default function AdminLeadDetailsPage() {
                 </form>
               </div>
             </div>
+          </div>
+
+          <section data-testid="lead-detail-intelligence-section">
+            <div className="dg-lead-detail-section-head">
+              <p className="dg-eyebrow">AI Intelligence</p>
+              <p className="dg-muted-sm">
+                Persistent intelligence profile and recommendations for this lead.
+              </p>
+            </div>
+            <LeadIntelligenceCards lead={lead} title="Lead Intelligence" />
+          </section>
+
+          <section data-testid="lead-detail-agent-flow-section">
+            <div className="dg-lead-detail-section-head">
+              <p className="dg-eyebrow">Agent Flow</p>
+              <p className="dg-muted-sm">
+                End-to-end lead-to-close execution map with blockers, next moves, and evidence.
+              </p>
+            </div>
+            <AgentFlowView
+              showHeader={false}
+              initialLeadId={lead.id}
+              compact
+            />
+          </section>
           </div>
         )}
       </Panel>

@@ -120,7 +120,7 @@ Primary outcomes:
 2. Add human intervention checkpoints and pending approvals.
 3. Show confidence trend and risk hints in flow sidebar.
 
-### Day 14
+### Day 14 - done
 1. Embed Agent Flow in lead detail view.
 2. Add Agent Flow tab in AI Sales Agent page.
 3. Add deep links from flow steps to related detail actions.

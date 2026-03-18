@@ -36,6 +36,7 @@ export type AgentFlowMarker = {
 export type AgentFlowResult = {
   leadId?: string | null;
   dealId?: string | null;
+  quoteId?: string | null;
   stages: AgentFlowStage[];
   activeStageKey: AgentFlowStageKey;
   completionPercent: number;
@@ -451,7 +452,7 @@ function deriveMarkers(source: FlowSourceData): AgentFlowMarker[] {
       type: 'human_checkpoint',
       label: 'Quote Prepared',
       stageKey: 'quote_preparation',
-      details: 'A quote record exists and indicates human or operator intervention.',
+      details: 'A quote record exists and indicates human/operator intervention.',
     });
   }
 
@@ -532,10 +533,7 @@ function derivePendingApprovals(
 
 function deriveConfidenceTrend(source: FlowSourceData): Array<{ label: string; value: number }> {
   const lead = source.lead;
-
-  const currentScore =
-    typeof lead?.ai_score === 'number' ? lead.ai_score : 0;
-
+  const currentScore = typeof lead?.ai_score === 'number' ? lead.ai_score : 0;
   const previous = Math.max(0, currentScore - 18);
   const mid = Math.max(previous, currentScore - 8);
 
@@ -670,44 +668,44 @@ export async function resolveAgentFlow(input: {
 
     const blockers = deriveBlockers(stages);
     const recommendedNextMove = deriveRecommendedNextMove(stages);
-
-    const markers = deriveMarkers({
-    lead,
-    deal,
-    quote,
-    activities,
-    automationRuns,
+        const markers = deriveMarkers({
+        lead,
+        deal,
+        quote,
+        activities,
+        automationRuns,
     });
     const humanCheckpoints = deriveHumanCheckpoints(markers);
     const pendingApprovals = derivePendingApprovals(
-    { lead, deal, quote, activities, automationRuns },
-    markers
+        { lead, deal, quote, activities, automationRuns },
+        markers
     );
     const confidenceTrend = deriveConfidenceTrend({
-    lead,
-    deal,
-    quote,
-    activities,
-    automationRuns,
+        lead,
+        deal,
+        quote,
+        activities,
+        automationRuns,
     });
     const riskHints = deriveRiskHints(
-    { lead, deal, quote, activities, automationRuns },
-    stages
+        { lead, deal, quote, activities, automationRuns },
+        stages
     );
 
     return {
     leadId: lead?.id ?? null,
     dealId: deal?.id ?? null,
+    quoteId: quote?.id ?? null,
     stages,
-    activeStageKey: activeStage.key,
-    completionPercent,
-    summary: summarizeFlow(stages),
-    blockers,
-    recommendedNextMove,
-    markers,
-    humanCheckpoints,
-    pendingApprovals,
-    confidenceTrend,
-    riskHints,
+        activeStageKey: activeStage.key,
+        completionPercent,
+        summary: summarizeFlow(stages),
+        blockers,
+        recommendedNextMove,
+        markers,
+        humanCheckpoints,
+        pendingApprovals,
+        confidenceTrend,
+        riskHints,
     };
 }

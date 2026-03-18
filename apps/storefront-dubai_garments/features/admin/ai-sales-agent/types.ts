@@ -110,6 +110,7 @@ export type AgentFlowResponse = {
   ok: true;
   leadId?: string | null;
   dealId?: string | null;
+  quoteId?: string | null;
   stages: AgentFlowStage[];
   activeStageKey: AgentFlowStageKey;
   completionPercent: number;
