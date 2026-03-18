@@ -10,6 +10,7 @@ import type {
   QuoteRecommendationItem,
   QuoteCopilotUpsell,
 } from '@/features/admin/ai-sales-agent/types';
+import { AisBadge, AisTrustBadges } from './reusable';
 
 export default function QuoteCopilotPanel() {
   const [recommendation, setRecommendation] = useState<QuoteRecommendationEnvelope | null>(null);
@@ -156,26 +157,25 @@ export default function QuoteCopilotPanel() {
             <CardText>{copilotResponse.data.summary.summaryText}</CardText>
 
             <div className="qcop-badges">
-              <span className="dg-ai-badge dg-ai-badge-blue">
-                Latency: {copilotResponse.processingMs ?? 0}ms
-              </span>
-              <span className={`dg-ai-badge ${copilotResponse.fallbackUsed ? 'dg-ai-badge-amber' : 'dg-ai-badge-green'}`}>
-                {copilotResponse.fallbackUsed ? 'Fallback Active' : 'Primary Path'}
-              </span>
-              <span className="dg-ai-badge dg-ai-badge-slate">
-                Accepted: {copilotResponse.data.summary.acceptedCount}
-              </span>
+              <AisTrustBadges
+                processingMs={copilotResponse.processingMs}
+                fallbackUsed={copilotResponse.fallbackUsed}
+                provider={copilotResponse.provider}
+                source={copilotResponse.source}
+                className="qcop-badges"
+              />
+              <AisBadge tone="slate">Accepted: {copilotResponse.data.summary.acceptedCount}</AisBadge>
               {copilotResponse.data.summary.generationMode === 'lead_context_only' ? (
-                <span className="dg-ai-badge dg-ai-badge-amber">No Recommendation</span>
+                <AisBadge tone="amber">No Recommendation</AisBadge>
               ) : null}
-              <span className="dg-ai-badge dg-ai-badge-green">
+              <AisBadge tone="green">
                 Source: {copilotResponse.data.summary.generationMode === 'selected_recommendations'
                   ? 'Selected Recommendations'
                   : 'Lead/Deal Context'}
-              </span>
-              <span className={`dg-ai-badge ${copilotResponse.data.summary.canProceed ? 'dg-ai-badge-green' : 'dg-ai-badge-amber'}`}>
+              </AisBadge>
+              <AisBadge tone={copilotResponse.data.summary.canProceed ? 'green' : 'amber'}>
                 {copilotResponse.data.summary.canProceed ? 'Quote Ready' : 'Needs Review'}
-              </span>
+              </AisBadge>
             </div>
 
             {copilotResponse.data.summary.acceptedItems.length > 0 ? (
@@ -196,27 +196,27 @@ export default function QuoteCopilotPanel() {
             </CardText>
 
             <div className="qcop-badges">
-              <span className={`dg-ai-badge ${
+              <AisBadge tone={
                 copilotResponse.data.quoteIntelligence.marginSafety.status === 'safe'
-                  ? 'dg-ai-badge-green'
+                  ? 'green'
                   : copilotResponse.data.quoteIntelligence.marginSafety.status === 'watch'
-                  ? 'dg-ai-badge-amber'
-                  : 'dg-ai-badge-red'
-              }`}>
+                  ? 'amber'
+                  : 'red'
+              }>
                 Margin Safety: {copilotResponse.data.quoteIntelligence.marginSafety.status.toUpperCase()}
-              </span>
-              <span className="dg-ai-badge dg-ai-badge-slate">
+              </AisBadge>
+              <AisBadge tone="slate">
                 Est. Margin: {copilotResponse.data.quoteIntelligence.marginSafety.estimatedGrossMarginPct ?? 'n/a'}%
-              </span>
-              <span className="dg-ai-badge dg-ai-badge-slate">
+              </AisBadge>
+              <AisBadge tone="slate">
                 Max Safe Discount: {copilotResponse.data.quoteIntelligence.discountGuidance.maxSafeDiscountPct ?? 'n/a'}%
-              </span>
-              <span className="dg-ai-badge dg-ai-badge-slate">
+              </AisBadge>
+              <AisBadge tone="slate">
                 Suggested Discount: {copilotResponse.data.quoteIntelligence.discountGuidance.suggestedDiscountPct ?? 'n/a'}%
-              </span>
-              <span className="dg-ai-badge dg-ai-badge-slate">
+              </AisBadge>
+              <AisBadge tone="slate">
                 Est. Subtotal AED: {copilotResponse.data.quoteIntelligence.estimatedSubtotalAED ?? 'n/a'}
-              </span>
+              </AisBadge>
             </div>
 
             <div className="qcop-next-action">

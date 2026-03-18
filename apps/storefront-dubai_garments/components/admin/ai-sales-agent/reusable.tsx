@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Card, CardText, CardTitle } from '@/components/ui';
 
 export function AisSectionEyebrow({ children }: { children: string }) {
@@ -92,3 +93,46 @@ export function AisFieldLabel({ children, htmlFor }: FieldLabelProps) {
   );
 }
 
+type AisBadgeTone = 'blue' | 'green' | 'amber' | 'red' | 'violet' | 'slate';
+
+type AisBadgeProps = {
+  children: ReactNode;
+  tone?: AisBadgeTone;
+  className?: string;
+};
+
+export function AisBadge({ children, tone = 'slate', className }: AisBadgeProps) {
+  const toneClass = `dg-ai-badge-${tone}`;
+  return (
+    <span className={['dg-ai-badge', toneClass, className].filter(Boolean).join(' ')}>
+      {children}
+    </span>
+  );
+}
+
+type AisTrustBadgesProps = {
+  processingMs?: number;
+  fallbackUsed: boolean;
+  provider?: string | null;
+  source?: string | null;
+  className?: string;
+};
+
+export function AisTrustBadges({
+  processingMs,
+  fallbackUsed,
+  provider,
+  source,
+  className,
+}: AisTrustBadgesProps) {
+  return (
+    <div className={['ars-badges', className].filter(Boolean).join(' ')}>
+      <AisBadge tone="blue">Latency: {processingMs ?? 0}ms</AisBadge>
+      <AisBadge tone={fallbackUsed ? 'amber' : 'green'}>
+        {fallbackUsed ? 'Fallback Active' : 'Primary Path'}
+      </AisBadge>
+      {provider ? <AisBadge tone="slate">Provider: {provider}</AisBadge> : null}
+      {source ? <AisBadge tone="slate">Source: {source}</AisBadge> : null}
+    </div>
+  );
+}

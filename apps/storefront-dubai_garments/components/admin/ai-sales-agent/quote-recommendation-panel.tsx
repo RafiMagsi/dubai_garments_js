@@ -8,7 +8,7 @@ import type {
   QuoteRecommendationItem,
   QuoteRecommendationMissingField,
 } from '@/features/admin/ai-sales-agent/types';
-import { AisFieldLabel } from './reusable';
+import { AisBadge, AisFieldLabel, AisTrustBadges } from './reusable';
 
 type QuoteRecommendationPanelProps = {
   onRecommendationLoaded?: (payload: QuoteRecommendationEnvelope) => void;
@@ -131,18 +131,17 @@ export default function QuoteRecommendationPanel({
             <CardText>{response.data.summary}</CardText>
 
             <div className="qrec-badges">
-              <span className="dg-ai-badge dg-ai-badge-blue">Latency: {response.processingMs ?? 0}ms</span>
-              <span className={`dg-ai-badge ${response.fallbackUsed ? 'dg-ai-badge-amber' : 'dg-ai-badge-green'}`}>
-                {response.fallbackUsed ? 'Fallback Active' : 'Primary Path'}
-              </span>
-              <span className="dg-badge">Provider: {response.provider}</span>
-              <span className="dg-badge">
-                {response.fallbackUsed ? 'Fallback' : 'Primary'}
-              </span>
-              <span className="dg-badge">Confidence: {response.data.confidence}%</span>
-              <span className="dg-badge">
+              <AisTrustBadges
+                processingMs={response.processingMs}
+                fallbackUsed={response.fallbackUsed}
+                provider={response.provider}
+                source={response.source}
+                className="qrec-badges"
+              />
+              <AisBadge tone="blue">Confidence: {response.data.confidence}%</AisBadge>
+              <AisBadge tone={response.data.canCreateQuote ? 'green' : 'amber'}>
                 {response.data.canCreateQuote ? 'Quote Ready' : 'Missing Data'}
-              </span>
+              </AisBadge>
             </div>
           </Card>
 

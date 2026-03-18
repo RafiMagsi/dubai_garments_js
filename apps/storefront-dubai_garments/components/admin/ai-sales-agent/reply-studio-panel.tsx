@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button, Card, CardText, CardTitle, SelectField, TextField } from '@/components/ui';
 import { approveAndSendReplyStudio, runReplyStudio } from '@/features/admin/ai-sales-agent/api';
 import type { ReplyStudioEnvelope } from '@/features/admin/ai-sales-agent/types';
-import { AisFieldLabel } from './reusable';
+import { AisBadge, AisFieldLabel, AisTrustBadges } from './reusable';
 
 type ReplyStudioPanelProps = {
   showHeading?: boolean;
@@ -226,16 +226,14 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
 
       {response?.ok ? (
         <div className="ars-output-area">
-          <Card className="ars-card ars-output-card" data-testid="reply-studio-draft-output-card">
+            <Card className="ars-card ars-output-card" data-testid="reply-studio-draft-output-card">
             <CardTitle>Draft Output</CardTitle>
-            <div className="ars-badges">
-              <span className="dg-ai-badge dg-ai-badge-blue">Latency: {response.processingMs ?? 0}ms</span>
-              <span className={`dg-ai-badge ${response.fallbackUsed ? 'dg-ai-badge-amber' : 'dg-ai-badge-green'}`}>
-                {response.fallbackUsed ? 'Fallback Active' : 'Primary Path'}
-              </span>
-              <span className="dg-ai-badge dg-ai-badge-slate">Provider: {response.provider}</span>
-              <span className="dg-ai-badge dg-ai-badge-slate">Source: {response.source}</span>
-            </div>
+            <AisTrustBadges
+              processingMs={response.processingMs}
+              fallbackUsed={response.fallbackUsed}
+              provider={response.provider}
+              source={response.source}
+            />
 
             <div
             className="dg-mt-4 dg-rounded-xl dg-border dg-p-4"
@@ -305,9 +303,9 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
             </div>
 
             <div className="ars-badges">
-              <span className="dg-badge">Mode: {response.data.mode}</span>
-              <span className="dg-badge">Tone: {response.data.tone}</span>
-              <span className="dg-badge">Confidence: {response.data.confidence}%</span>
+              <AisBadge tone="slate">Mode: {response.data.mode}</AisBadge>
+              <AisBadge tone="slate">Tone: {response.data.tone}</AisBadge>
+              <AisBadge tone="blue">Confidence: {response.data.confidence}%</AisBadge>
             </div>
 
             <div className="ars-send-actions">
