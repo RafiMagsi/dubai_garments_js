@@ -281,7 +281,7 @@ export default function AgentFlowView({
   const showPanelLoading = loading && !flow;
 
   return (
-    <div className="aflow-stack">
+    <div className={`aflow-stack ${compact ? 'is-compact' : ''}`.trim()}>
       <Card className={`aflow-shell ${showHeader ? '' : 'aflow-shell-embedded'}`.trim()}>
         {showHeader ? (
           <>

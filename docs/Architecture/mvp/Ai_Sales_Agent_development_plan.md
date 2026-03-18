@@ -125,7 +125,7 @@ Primary outcomes:
 2. Add Agent Flow tab in AI Sales Agent page.
 3. Add deep links from flow steps to related detail actions.
 
-### Day 15
+### Day 15 - done
 1. Full UX polish for flow readability and compactness.
 2. Add empty/error/loading states for all flow sub-panels.
 3. Freeze Week 3 output.
@@ -222,6 +222,11 @@ Primary outcomes:
 5. Week 5: Pipeline insights + automation transparency + routing/SLA + templates.
 6. Week 6: Model settings + AI impact board + demo packaging + release hardening.
 
+## Freeze Status
+1. Week 1: Frozen - done (March 18, 2026).
+2. Week 2: Frozen - done (March 18, 2026).
+3. Week 3: Frozen - done (March 18, 2026).
+
 ## Definition of Done (Daily)
 1. Day-scope code merged.
 2. API/UI behavior manually validated.
@@ -238,3 +243,21 @@ Primary outcomes:
 7. Next-Best-Action dashboard and AI impact KPIs are visible and demoable.
 8. Smart routing/SLA and template automations are running with audit visibility.
 9. Demo walkthrough runs cleanly end-to-end in under 7 minutes.
+
+### Week 1 Freeze - done
+1. Sidebar route, tab shell, admin guards, and copilot query/execute contracts stabilized.
+2. Structured intent handling, fallback behavior, dry-run execution, and audit logging verified.
+3. Global copilot UI integrated with consistent loading/error/success states.
+4. Frozen on March 18, 2026.
+
+### Week 2 Freeze - done
+1. Lead triage orchestration with persisted outputs (summary, intent, urgency, complexity, quantity, confidence, score) stabilized.
+2. Intake-triggered + manual retrigger triage flows verified with fallback/failure logging.
+3. Lead Intelligence cards and explainability actions (draft, convert, prioritize) aligned across lead detail + AI Agent views.
+4. Frozen on March 18, 2026.
+
+### Week 3 Freeze - done
+1. Agent Flow readability and compactness finalized for lead detail + AI Sales Agent tab.
+2. Empty/error/loading states added across flow panels (decision, signals, stage matrix, execution evidence).
+3. Deep links from stage cards and next move panel mapped to related actions.
+4. Frozen on March 18, 2026.

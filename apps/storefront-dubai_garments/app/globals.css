@@ -4018,6 +4018,25 @@ html[data-dg-theme='twenty'] {
     gap: 1rem;
   }
 
+  .aflow-stack.is-compact {
+    gap: 0.75rem;
+  }
+
+  .aflow-stack.is-compact .aflow-shell,
+  .aflow-stack.is-compact .aflow-track-card,
+  .aflow-stack.is-compact .aflow-active-card,
+  .aflow-stack.is-compact .aflow-signals-card {
+    gap: 0.55rem;
+  }
+
+  .aflow-stack.is-compact .aflow-signals-grid {
+    gap: 0.45rem;
+  }
+
+  .aflow-stack.is-compact .aflow-stage {
+    min-height: 142px;
+  }
+
   .aflow-shell,
   .aflow-summary-card,
   .aflow-track-card,
