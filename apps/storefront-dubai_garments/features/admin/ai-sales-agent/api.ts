@@ -199,3 +199,25 @@ export async function approveAndSendReplyStudio(input: {
 
   return json;
 }
+
+export async function runQuoteRecommendation(input: {
+  leadId: string;
+  dealId?: string;
+  quoteId?: string;
+  dry_run?: boolean;
+}) {
+  const response = await fetch('/api/admin/ai-sales-agent/quote-recommendation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to run quote recommendation.');
+  }
+
+  return json;
+}

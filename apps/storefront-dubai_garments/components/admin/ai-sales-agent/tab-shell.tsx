@@ -12,6 +12,7 @@ import {
   AisKpiPill,
   AisSectionEyebrow,
 } from './reusable';
+import QuoteRecommendationPanel from '@/components/admin/ai-sales-agent/quote-recommendation-panel';
 
 type AgentTabKey =
   | 'lead-intelligence'
@@ -192,7 +193,11 @@ export default function AiSalesAgentTabShell() {
               <>
                 {currentTab.key === 'agent-flow' ? (
                   <div className="dg-mt-4">
-                    <AgentFlowView showHeader={false} />
+                    <AgentFlowView />
+                  </div>
+                ) : currentTab.key === 'quote-copilot' ? (
+                  <div className="dg-mt-4">
+                    <QuoteRecommendationPanel />
                   </div>
                 ) : currentTab.key === 'reply-studio' ? (
                   <div className="dg-mt-4">

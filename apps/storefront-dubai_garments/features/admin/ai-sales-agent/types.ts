@@ -172,3 +172,44 @@ export type ReplyStudioEnvelope = {
   data: ReplyStudioDraft;
   requestId?: string | null;
 };
+
+export type QuoteRecommendationRequest = {
+  leadId: string;
+  dealId?: string;
+  quoteId?: string;
+  dry_run?: boolean;
+};
+
+export type QuoteRecommendationItem = {
+  productId: string | null;
+  productName: string;
+  suggestedQuantity: number | null;
+  suggestedVariant: string | null;
+  rationale: string;
+};
+
+export type QuoteRecommendationMissingField = {
+  field: string;
+  reason: string;
+};
+
+export type QuoteRecommendationEnvelope = {
+  ok: true;
+  leadId: string;
+  dealId: string | null;
+  quoteId: string | null;
+  source: 'model' | 'fallback';
+  provider: string;
+  fallbackUsed: boolean;
+  failureReason: string | null;
+  dryRun: boolean;
+  data: {
+    summary: string;
+    recommendations: QuoteRecommendationItem[];
+    missingData: QuoteRecommendationMissingField[];
+    canCreateQuote: boolean;
+    suggestedNextAction: string;
+    confidence: number;
+  };
+  requestId?: string | null;
+};

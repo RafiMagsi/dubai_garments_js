@@ -141,7 +141,7 @@ Primary outcomes:
 2. Add "approve and send" flow with audit events.
 3. Add manual edit + regenerate controls.
 
-### Day 18
+### Day 18 - done
 1. Implement `AIA-010` quote recommendation endpoint.
 2. Build quote recommendation payload with product/quantity/variant suggestions.
 3. Add missing-data detection logic before quote creation.

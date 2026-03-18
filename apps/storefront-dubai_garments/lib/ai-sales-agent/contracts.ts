@@ -206,3 +206,50 @@ export type ReplyStudioTone = z.infer<typeof ReplyStudioToneSchema>;
 export type ReplyStudioRequest = z.infer<typeof ReplyStudioRequestSchema>;
 export type ReplyStudioDraft = z.infer<typeof ReplyStudioDraftSchema>;
 export type ReplyStudioResponse = z.infer<typeof ReplyStudioResponseSchema>;
+
+export const QuoteRecommendationRequestSchema = z.object({
+  leadId: z.string().uuid(),
+  dealId: z.string().uuid().optional(),
+  quoteId: z.string().uuid().optional(),
+  dry_run: z.boolean().optional().default(false),
+});
+
+export const QuoteRecommendationProductSchema = z.object({
+  productId: z.string().uuid().nullable(),
+  productName: z.string(),
+  suggestedQuantity: z.number().nullable(),
+  suggestedVariant: z.string().nullable(),
+  rationale: z.string(),
+});
+
+export const QuoteRecommendationMissingFieldSchema = z.object({
+  field: z.string(),
+  reason: z.string(),
+});
+
+export const QuoteRecommendationPayloadSchema = z.object({
+  summary: z.string(),
+  recommendations: z.array(QuoteRecommendationProductSchema),
+  missingData: z.array(QuoteRecommendationMissingFieldSchema),
+  canCreateQuote: z.boolean(),
+  suggestedNextAction: z.string(),
+  confidence: z.number().min(0).max(100),
+});
+
+export const QuoteRecommendationResponseSchema = z.object({
+  ok: z.literal(true),
+  leadId: z.string(),
+  dealId: z.string().nullable(),
+  quoteId: z.string().nullable(),
+  source: z.enum(['model', 'fallback']),
+  provider: z.string(),
+  fallbackUsed: z.boolean(),
+  failureReason: z.string().nullable(),
+  dryRun: z.boolean(),
+  data: QuoteRecommendationPayloadSchema,
+  requestId: z.string().nullable(),
+});
+
+export type QuoteRecommendationRequest = z.infer<typeof QuoteRecommendationRequestSchema>;
+export type QuoteRecommendationPayload = z.infer<typeof QuoteRecommendationPayloadSchema>;
+export type QuoteRecommendationResponse = z.infer<typeof QuoteRecommendationResponseSchema>;

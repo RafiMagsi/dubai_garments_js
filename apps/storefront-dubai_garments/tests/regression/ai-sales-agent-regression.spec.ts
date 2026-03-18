@@ -186,4 +186,37 @@ test.describe.serial('AI Sales Agent regression', () => {
     const directAuditPayload = (await directAuditResponse.json()) as { activityId?: string };
     expect(!!directAuditPayload.activityId).toBeTruthy();
   });
+
+  test('Day 18 Quote recommendation integration (endpoint + payload + missing-data detection)', async ({ page }) => {
+    await login(page, 'admin');
+    const leadId = await createLeadViaIntake(page);
+
+    await page.goto('/admin/ai-sales-agent');
+    await page.getByRole('button', { name: 'Quote Copilot' }).click();
+
+    await expectVisibleByTestId(page, 'quote-recommendation-lead-id-input');
+    await page.getByTestId('quote-recommendation-lead-id-input').fill(leadId);
+    await page.getByRole('button', { name: 'Run Quote Recommendation' }).click();
+
+    await expectVisibleByTestId(page, 'quote-recommendation-summary-card');
+    await expectVisibleByTestId(page, 'quote-recommendation-products-card');
+    await expectVisibleByTestId(page, 'quote-recommendation-missing-card');
+
+    const response = await page.request.post('/api/admin/ai-sales-agent/quote-recommendation', {
+      data: { leadId, dry_run: false },
+    });
+    expect(response.ok()).toBeTruthy();
+    const payload = (await response.json()) as {
+      ok?: boolean;
+      data?: {
+        recommendations?: Array<unknown>;
+        missingData?: Array<{ field: string; reason: string }>;
+        canCreateQuote?: boolean;
+      };
+    };
+    expect(payload.ok).toBeTruthy();
+    expect((payload.data?.recommendations?.length ?? 0) > 0).toBeTruthy();
+    expect(Array.isArray(payload.data?.missingData)).toBeTruthy();
+    expect(typeof payload.data?.canCreateQuote === 'boolean').toBeTruthy();
+  });
 });
