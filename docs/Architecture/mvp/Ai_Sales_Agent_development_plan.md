@@ -204,7 +204,7 @@ Primary outcomes:
 3. Verify deterministic setup flow.
 4. Implement `AIA-024` AI impact KPI board.
 
-### Day 29
+### Day 29 - done
 1. Implement `AIA-019` showcase walkthrough script.
 2. Add checklist for portfolio demo run.
 3. Capture baseline screenshots and expected talking points.
@@ -288,3 +288,12 @@ Primary outcomes:
    - API: `GET /api/admin/ai-sales-agent/impact-kpis`
    - AI Sales Agent tab integration
    - Admin Dashboard compact snapshot integration
+
+### Day 29 Status - done
+1. Added showcase walkthrough command (`npm run demo:showcase`) with timed flow and expected demo narrative.
+2. Added portfolio demo run checklist:
+   - `docs/qa/portfolio-demo-run-checklist.md`
+3. Added expected talking points document:
+   - `docs/qa/showcase-talking-points.md`
+4. Added baseline screenshot capture command (`npm run demo:baseline:capture`) and baseline docs:
+   - `docs/qa/visual-goldens/README-day29-showcase.md`

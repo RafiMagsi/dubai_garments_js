@@ -19,6 +19,8 @@
     "demo:seed:ai": "./scripts/demo-seed-ai-heavy.sh",
     "demo:verify:ai": "./scripts/demo-verify-ai-determinism.sh",
     "demo:prepare:ai": "./scripts/demo-prepare-ai.sh",
+    "demo:showcase": "./scripts/showcase-walkthrough.sh",
+    "demo:baseline:capture": "node ./scripts/capture-showcase-baseline.mjs",
     "demo:walkthrough": "./scripts/demo-walkthrough.sh",
     "demo:prepare": "./scripts/db-migrate.sh && ./scripts/db-seed.sh && ./scripts/db-seed-users.sh && ./scripts/demo-walkthrough.sh"
   },

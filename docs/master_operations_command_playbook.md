@@ -33,6 +33,7 @@ This version does four things better than a raw command dump:
 18. Hard Lessons and Operational Rules
 19. Database Command Center (PostgreSQL + Docker Compose)
 20. AI Day 28 Demo Setup Commands
+21. AI Day 29 Showcase Commands
 
 ---
 
@@ -259,6 +260,37 @@ This chains:
 Safety:
 - no table/database reset
 - additive upsert behavior only
+
+---
+
+## 21. AI Day 29 Showcase Commands
+
+### Print timed showcase walkthrough script
+
+```bash
+cd apps/storefront-dubai_garments
+npm run demo:showcase
+```
+
+### Capture baseline showcase screenshots
+
+```bash
+cd apps/storefront-dubai_garments
+BASE_URL=https://aisales.appcenter.me npm run demo:baseline:capture
+```
+
+Output:
+
+```text
+docs/qa/visual-goldens/<timestamp>-day29-showcase/
+```
+
+### Portfolio checklist and talk track docs
+
+```text
+docs/qa/portfolio-demo-run-checklist.md
+docs/qa/showcase-talking-points.md
+```
 
 ---
 
