@@ -193,7 +193,7 @@ Primary outcomes:
 2. Add validation and safe defaults.
 3. Add strict env checks for model/provider keys.
 
-### Day 27
+### Day 27 - done
 1. Build `AIA-017` Model and Prompt Settings UI.
 2. Add test prompt panel and structured output preview.
 3. Add fallback toggles and temperature/style presets.
@@ -258,6 +258,13 @@ Primary outcomes:
 
 ### Week 3 Freeze - done
 1. Agent Flow readability and compactness finalized for lead detail + AI Sales Agent tab.
+
+### Day 27 Status - done
+1. Model settings UI finalized with reusable subcomponents (`ModelConfigFormCard`, `PromptEditorCard`, `PromptTestCard`, `StructuredPreviewCard`, `ProviderChecksCard`) and consistent `pins-*` spacing.
+2. Prompt test endpoint now returns structured preview data with locked contract fields: `schemaValid`, `parsed`, `parseIssues`, `rawOutput`, `provider`, `model`, `fallbackUsed`, `latencyMs`.
+3. Error mapping hardened: validation/config issues -> `400`, provider upstream failures -> `502`, unexpected errors -> `500`.
+4. Fallback behavior aligned with `fallbackEnabled` across save flow, warnings, and prompt test execution.
+5. Added focused unit coverage for strict env checks, style preset temperature mapping, and prompt-test error status classification.
 2. Empty/error/loading states added across flow panels (decision, signals, stage matrix, execution evidence).
 3. Deep links from stage cards and next move panel mapped to related actions.
 4. Frozen on March 18, 2026.

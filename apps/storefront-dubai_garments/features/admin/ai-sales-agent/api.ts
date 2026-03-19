@@ -17,6 +17,8 @@ import type {
   AiModelConfig,
   AiModelConfigEnvelope,
   AiModelConfigUpdateEnvelope,
+  AiPromptTestEnvelope,
+  AiPromptTestRequest,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -441,4 +443,23 @@ export async function updateAiModelConfig(
   }
 
   return json as AiModelConfigUpdateEnvelope;
+}
+
+export async function runAiPromptTest(
+  input: AiPromptTestRequest
+): Promise<AiPromptTestEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/model-config/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to run prompt test.');
+  }
+
+  return json as AiPromptTestEnvelope;
 }

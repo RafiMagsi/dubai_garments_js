@@ -1,20 +1,33 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, CardText, CardTitle, SelectField, TextField } from '@/components/ui';
-import { getAiModelConfig, updateAiModelConfig } from '@/features/admin/ai-sales-agent/api';
+import { Card, CardText, CardTitle } from '@/components/ui';
+import {
+  getAiModelConfig,
+  runAiPromptTest,
+  updateAiModelConfig,
+} from '@/features/admin/ai-sales-agent/api';
 import type {
   AiModelConfig,
   AiModelConfigEnvelope,
-  AiModelProvider,
+  AiPromptTestEnvelope,
+  AiPromptTestRequest,
+  AiModelStylePreset,
 } from '@/features/admin/ai-sales-agent/types';
-import { AisBadge, AisFieldLabel } from './reusable';
+import ModelConfigFormCard from '@/components/admin/ai-sales-agent/model-settings/model-config-form-card';
+import PromptEditorCard from '@/components/admin/ai-sales-agent/model-settings/prompt-editor-card';
+import PromptTestCard from '@/components/admin/ai-sales-agent/model-settings/prompt-test-card';
+import StructuredPreviewCard from '@/components/admin/ai-sales-agent/model-settings/structured-preview-card';
+import ProviderChecksCard from '@/components/admin/ai-sales-agent/model-settings/provider-checks-card';
+import { getTemperatureForStylePreset } from '@/lib/ai-sales-agent/model-style-presets';
 
 const DEFAULT_MODEL_CONFIG: AiModelConfig = {
   provider: 'deterministic',
   model: 'gpt-4o-mini',
+  fallbackEnabled: true,
   fallbackProvider: 'deterministic',
   fallbackModel: 'gpt-4o-mini',
+  stylePreset: 'balanced',
   temperature: 0.2,
   maxOutputTokens: 1200,
   prompts: {
@@ -24,9 +37,11 @@ const DEFAULT_MODEL_CONFIG: AiModelConfig = {
   },
 };
 
-function getProviderBadgeTone(provider: AiModelProvider) {
-  return provider === 'openai' ? 'blue' : 'slate';
-}
+const DEFAULT_TEST_INPUT: AiPromptTestRequest = {
+  feature: 'copilot',
+  input: 'Who needs follow-up today and what should be the next action?',
+  context: {},
+};
 
 export default function ModelSettingsPanel() {
   const [loading, setLoading] = useState(true);
@@ -34,8 +49,14 @@ export default function ModelSettingsPanel() {
   const [error, setError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [config, setConfig] = useState<AiModelConfig>(DEFAULT_MODEL_CONFIG);
-  const [providerChecks, setProviderChecks] = useState<AiModelConfigEnvelope['providerChecks']>([]);
+  const [providerChecks, setProviderChecks] =
+    useState<AiModelConfigEnvelope['providerChecks']>([]);
   const [strictEnvChecksPassed, setStrictEnvChecksPassed] = useState(false);
+
+  const [testInput, setTestInput] = useState<AiPromptTestRequest>(DEFAULT_TEST_INPUT);
+  const [testLoading, setTestLoading] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
+  const [testResponse, setTestResponse] = useState<AiPromptTestEnvelope | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,10 +84,15 @@ export default function ModelSettingsPanel() {
     };
   }, []);
 
-  const hasMissingProviderKey = useMemo(
-    () => providerChecks.some((item) => !item.present),
-    [providerChecks]
-  );
+  const hasMissingProviderKey = useMemo(() => {
+    const primary = providerChecks.find((item) => item.provider === config.provider);
+    if (!primary?.present) return true;
+    if (!config.fallbackEnabled) return false;
+    const fallback = providerChecks.find(
+      (item) => item.provider === config.fallbackProvider
+    );
+    return !fallback?.present;
+  }, [providerChecks, config.provider, config.fallbackEnabled, config.fallbackProvider]);
 
   function updateConfig(partial: Partial<AiModelConfig>) {
     setConfig((prev) => ({ ...prev, ...partial }));
@@ -82,6 +108,14 @@ export default function ModelSettingsPanel() {
         ...prev.prompts,
         [key]: value,
       },
+    }));
+  }
+
+  function handleStylePresetChange(nextPreset: AiModelStylePreset) {
+    setConfig((prev) => ({
+      ...prev,
+      stylePreset: nextPreset,
+      temperature: getTemperatureForStylePreset(nextPreset),
     }));
   }
 
@@ -112,195 +146,71 @@ export default function ModelSettingsPanel() {
     setError(null);
   }
 
+  async function handleRunPromptTest() {
+    if (!testInput.input.trim()) {
+      setTestError('Test input is required.');
+      setTestResponse(null);
+      return;
+    }
+
+    try {
+      setTestLoading(true);
+      setTestError(null);
+      setTestResponse(null);
+
+      const result = await runAiPromptTest({
+        ...testInput,
+        configOverride: config,
+      });
+      setTestResponse(result);
+    } catch (err) {
+      setTestError(err instanceof Error ? err.message : 'Failed to run prompt test.');
+    } finally {
+      setTestLoading(false);
+    }
+  }
+
   return (
     <div className="pins-scope pins-stack" data-testid="model-settings-panel">
-      <Card className="pins-composer" data-testid="model-settings-config-card">
-        <p className="pins-kicker">Model Settings</p>
-        <p className="pins-muted">
-          Configure provider/model routing, prompt defaults, and strict provider key checks.
-        </p>
+      <ModelConfigFormCard
+        loading={loading}
+        saving={saving}
+        strictEnvChecksPassed={strictEnvChecksPassed}
+        config={config}
+        onChange={updateConfig}
+        onStylePresetChange={handleStylePresetChange}
+        onSave={handleSave}
+        onResetDefaults={handleResetDefaults}
+      />
 
-        {loading ? (
-          <CardText className="pins-muted">Loading model settings...</CardText>
-        ) : (
-          <>
-            <div className="pins-grid">
-              <div>
-                <AisFieldLabel>Primary Provider</AisFieldLabel>
-                <SelectField
-                  className="pins-input"
-                  value={config.provider}
-                  onChange={(event) =>
-                    updateConfig({ provider: event.target.value as AiModelProvider })
-                  }
-                  data-testid="model-settings-provider-select"
-                >
-                  <option value="deterministic">Deterministic</option>
-                  <option value="openai">OpenAI</option>
-                </SelectField>
-              </div>
+      <PromptEditorCard
+        loading={loading}
+        saving={saving}
+        prompts={config.prompts}
+        onChangePrompt={updatePrompt}
+      />
 
-              <div>
-                <AisFieldLabel>Primary Model</AisFieldLabel>
-                <TextField
-                  className="pins-input"
-                  value={config.model}
-                  onChange={(event) => updateConfig({ model: event.target.value })}
-                  placeholder="gpt-4o-mini"
-                  data-testid="model-settings-model-input"
-                />
-              </div>
+      <PromptTestCard
+        loading={testLoading}
+        testInput={testInput}
+        onChange={setTestInput}
+        onRun={handleRunPromptTest}
+      />
 
-              <div>
-                <AisFieldLabel>Fallback Provider</AisFieldLabel>
-                <SelectField
-                  className="pins-input"
-                  value={config.fallbackProvider}
-                  onChange={(event) =>
-                    updateConfig({ fallbackProvider: event.target.value as AiModelProvider })
-                  }
-                  data-testid="model-settings-fallback-provider-select"
-                >
-                  <option value="deterministic">Deterministic</option>
-                  <option value="openai">OpenAI</option>
-                </SelectField>
-              </div>
+      <StructuredPreviewCard
+        loading={testLoading}
+        response={testResponse}
+        error={testError}
+      />
 
-              <div>
-                <AisFieldLabel>Fallback Model</AisFieldLabel>
-                <TextField
-                  className="pins-input"
-                  value={config.fallbackModel}
-                  onChange={(event) => updateConfig({ fallbackModel: event.target.value })}
-                  placeholder="gpt-4o-mini"
-                  data-testid="model-settings-fallback-model-input"
-                />
-              </div>
-
-              <div>
-                <AisFieldLabel>Temperature</AisFieldLabel>
-                <TextField
-                  className="pins-input"
-                  type="number"
-                  value={String(config.temperature)}
-                  onChange={(event) => updateConfig({ temperature: Number(event.target.value || 0) })}
-                  data-testid="model-settings-temperature-input"
-                />
-              </div>
-
-              <div>
-                <AisFieldLabel>Max Output Tokens</AisFieldLabel>
-                <TextField
-                  className="pins-input"
-                  type="number"
-                  value={String(config.maxOutputTokens)}
-                  onChange={(event) =>
-                    updateConfig({ maxOutputTokens: Number(event.target.value || 0) })
-                  }
-                  data-testid="model-settings-max-output-tokens-input"
-                />
-              </div>
-            </div>
-
-            <div className="pins-grid">
-              <div>
-                <AisFieldLabel>Copilot System Prompt</AisFieldLabel>
-                <textarea
-                  className="dg-input pins-input dg-min-h-[88px]"
-                  value={config.prompts.copilotSystem}
-                  onChange={(event) => updatePrompt('copilotSystem', event.target.value)}
-                  data-testid="model-settings-copilot-prompt-input"
-                />
-              </div>
-
-              <div>
-                <AisFieldLabel>Reply Studio System Prompt</AisFieldLabel>
-                <textarea
-                  className="dg-input pins-input dg-min-h-[88px]"
-                  value={config.prompts.replyStudioSystem}
-                  onChange={(event) => updatePrompt('replyStudioSystem', event.target.value)}
-                  data-testid="model-settings-reply-prompt-input"
-                />
-              </div>
-
-              <div>
-                <AisFieldLabel>Quote Copilot System Prompt</AisFieldLabel>
-                <textarea
-                  className="dg-input pins-input dg-min-h-[88px]"
-                  value={config.prompts.quoteCopilotSystem}
-                  onChange={(event) => updatePrompt('quoteCopilotSystem', event.target.value)}
-                  data-testid="model-settings-quote-prompt-input"
-                />
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="pins-badges" data-testid="model-settings-status-badges">
-          <AisBadge tone={strictEnvChecksPassed ? 'green' : 'amber'}>
-            {strictEnvChecksPassed ? 'Strict Env Checks: Passed' : 'Strict Env Checks: Failed'}
-          </AisBadge>
-          <AisBadge tone={getProviderBadgeTone(config.provider)}>
-            Provider: {config.provider}
-          </AisBadge>
-          <AisBadge tone={getProviderBadgeTone(config.fallbackProvider)}>
-            Fallback: {config.fallbackProvider}
-          </AisBadge>
-        </div>
-
-        <div className="pins-actions">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleResetDefaults}
-            disabled={saving || loading}
-          >
-            Reset Defaults
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || loading}
-            data-testid="model-settings-save-btn"
-          >
-            {saving ? 'Saving...' : 'Save Model Settings'}
-          </Button>
-        </div>
-      </Card>
-
-      <Card className="pins-card" data-testid="model-settings-provider-check-card">
-        <CardTitle>Provider Key Checks</CardTitle>
-        <CardText className="pins-muted">
-          Save is allowed only when selected providers have required keys configured.
-        </CardText>
-        <div className="pins-list">
-          {providerChecks.length === 0 ? (
-            <p className="pins-muted">No provider checks available.</p>
-          ) : (
-            providerChecks.map((item, index) => (
-              <div key={`${item.provider}-${index}`} className="pins-item">
-                <div className="pins-item-head">
-                  <div className="pins-item-title">
-                    {item.provider} - {item.requiredKey}
-                  </div>
-                  <AisBadge tone={item.present ? 'green' : 'amber'}>
-                    {item.present ? 'Available' : 'Missing'}
-                  </AisBadge>
-                </div>
-                <div className="pins-item-text">{item.message}</div>
-                <div className="pins-item-text">Source: {item.source}</div>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
+      <ProviderChecksCard checks={providerChecks} config={config} />
 
       {hasMissingProviderKey ? (
         <Card className="pins-card pins-card-error" data-testid="model-settings-warning-card">
           <CardTitle>Provider Key Missing</CardTitle>
           <CardText>
-            OPENAI_API_KEY is required when provider is set to OpenAI. Configure it in environment
-            or DB config before saving this provider selection.
+            OPENAI_API_KEY is required when provider or enabled fallback provider is set to OpenAI.
+            Configure it in environment or DB config before saving this provider selection.
           </CardText>
         </Card>
       ) : null}

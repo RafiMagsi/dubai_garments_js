@@ -99,12 +99,20 @@ type AisBadgeProps = {
   children: ReactNode;
   tone?: AisBadgeTone;
   className?: string;
-};
+} & React.HTMLAttributes<HTMLSpanElement>;
 
-export function AisBadge({ children, tone = 'slate', className }: AisBadgeProps) {
+export function AisBadge({
+  children,
+  tone = 'slate',
+  className,
+  ...rest
+}: AisBadgeProps) {
   const toneClass = `dg-ai-badge-${tone}`;
   return (
-    <span className={['dg-ai-badge', toneClass, className].filter(Boolean).join(' ')}>
+    <span
+      className={['dg-ai-badge', toneClass, className].filter(Boolean).join(' ')}
+      {...rest}
+    >
       {children}
     </span>
   );

@@ -410,12 +410,15 @@ export type AutomationTemplateToggleEnvelope = {
 };
 
 export type AiModelProvider = 'openai' | 'deterministic';
+export type AiModelStylePreset = 'balanced' | 'concise' | 'persuasive';
 
 export type AiModelConfig = {
   provider: AiModelProvider;
   model: string;
+  fallbackEnabled: boolean;
   fallbackProvider: AiModelProvider;
   fallbackModel: string;
+  stylePreset: AiModelStylePreset;
   temperature: number;
   maxOutputTokens: number;
   prompts: {
@@ -445,5 +448,36 @@ export type AiModelConfigUpdateEnvelope = {
   ok: true;
   config: AiModelConfig;
   strictEnvChecksPassed: boolean;
+  requestId?: string | null;
+};
+
+export type AiPromptTestFeature = 'copilot' | 'reply_studio' | 'quote_copilot';
+
+export type AiPromptTestRequest = {
+  feature: AiPromptTestFeature;
+  input: string;
+  context?: {
+    leadId?: string;
+    dealId?: string;
+    channel?: 'email' | 'whatsapp';
+    tone?: 'professional' | 'friendly' | 'persuasive';
+  };
+  configOverride?: Partial<AiModelConfig> & {
+    prompts?: Partial<AiModelConfig['prompts']>;
+  };
+};
+
+export type AiPromptTestEnvelope = {
+  ok: true;
+  feature: AiPromptTestFeature;
+  source: 'model' | 'fallback';
+  provider: string;
+  model: string;
+  fallbackUsed: boolean;
+  schemaValid: boolean;
+  parsed: unknown | null;
+  parseIssues: string[];
+  rawOutput: string;
+  latencyMs: number;
   requestId?: string | null;
 };

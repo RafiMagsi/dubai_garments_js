@@ -520,12 +520,15 @@ export type AutomationTemplateToggleRequest = z.infer<typeof AutomationTemplateT
 export type AutomationTemplateToggleResponse = z.infer<typeof AutomationTemplateToggleResponseSchema>;
 
 export const AiModelProviderSchema = z.enum(['openai', 'deterministic']);
+export const AiModelStylePresetSchema = z.enum(['balanced', 'concise', 'persuasive']);
 
 export const AiModelConfigSchema = z.object({
   provider: AiModelProviderSchema.default('deterministic'),
   model: z.string().min(1).max(120).default('gpt-4o-mini'),
+  fallbackEnabled: z.boolean().default(true),
   fallbackProvider: AiModelProviderSchema.default('deterministic'),
   fallbackModel: z.string().min(1).max(120).default('gpt-4o-mini'),
+  stylePreset: AiModelStylePresetSchema.default('balanced'),
   temperature: z.number().min(0).max(1.5).default(0.2),
   maxOutputTokens: z.number().int().min(128).max(8192).default(1200),
   prompts: z.object({
@@ -559,8 +562,65 @@ export const AiModelConfigUpdateResponseSchema = z.object({
   requestId: z.string().nullable(),
 });
 
+export const AiPromptTestFeatureSchema = z.enum([
+  'copilot',
+  'reply_studio',
+  'quote_copilot',
+]);
+
+export const AiPromptTestRequestSchema = z.object({
+  feature: AiPromptTestFeatureSchema,
+  input: z.string().min(1).max(4000),
+  context: z
+    .object({
+      leadId: z.string().uuid().optional(),
+      dealId: z.string().uuid().optional(),
+      channel: z.enum(['email', 'whatsapp']).optional(),
+      tone: z.enum(['professional', 'friendly', 'persuasive']).optional(),
+    })
+    .optional(),
+  configOverride: z
+    .object({
+      provider: AiModelProviderSchema.optional(),
+      model: z.string().min(1).max(120).optional(),
+      fallbackEnabled: z.boolean().optional(),
+      fallbackProvider: AiModelProviderSchema.optional(),
+      fallbackModel: z.string().min(1).max(120).optional(),
+      stylePreset: AiModelStylePresetSchema.optional(),
+      temperature: z.number().min(0).max(1.5).optional(),
+      maxOutputTokens: z.number().int().min(128).max(8192).optional(),
+      prompts: z
+        .object({
+          copilotSystem: z.string().min(1).max(8000).optional(),
+          replyStudioSystem: z.string().min(1).max(8000).optional(),
+          quoteCopilotSystem: z.string().min(1).max(8000).optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+});
+
+export const AiPromptTestResponseSchema = z.object({
+  ok: z.literal(true),
+  feature: AiPromptTestFeatureSchema,
+  source: z.enum(['model', 'fallback']),
+  provider: z.string(),
+  model: z.string(),
+  fallbackUsed: z.boolean(),
+  schemaValid: z.boolean(),
+  parsed: z.unknown().nullable(),
+  parseIssues: z.array(z.string()),
+  rawOutput: z.string(),
+  latencyMs: z.number(),
+  requestId: z.string().nullable(),
+});
+
 export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
+export type AiModelStylePreset = z.infer<typeof AiModelStylePresetSchema>;
 export type AiModelConfig = z.infer<typeof AiModelConfigSchema>;
 export type AiModelConfigResponse = z.infer<typeof AiModelConfigResponseSchema>;
 export type AiModelConfigUpdateRequest = z.infer<typeof AiModelConfigUpdateRequestSchema>;
 export type AiModelConfigUpdateResponse = z.infer<typeof AiModelConfigUpdateResponseSchema>;
+export type AiPromptTestFeature = z.infer<typeof AiPromptTestFeatureSchema>;
+export type AiPromptTestRequest = z.infer<typeof AiPromptTestRequestSchema>;
+export type AiPromptTestResponse = z.infer<typeof AiPromptTestResponseSchema>;
