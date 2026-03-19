@@ -13,7 +13,8 @@ export type ActivityType =
   | 'ai_copilot_action'
   | 'ai_lead_intelligence_action'
   | 'ai_pipeline_insight'
-  | 'ai_pipeline_insight_execution';
+  | 'ai_pipeline_insight_execution'
+  | 'ai_smart_routing_sla';
 
 export interface Activity {
   id: string;

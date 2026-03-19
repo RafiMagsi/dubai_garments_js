@@ -169,7 +169,7 @@ Primary outcomes:
 3. Track execution results in audit logs.
 4. Implement `AIA-021` Next-Best-Action dashboard cards.
 
-### Day 23
+### Day 23 - done
 1. Implement `AIA-014` automation run detail API.
 2. Include workflow input/output summary and failure metadata.
 3. Add permission checks and pagination.

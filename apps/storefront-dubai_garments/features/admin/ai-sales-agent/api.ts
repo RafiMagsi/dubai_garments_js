@@ -9,6 +9,8 @@ import type {
   QuoteRecommendationEnvelope,
   PipelineInsightEnvelope,
   PipelineInsightExecuteEnvelope,
+  AutomationRunDetailEnvelope,
+  SmartRoutingSlaEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -300,4 +302,47 @@ export async function executePipelineInsightAction(input: {
   }
 
   return json as PipelineInsightExecuteEnvelope;
+}
+
+export async function getAutomationRunDetails(input: {
+  page?: number;
+  pageSize?: number;
+  workflowName?: string;
+  status?: 'success' | 'failed' | 'pending';
+}): Promise<AutomationRunDetailEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/automation-runs/detail', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load automation run details.');
+  }
+
+  return json as AutomationRunDetailEnvelope;
+}
+
+export async function runSmartRoutingSla(input: {
+  leadId?: string;
+  dealId?: string;
+  dry_run?: boolean;
+}): Promise<SmartRoutingSlaEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/smart-routing-sla', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to run smart routing + SLA.');
+  }
+
+  return json as SmartRoutingSlaEnvelope;
 }

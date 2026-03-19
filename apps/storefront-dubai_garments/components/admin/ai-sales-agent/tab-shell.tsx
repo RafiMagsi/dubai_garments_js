@@ -14,6 +14,7 @@ import {
 } from './reusable';
 import QuoteCopilotPanel from '@/components/admin/ai-sales-agent/quote-copilot-panel';
 import PipelineInsightsPanel from '@/components/admin/ai-sales-agent/pipeline-insights-panel';
+import AutomationRunsPanel from '@/components/admin/ai-sales-agent/automation-runs-panel';
 
 type AgentTabKey =
   | 'lead-intelligence'
@@ -207,6 +208,10 @@ export default function AiSalesAgentTabShell() {
                 ) : currentTab.key === 'pipeline-insights' ? (
                   <div className="dg-mt-4">
                     <PipelineInsightsPanel />
+                  </div>
+                ): currentTab.key === 'automation-runs' ? (
+                  <div className="dg-mt-4">
+                    <AutomationRunsPanel />
                   </div>
                 ): (
                   <div className="dg-mt-4 dg-grid dg-grid-cols-3 dg-gap-4">

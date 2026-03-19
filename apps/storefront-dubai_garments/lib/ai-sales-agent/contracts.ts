@@ -409,3 +409,62 @@ export type PipelineInsightExecuteRequest = z.infer<
 export type PipelineInsightExecuteResponse = z.infer<
   typeof PipelineInsightExecuteResponseSchema
 >;
+
+export const AutomationRunDetailRequestSchema = z.object({
+  page: z.number().int().min(1).optional().default(1),
+  pageSize: z.number().int().min(1).max(50).optional().default(10),
+  workflowName: z.string().optional(),
+  status: z.enum(['success', 'failed', 'pending']).optional(),
+});
+
+export const AutomationRunDetailItemSchema = z.object({
+  id: z.string(),
+  workflowName: z.string(),
+  status: z.enum(['success', 'failed', 'pending']),
+  triggerSource: z.string().nullable(),
+  inputSummary: z.string(),
+  outputSummary: z.string(),
+  failureMetadata: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export const AutomationRunDetailResponseSchema = z.object({
+  ok: z.literal(true),
+  page: z.number(),
+  pageSize: z.number(),
+  total: z.number(),
+  items: z.array(AutomationRunDetailItemSchema),
+  processingMs: z.number().optional(),
+  requestId: z.string().nullable(),
+});
+
+export const SmartRoutingSlaRequestSchema = z.object({
+  leadId: z.string().uuid().optional(),
+  dealId: z.string().uuid().optional(),
+  dry_run: z.boolean().optional().default(true),
+});
+
+export const SmartRoutingSlaResponseSchema = z.object({
+  ok: z.literal(true),
+  leadId: z.string().nullable(),
+  dealId: z.string().nullable(),
+  source: z.enum(['model', 'fallback']),
+  provider: z.string(),
+  fallbackUsed: z.boolean(),
+  failureReason: z.string().nullable(),
+  dryRun: z.boolean(),
+  data: z.object({
+    recommendedOwner: z.string().nullable(),
+    routingReason: z.string(),
+    slaBucket: z.enum(['on_track', 'at_risk', 'breached']),
+    slaReason: z.string(),
+    recommendedAction: z.string(),
+  }),
+  processingMs: z.number().optional(),
+  requestId: z.string().nullable(),
+});
+
+export type AutomationRunDetailRequest = z.infer<typeof AutomationRunDetailRequestSchema>;
+export type AutomationRunDetailResponse = z.infer<typeof AutomationRunDetailResponseSchema>;
+export type SmartRoutingSlaRequest = z.infer<typeof SmartRoutingSlaRequestSchema>;
+export type SmartRoutingSlaResponse = z.infer<typeof SmartRoutingSlaResponseSchema>;

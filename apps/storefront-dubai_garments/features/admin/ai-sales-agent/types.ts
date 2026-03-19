@@ -334,3 +334,44 @@ export type NextBestActionCard = {
   leadId?: string | null;
   dealId?: string | null;
 };
+
+export type AutomationRunDetailItem = {
+  id: string;
+  workflowName: string;
+  status: 'success' | 'failed' | 'pending';
+  triggerSource: string | null;
+  inputSummary: string;
+  outputSummary: string;
+  failureMetadata: string | null;
+  createdAt: string;
+};
+
+export type AutomationRunDetailEnvelope = {
+  ok: true;
+  page: number;
+  pageSize: number;
+  total: number;
+  items: AutomationRunDetailItem[];
+  processingMs?: number;
+  requestId?: string | null;
+};
+
+export type SmartRoutingSlaEnvelope = {
+  ok: true;
+  leadId: string | null;
+  dealId: string | null;
+  source: 'model' | 'fallback';
+  provider: string;
+  fallbackUsed: boolean;
+  failureReason: string | null;
+  dryRun: boolean;
+  data: {
+    recommendedOwner: string | null;
+    routingReason: string;
+    slaBucket: 'on_track' | 'at_risk' | 'breached';
+    slaReason: string;
+    recommendedAction: string;
+  };
+  processingMs?: number;
+  requestId?: string | null;
+};
