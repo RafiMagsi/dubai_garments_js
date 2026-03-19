@@ -209,7 +209,7 @@ Primary outcomes:
 2. Add checklist for portfolio demo run.
 3. Capture baseline screenshots and expected talking points.
 
-### Day 30
+### Day 30 - done
 1. Execute `AIA-020` final QA and regression suite.
 2. Fix critical defects and finalize release notes.
 3. Freeze AI Sales Agent module as demo-ready.
