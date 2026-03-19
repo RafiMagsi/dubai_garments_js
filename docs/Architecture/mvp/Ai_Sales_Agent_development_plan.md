@@ -175,7 +175,7 @@ Primary outcomes:
 3. Add permission checks and pagination.
 4. Implement `AIA-022` Smart Routing + SLA automation service.
 
-### Day 24
+### Day 24 - done
 1. Build `AIA-015` automation runs timeline UI.
 2. Add rerun action with guardrails.
 3. Add failure drilldown and remediation hints.

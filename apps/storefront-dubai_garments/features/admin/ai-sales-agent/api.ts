@@ -11,6 +11,8 @@ import type {
   PipelineInsightExecuteEnvelope,
   AutomationRunDetailEnvelope,
   SmartRoutingSlaEnvelope,
+  AutomationRunRerunEnvelope,
+  AutomationTemplateLibraryEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -345,4 +347,40 @@ export async function runSmartRoutingSla(input: {
   }
 
   return json as SmartRoutingSlaEnvelope;
+}
+
+export async function rerunAutomationRun(input: {
+  runId: string;
+  note?: string;
+  dry_run?: boolean;
+}): Promise<AutomationRunRerunEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/automation-runs/rerun', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to rerun automation run.');
+  }
+
+  return json as AutomationRunRerunEnvelope;
+}
+
+export async function getAutomationTemplateLibrary(): Promise<AutomationTemplateLibraryEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/automation-templates', {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load automation template library.');
+  }
+
+  return json as AutomationTemplateLibraryEnvelope;
 }

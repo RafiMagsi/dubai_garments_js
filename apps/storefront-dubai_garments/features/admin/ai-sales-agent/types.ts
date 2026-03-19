@@ -375,3 +375,28 @@ export type SmartRoutingSlaEnvelope = {
   processingMs?: number;
   requestId?: string | null;
 };
+
+export type AutomationRunRerunEnvelope = {
+  ok: true;
+  runId: string;
+  dryRun: boolean;
+  guardrailPassed: boolean;
+  outcome: string;
+  requestId?: string | null;
+};
+
+export type AutomationTemplateItem = {
+  key: string;
+  name: string;
+  category: string;
+  description: string;
+  inputs: string[];
+  outputs: string[];
+  guardrails: string[];
+};
+
+export type AutomationTemplateLibraryEnvelope = {
+  ok: true;
+  templates: AutomationTemplateItem[];
+  requestId?: string | null;
+};

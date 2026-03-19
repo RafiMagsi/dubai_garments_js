@@ -468,3 +468,38 @@ export type AutomationRunDetailRequest = z.infer<typeof AutomationRunDetailReque
 export type AutomationRunDetailResponse = z.infer<typeof AutomationRunDetailResponseSchema>;
 export type SmartRoutingSlaRequest = z.infer<typeof SmartRoutingSlaRequestSchema>;
 export type SmartRoutingSlaResponse = z.infer<typeof SmartRoutingSlaResponseSchema>;
+
+export const AutomationRunRerunRequestSchema = z.object({
+  runId: z.string(),
+  note: z.string().optional(),
+  dry_run: z.boolean().optional().default(true),
+});
+
+export const AutomationRunRerunResponseSchema = z.object({
+  ok: z.literal(true),
+  runId: z.string(),
+  dryRun: z.boolean(),
+  guardrailPassed: z.boolean(),
+  outcome: z.string(),
+  requestId: z.string().nullable(),
+});
+
+export const AutomationTemplateLibraryResponseSchema = z.object({
+  ok: z.literal(true),
+  templates: z.array(
+    z.object({
+      key: z.string(),
+      name: z.string(),
+      category: z.string(),
+      description: z.string(),
+      inputs: z.array(z.string()),
+      outputs: z.array(z.string()),
+      guardrails: z.array(z.string()),
+    })
+  ),
+  requestId: z.string().nullable(),
+});
+
+export type AutomationRunRerunRequest = z.infer<typeof AutomationRunRerunRequestSchema>;
+export type AutomationRunRerunResponse = z.infer<typeof AutomationRunRerunResponseSchema>;
+export type AutomationTemplateLibraryResponse = z.infer<typeof AutomationTemplateLibraryResponseSchema>;

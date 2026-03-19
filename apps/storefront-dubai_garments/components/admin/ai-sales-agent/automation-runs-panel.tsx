@@ -14,6 +14,9 @@ import AutomationRunQueryCard from './automation-runs/automation-run-query-card'
 import SmartRoutingQueryCard from './automation-runs/smart-routing-query-card';
 import AutomationRunResultsCard from './automation-runs/automation-run-results-card';
 import SmartRoutingResultCard from './automation-runs/smart-routing-result-card';
+import AutomationRunTimeline from './automation-runs/automation-run-timeline';
+import FailureDrilldownCard from './automation-runs/failure-drilldown-card';
+import TemplateLibraryCard from './automation-runs/template-library-card';
 
 export default function AutomationRunsPanel() {
   const [page, setPage] = useState(1);
@@ -108,6 +111,16 @@ export default function AutomationRunsPanel() {
           onNext={() => loadRuns(page + 1)}
         />
       ) : null}
+
+        {runsResponse?.ok ? (
+            <AutomationRunTimeline items={runsResponse.items} />
+            ) : null}
+            {runsResponse?.ok ? (
+            <FailureDrilldownCard items={runsResponse.items} />
+            ) : null}
+            {runsResponse?.ok ? (
+            <TemplateLibraryCard />
+        ) : null}
 
       {routingResponse?.ok ? (
         <SmartRoutingResultCard response={routingResponse} />
