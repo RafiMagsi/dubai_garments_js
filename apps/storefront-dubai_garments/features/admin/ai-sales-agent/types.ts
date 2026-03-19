@@ -311,3 +311,26 @@ export type PipelineInsightEnvelope = {
   };
   requestId?: string | null;
 };
+
+export type PipelineInsightExecuteAction =
+  | 'draft_followup'
+  | 'assign_owner'
+  | 'move_stage_suggestion';
+
+export type PipelineInsightExecuteEnvelope = {
+  ok: true;
+  action: PipelineInsightExecuteAction;
+  leadId: string | null;
+  dealId: string | null;
+  dryRun: boolean;
+  outcome: string;
+  requestId?: string | null;
+};
+
+export type NextBestActionCard = {
+  title: string;
+  urgency: 'low' | 'medium' | 'high' | 'critical';
+  reason: string;
+  leadId?: string | null;
+  dealId?: string | null;
+};

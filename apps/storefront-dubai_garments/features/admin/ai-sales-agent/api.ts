@@ -8,6 +8,7 @@ import type {
   QuoteCopilotEnvelope,
   QuoteRecommendationEnvelope,
   PipelineInsightEnvelope,
+  PipelineInsightExecuteEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -272,4 +273,31 @@ export async function runPipelineInsights(input: {
   }
 
   return json as PipelineInsightEnvelope;
+}
+
+export async function executePipelineInsightAction(input: {
+  action: 'draft_followup' | 'assign_owner' | 'move_stage_suggestion';
+  leadId?: string;
+  dealId?: string;
+  payload?: {
+    ownerUserId?: string;
+    suggestedStage?: string;
+    note?: string;
+  };
+  dry_run?: boolean;
+}): Promise<PipelineInsightExecuteEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/pipeline-insights/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to execute pipeline insight action.');
+  }
+
+  return json as PipelineInsightExecuteEnvelope;
 }

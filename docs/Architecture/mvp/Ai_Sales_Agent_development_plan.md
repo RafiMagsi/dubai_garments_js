@@ -163,7 +163,7 @@ Primary outcomes:
 2. Define risk score reasons and urgency queues.
 3. Add stage-aging and inactivity heuristics.
 
-### Day 22
+### Day 22 - done
 1. Build `AIA-013` pipeline insight cards in AI Sales Agent and dashboard.
 2. Add one-click actions (follow-up draft, assign owner, move stage suggestion).
 3. Track execution results in audit logs.

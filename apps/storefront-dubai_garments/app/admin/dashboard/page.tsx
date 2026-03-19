@@ -9,6 +9,11 @@ import { useDeals, usePipeline } from '@/features/admin/deals';
 import { useLeads } from '@/features/admin/leads';
 import { useQuotes } from '@/features/admin/quotes';
 import { shortCode, titleCase } from '@/features/admin/shared/view-format';
+import { useEffect, useState } from 'react';
+import { runPipelineInsights } from '@/features/admin/ai-sales-agent/api';
+import type { PipelineInsightEnvelope } from '@/features/admin/ai-sales-agent/types';
+import PipelineInsightCards from '@/components/admin/ai-sales-agent/pipeline-insight-cards';
+import NextBestActionCards from '@/components/admin/dashboard/next-best-action-cards';
 
 const leadStatuses = ['new', 'qualified', 'quoted', 'won', 'lost'] as const;
 const dealStages = ['new', 'qualified', 'quoted', 'negotiation', 'won', 'lost'] as const;
@@ -62,6 +67,50 @@ export default function AdminDashboardPage() {
         .filter(Boolean)
     ).size
   );
+  const [dashboardInsight, setDashboardInsight] = useState<PipelineInsightEnvelope | null>(null);
+  const [dashboardInsightError, setDashboardInsightError] = useState<string | null>(null);
+
+  useEffect(() => {
+  const firstLead = leads[0];
+  if (!firstLead?.id) return;
+
+  let mounted = true;
+
+  async function loadDashboardInsight() {
+      try {
+        const result = await runPipelineInsights({
+          leadId: firstLead.id,
+          dry_run: true,
+        });
+
+        if (!mounted) return;
+        setDashboardInsight(result);
+        setDashboardInsightError(null);
+      } catch (err) {
+        if (!mounted) return;
+        setDashboardInsight(null);
+        setDashboardInsightError(
+          err instanceof Error ? err.message : 'Failed to load dashboard pipeline insight.'
+        );
+      }
+    }
+
+    void loadDashboardInsight();
+
+    return () => {
+      mounted = false;
+    };
+  }, [leads]);
+
+  const nextBestActionItems = dashboardInsight?.ok
+  ? dashboardInsight.data.urgencyQueue.map((item) => ({
+      title: item.title,
+      urgency: item.urgency,
+      reason: item.reason,
+      leadId: dashboardInsight.leadId,
+      dealId: dashboardInsight.dealId,
+    }))
+  : [];
 
   return (
     <AdminShell>
@@ -140,6 +189,34 @@ export default function AdminDashboardPage() {
           />
         </Panel>
 
+        <Panel>
+          <div className="dg-admin-head">
+            <h2 className="dg-title-sm">Pipeline Insight Cards</h2>
+            <span className="dg-badge">AIA-013</span>
+          </div>
+
+          {dashboardInsightError ? (
+            <p className="dg-help">{dashboardInsightError}</p>
+          ) : dashboardInsight?.ok ? (
+            <PipelineInsightCards response={dashboardInsight} compact />
+          ) : (
+            <p className="dg-help">No pipeline insight loaded yet.</p>
+          )}
+        </Panel>
+
+        <Panel>
+          <div className="dg-admin-head">
+            <h2 className="dg-title-sm">Next-Best-Action Dashboard Cards</h2>
+            <span className="dg-badge">AIA-021</span>
+          </div>
+
+          {nextBestActionItems.length > 0 ? (
+            <NextBestActionCards items={nextBestActionItems} />
+          ) : (
+            <p className="dg-help">No next-best-action cards available yet.</p>
+          )}
+        </Panel>
+        
         <Panel>
           <div className="dg-analytics-grid">
           <article className="dg-chart-card">

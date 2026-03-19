@@ -371,3 +371,41 @@ export const PipelineInsightResponseSchema = z.object({
 
 export type PipelineInsightRequest = z.infer<typeof PipelineInsightRequestSchema>;
 export type PipelineInsightResponse = z.infer<typeof PipelineInsightResponseSchema>;
+
+export const PipelineInsightExecuteActionSchema = z.enum([
+  'draft_followup',
+  'assign_owner',
+  'move_stage_suggestion',
+]);
+
+export const PipelineInsightExecuteRequestSchema = z.object({
+  action: PipelineInsightExecuteActionSchema,
+  leadId: z.string().uuid().optional(),
+  dealId: z.string().uuid().optional(),
+  payload: z
+    .object({
+      ownerUserId: z.string().uuid().optional(),
+      suggestedStage: z.string().optional(),
+      note: z.string().optional(),
+    })
+    .optional()
+    .default({}),
+  dry_run: z.boolean().optional().default(true),
+});
+
+export const PipelineInsightExecuteResponseSchema = z.object({
+  ok: z.literal(true),
+  action: PipelineInsightExecuteActionSchema,
+  leadId: z.string().nullable(),
+  dealId: z.string().nullable(),
+  dryRun: z.boolean(),
+  outcome: z.string(),
+  requestId: z.string().nullable(),
+});
+
+export type PipelineInsightExecuteRequest = z.infer<
+  typeof PipelineInsightExecuteRequestSchema
+>;
+export type PipelineInsightExecuteResponse = z.infer<
+  typeof PipelineInsightExecuteResponseSchema
+>;

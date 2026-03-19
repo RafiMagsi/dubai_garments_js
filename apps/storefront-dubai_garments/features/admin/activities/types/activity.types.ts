@@ -11,7 +11,9 @@ export type ActivityType =
   | 'deal_created'
   | 'deal_stage_changed'
   | 'ai_copilot_action'
-  | 'ai_lead_intelligence_action';
+  | 'ai_lead_intelligence_action'
+  | 'ai_pipeline_insight'
+  | 'ai_pipeline_insight_execution';
 
 export interface Activity {
   id: string;
