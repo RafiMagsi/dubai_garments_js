@@ -181,14 +181,14 @@ Primary outcomes:
 3. Add failure drilldown and remediation hints.
 4. Implement `AIA-023` automation template library backend.
 
-### Day 25
+### Day 25 - done
 1. Validate operational reliability on AI and automation views.
 2. Fix inconsistencies across tabs and details.
 3. Add automation template quick-enable controls in UI.
 4. Freeze Week 5 output.
 
 ## Week 6 - Model Settings, Demo Packaging, and Release Readiness
-### Day 26
+### Day 26 - done
 1. Implement `AIA-016` prompt/model config APIs.
 2. Add validation and safe defaults.
 3. Add strict env checks for model/provider keys.

@@ -5,7 +5,6 @@ import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import { PageShell, Panel, Toolbar } from '@/components/ui';
 import AiSalesAgentTabShell from '@/components/admin/ai-sales-agent/tab-shell';
-import GlobalAiSalesCopilot from '@/components/admin/ai-sales-agent/global-copilot';
 
 export default function AdminAiSalesAgentPage() {
 
@@ -31,10 +30,6 @@ export default function AdminAiSalesAgentPage() {
         />
 
         <AiSalesAgentTabShell />
-
-        <div className="dg-mt-4">
-          <GlobalAiSalesCopilot />
-        </div>
 
         <div className="dg-grid dg-grid-cols-3 dg-gap-6">
           <Panel>

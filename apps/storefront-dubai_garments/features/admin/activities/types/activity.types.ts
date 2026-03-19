@@ -15,7 +15,8 @@ export type ActivityType =
   | 'ai_pipeline_insight'
   | 'ai_pipeline_insight_execution'
   | 'ai_smart_routing_sla'
-  | 'ai_automation_rerun';
+  | 'ai_automation_rerun'
+  | 'ai_automation_template_toggle';
 
 export interface Activity {
   id: string;

@@ -393,10 +393,57 @@ export type AutomationTemplateItem = {
   inputs: string[];
   outputs: string[];
   guardrails: string[];
+  enabled: boolean;
 };
 
 export type AutomationTemplateLibraryEnvelope = {
   ok: true;
   templates: AutomationTemplateItem[];
+  requestId?: string | null;
+};
+
+export type AutomationTemplateToggleEnvelope = {
+  ok: true;
+  key: string;
+  enabled: boolean;
+  requestId?: string | null;
+};
+
+export type AiModelProvider = 'openai' | 'deterministic';
+
+export type AiModelConfig = {
+  provider: AiModelProvider;
+  model: string;
+  fallbackProvider: AiModelProvider;
+  fallbackModel: string;
+  temperature: number;
+  maxOutputTokens: number;
+  prompts: {
+    copilotSystem: string;
+    replyStudioSystem: string;
+    quoteCopilotSystem: string;
+  };
+};
+
+export type AiModelProviderCheck = {
+  provider: AiModelProvider;
+  requiredKey: string;
+  present: boolean;
+  source: 'env' | 'db' | 'missing';
+  message: string;
+};
+
+export type AiModelConfigEnvelope = {
+  ok: true;
+  config: AiModelConfig;
+  providerChecks: AiModelProviderCheck[];
+  strictEnvChecksPassed: boolean;
+  requestId?: string | null;
+};
+
+export type AiModelConfigUpdateEnvelope = {
+  ok: true;
+  config: AiModelConfig;
+  strictEnvChecksPassed: boolean;
   requestId?: string | null;
 };

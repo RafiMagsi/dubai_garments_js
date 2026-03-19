@@ -495,11 +495,72 @@ export const AutomationTemplateLibraryResponseSchema = z.object({
       inputs: z.array(z.string()),
       outputs: z.array(z.string()),
       guardrails: z.array(z.string()),
+      enabled: z.boolean(),
     })
   ),
+  requestId: z.string().nullable(),
+});
+
+export const AutomationTemplateToggleRequestSchema = z.object({
+  key: z.string().min(1),
+  enabled: z.boolean(),
+});
+
+export const AutomationTemplateToggleResponseSchema = z.object({
+  ok: z.literal(true),
+  key: z.string(),
+  enabled: z.boolean(),
   requestId: z.string().nullable(),
 });
 
 export type AutomationRunRerunRequest = z.infer<typeof AutomationRunRerunRequestSchema>;
 export type AutomationRunRerunResponse = z.infer<typeof AutomationRunRerunResponseSchema>;
 export type AutomationTemplateLibraryResponse = z.infer<typeof AutomationTemplateLibraryResponseSchema>;
+export type AutomationTemplateToggleRequest = z.infer<typeof AutomationTemplateToggleRequestSchema>;
+export type AutomationTemplateToggleResponse = z.infer<typeof AutomationTemplateToggleResponseSchema>;
+
+export const AiModelProviderSchema = z.enum(['openai', 'deterministic']);
+
+export const AiModelConfigSchema = z.object({
+  provider: AiModelProviderSchema.default('deterministic'),
+  model: z.string().min(1).max(120).default('gpt-4o-mini'),
+  fallbackProvider: AiModelProviderSchema.default('deterministic'),
+  fallbackModel: z.string().min(1).max(120).default('gpt-4o-mini'),
+  temperature: z.number().min(0).max(1.5).default(0.2),
+  maxOutputTokens: z.number().int().min(128).max(8192).default(1200),
+  prompts: z.object({
+    copilotSystem: z.string().min(1).max(8000).default('You are an AI sales copilot.'),
+    replyStudioSystem: z.string().min(1).max(8000).default('Generate concise and professional sales replies.'),
+    quoteCopilotSystem: z.string().min(1).max(8000).default('Generate quote guidance with margin-safe recommendations.'),
+  }),
+});
+
+export const AiModelConfigResponseSchema = z.object({
+  ok: z.literal(true),
+  config: AiModelConfigSchema,
+  providerChecks: z.array(
+    z.object({
+      provider: AiModelProviderSchema,
+      requiredKey: z.string(),
+      present: z.boolean(),
+      source: z.enum(['env', 'db', 'missing']),
+      message: z.string(),
+    })
+  ),
+  strictEnvChecksPassed: z.boolean(),
+  requestId: z.string().nullable(),
+});
+
+export const AiModelConfigUpdateRequestSchema = AiModelConfigSchema;
+export const AiModelConfigUpdateResponseSchema = z.object({
+  ok: z.literal(true),
+  config: AiModelConfigSchema,
+  strictEnvChecksPassed: z.boolean(),
+  requestId: z.string().nullable(),
+});
+
+export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
+export type AiModelConfig = z.infer<typeof AiModelConfigSchema>;
+export type AiModelConfigResponse = z.infer<typeof AiModelConfigResponseSchema>;
+export type AiModelConfigUpdateRequest = z.infer<typeof AiModelConfigUpdateRequestSchema>;
+export type AiModelConfigUpdateResponse = z.infer<typeof AiModelConfigUpdateResponseSchema>;

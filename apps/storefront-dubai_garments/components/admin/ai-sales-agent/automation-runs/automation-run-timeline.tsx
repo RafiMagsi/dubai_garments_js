@@ -13,7 +13,10 @@ export default function AutomationRunTimeline({ items }: Props) {
       <CardTitle>Automation Runs Timeline</CardTitle>
 
       <div className="pins-list">
-        {items.map((item) => (
+        {items.length === 0 ? (
+          <p className="pins-muted">No timeline items available for this page.</p>
+        ) : (
+          items.map((item) => (
           <div key={item.id} className="pins-item">
             <div className="pins-item-head">
               <div className="pins-item-title">{item.workflowName}</div>
@@ -24,7 +27,8 @@ export default function AutomationRunTimeline({ items }: Props) {
               Trigger: {item.triggerSource || 'n/a'}
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
     </Card>
   );

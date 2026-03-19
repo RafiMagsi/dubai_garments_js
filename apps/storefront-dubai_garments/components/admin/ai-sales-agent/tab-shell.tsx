@@ -15,8 +15,11 @@ import {
 import QuoteCopilotPanel from '@/components/admin/ai-sales-agent/quote-copilot-panel';
 import PipelineInsightsPanel from '@/components/admin/ai-sales-agent/pipeline-insights-panel';
 import AutomationRunsPanel from '@/components/admin/ai-sales-agent/automation-runs-panel';
+import GlobalAiSalesCopilot from '@/components/admin/ai-sales-agent/global-copilot';
+import ModelSettingsPanel from '@/components/admin/ai-sales-agent/model-settings-panel';
 
 type AgentTabKey =
+  | 'copilot'
   | 'lead-intelligence'
   | 'reply-studio'
   | 'quote-copilot'
@@ -39,6 +42,18 @@ type AgentTab = {
 };
 
 const tabs: AgentTab[] = [
+  {
+    key: 'copilot',
+    label: 'AI Copilot',
+    eyebrow: 'AI Command Center',
+    title: 'AI Sales Copilot',
+    description: 'Unified guided actions for follow-ups, replies, triage, and at-risk signals.',
+    kpiLabel: 'Copilot Actions',
+    kpiValue: '184',
+    kpiDelta: '+23 today',
+    health: 'healthy',
+    features: ['Follow-up command', 'Draft reply execution', 'At-risk deal cues'],
+  },
   {
     key: 'lead-intelligence',
     label: 'Lead Intelligence',
@@ -116,7 +131,7 @@ const tabs: AgentTab[] = [
     label: 'Model Settings',
     eyebrow: 'LLM Controls',
     title: 'Model & Prompt Settings',
-    description: 'Future home for model selection, prompt templates, and fallback strategy.',
+    description: 'Manage provider/model routing, prompt defaults, and strict environment checks.',
     kpiLabel: 'Prompt Versions',
     kpiValue: '11',
     kpiDelta: '2 active',
@@ -128,8 +143,8 @@ const tabs: AgentTab[] = [
 // const flowSteps = ['Lead Intake', 'AI Analysis', 'Reply Draft', 'Deal Guidance', 'Quote Assist', 'Close Loop'];
 
 export default function AiSalesAgentTabShell() {
-  const [activeTab, setActiveTab] = useState<AgentTabKey>('lead-intelligence');
-  const [expanded, setExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<AgentTabKey>('copilot');
+  const [expanded, setExpanded] = useState(true);
   const [leadPreviewId, setLeadPreviewId] = useState('');
   const { data: leadPreviewData } = useLeadById(leadPreviewId.trim());
   const previewLead = leadPreviewData?.item;
@@ -192,29 +207,23 @@ export default function AiSalesAgentTabShell() {
             </div>
 
             {expanded ? (
-              <>
-                {currentTab.key === 'agent-flow' ? (
-                  <div className="dg-mt-4">
-                    <AgentFlowView showHeader={false} />
-                  </div>
+              <div className="ais-tab-content">
+                {currentTab.key === 'copilot' ? (
+                  <GlobalAiSalesCopilot />
+                ) : currentTab.key === 'agent-flow' ? (
+                  <AgentFlowView showHeader={false} />
                 ) : currentTab.key === 'quote-copilot' ? (
-                  <div className="dg-mt-4">
-                    <QuoteCopilotPanel />
-                  </div>
+                  <QuoteCopilotPanel />
                 ) : currentTab.key === 'reply-studio' ? (
-                  <div className="dg-mt-4">
-                    <ReplyStudioPanel showHeading={false} />
-                  </div>
+                  <ReplyStudioPanel showHeading={false} />
                 ) : currentTab.key === 'pipeline-insights' ? (
-                  <div className="dg-mt-4">
-                    <PipelineInsightsPanel />
-                  </div>
-                ): currentTab.key === 'automation-runs' ? (
-                  <div className="dg-mt-4">
-                    <AutomationRunsPanel />
-                  </div>
-                ): (
-                  <div className="dg-mt-4 dg-grid dg-grid-cols-3 dg-gap-4">
+                  <PipelineInsightsPanel />
+                ) : currentTab.key === 'automation-runs' ? (
+                  <AutomationRunsPanel />
+                ) : currentTab.key === 'model-settings' ? (
+                  <ModelSettingsPanel />
+                ) : (
+                  <div className="dg-grid dg-grid-cols-3 dg-gap-4">
                     {currentTab.features.map((feature, index) => (
                       <AisFeatureCard
                         key={`${currentTab.key}-feature-${index}`}
@@ -224,13 +233,13 @@ export default function AiSalesAgentTabShell() {
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             ) : null}
           </div>
         </Card>
 
         {activeTab === 'lead-intelligence' ? (
-          <Card>
+          <Card className="ais-preview-card">
             <div style={{ display: 'grid', gap: 10 }}>
               <div>
                 <AisSectionEyebrow>Lead Intelligence Preview</AisSectionEyebrow>
@@ -246,18 +255,7 @@ export default function AiSalesAgentTabShell() {
                 data-testid="ai-sales-agent-lead-preview-input"
               />
               {previewLead ? (
-                <div data-testid="ai-sales-agent-lead-preview-cards"
-                  style={{
-                    marginTop: 2,
-                    paddingTop: 8,
-                    borderTop: '1px solid #e5e7eb',
-                    background: 'linear-gradient(180deg, rgba(238,242,255,0.45), rgba(255,255,255,0.9))',
-                    borderRadius: 12,
-                    paddingLeft: 6,
-                    paddingRight: 6,
-                    paddingBottom: 6,
-                  }}
-                >
+                <div data-testid="ai-sales-agent-lead-preview-cards" className="ais-preview-pane">
                   <LeadIntelligenceCards
                     lead={previewLead}
                     title="AI Sales Agent > Lead Intelligence"
@@ -281,6 +279,24 @@ export default function AiSalesAgentTabShell() {
         }
         .ais-overview {
           animation: ais-overview-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        .ais-tab-content {
+          margin-top: 0.95rem;
+          display: grid;
+          gap: 0.9rem;
+        }
+        .ais-preview-card {
+          margin-top: 0.18rem;
+        }
+        .ais-preview-pane {
+          margin-top: 0.15rem;
+          padding-top: 0.55rem;
+          border-top: 1px solid #e5e7eb;
+          background: linear-gradient(180deg, rgba(238,242,255,0.45), rgba(255,255,255,0.9));
+          border-radius: 12px;
+          padding-left: 0.35rem;
+          padding-right: 0.35rem;
+          padding-bottom: 0.35rem;
         }
         .ais-flow-step {
           animation: ais-step-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;

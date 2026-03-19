@@ -13,6 +13,10 @@ import type {
   SmartRoutingSlaEnvelope,
   AutomationRunRerunEnvelope,
   AutomationTemplateLibraryEnvelope,
+  AutomationTemplateToggleEnvelope,
+  AiModelConfig,
+  AiModelConfigEnvelope,
+  AiModelConfigUpdateEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -383,4 +387,58 @@ export async function getAutomationTemplateLibrary(): Promise<AutomationTemplate
   }
 
   return json as AutomationTemplateLibraryEnvelope;
+}
+
+export async function toggleAutomationTemplate(input: {
+  key: string;
+  enabled: boolean;
+}): Promise<AutomationTemplateToggleEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/automation-templates', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to update automation template.');
+  }
+
+  return json as AutomationTemplateToggleEnvelope;
+}
+
+export async function getAiModelConfig(): Promise<AiModelConfigEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/model-config', {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load model settings.');
+  }
+
+  return json as AiModelConfigEnvelope;
+}
+
+export async function updateAiModelConfig(
+  input: AiModelConfig
+): Promise<AiModelConfigUpdateEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/model-config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to save model settings.');
+  }
+
+  return json as AiModelConfigUpdateEnvelope;
 }
