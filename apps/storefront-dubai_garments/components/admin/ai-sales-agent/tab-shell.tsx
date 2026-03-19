@@ -17,6 +17,7 @@ import PipelineInsightsPanel from '@/components/admin/ai-sales-agent/pipeline-in
 import AutomationRunsPanel from '@/components/admin/ai-sales-agent/automation-runs-panel';
 import GlobalAiSalesCopilot from '@/components/admin/ai-sales-agent/global-copilot';
 import ModelSettingsPanel from '@/components/admin/ai-sales-agent/model-settings-panel';
+import AiImpactKpiBoard from '@/components/admin/ai-sales-agent/ai-impact-kpi-board';
 
 type AgentTabKey =
   | 'copilot'
@@ -209,7 +210,13 @@ export default function AiSalesAgentTabShell() {
             {expanded ? (
               <div className="ais-tab-content">
                 {currentTab.key === 'copilot' ? (
-                  <GlobalAiSalesCopilot />
+                  <div className="pins-stack">
+                    <AiImpactKpiBoard
+                      title="AI Impact KPI Board"
+                      subtitle="Time saved, suggestion acceptance, and risk-resolution outcomes from recent AI activity."
+                    />
+                    <GlobalAiSalesCopilot />
+                  </div>
                 ) : currentTab.key === 'agent-flow' ? (
                   <AgentFlowView showHeader={false} />
                 ) : currentTab.key === 'quote-copilot' ? (

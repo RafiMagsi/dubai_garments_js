@@ -198,7 +198,7 @@ Primary outcomes:
 2. Add test prompt panel and structured output preview.
 3. Add fallback toggles and temperature/style presets.
 
-### Day 28
+### Day 28 - done
 1. Implement `AIA-018` demo seed presets.
 2. Build one-command setup for AI-heavy demo data.
 3. Verify deterministic setup flow.
@@ -276,3 +276,15 @@ Primary outcomes:
    - margin safety status
    - discount guidance
    - pricing risk hints
+
+### Day 28 Status - done
+1. Implemented non-destructive deterministic AI-heavy demo preset service (`seedAiHeavyDemoPreset`) with fixed IDs, idempotent upserts, and activity/automation evidence rows.
+2. Added one-command AI demo setup flow:
+   - `npm run demo:seed:ai`
+   - `npm run demo:prepare:ai`
+   - `npm run demo:verify:ai`
+3. Added deterministic fingerprint verification (`verifyAiDemoDeterminism`) with fail-fast drift diagnostics.
+4. Implemented `AIA-024` AI Impact KPI board backend + UI:
+   - API: `GET /api/admin/ai-sales-agent/impact-kpis`
+   - AI Sales Agent tab integration
+   - Admin Dashboard compact snapshot integration

@@ -481,3 +481,30 @@ export type AiPromptTestEnvelope = {
   latencyMs: number;
   requestId?: string | null;
 };
+
+export type AiImpactMetric = {
+  value: number;
+  today: number;
+  last7d: number;
+  denominator7d: number;
+  deltaPct: number;
+};
+
+export type AiImpactKpiEnvelope = {
+  ok: true;
+  generatedAt: string;
+  window: {
+    todayStart: string;
+    last7dStart: string;
+  };
+  timeSavedEstimate: AiImpactMetric & {
+    hoursSaved7d: number;
+  };
+  suggestionsAccepted: AiImpactMetric & {
+    acceptanceRate7d: number;
+  };
+  riskAlertsResolved: AiImpactMetric & {
+    resolutionRate7d: number;
+  };
+  requestId?: string | null;
+};

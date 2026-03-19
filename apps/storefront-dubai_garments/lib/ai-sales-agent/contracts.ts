@@ -615,6 +615,33 @@ export const AiPromptTestResponseSchema = z.object({
   requestId: z.string().nullable(),
 });
 
+export const AiImpactMetricSchema = z.object({
+  value: z.number(),
+  today: z.number(),
+  last7d: z.number(),
+  denominator7d: z.number(),
+  deltaPct: z.number(),
+});
+
+export const AiImpactKpiResponseSchema = z.object({
+  ok: z.literal(true),
+  generatedAt: z.string(),
+  window: z.object({
+    todayStart: z.string(),
+    last7dStart: z.string(),
+  }),
+  timeSavedEstimate: AiImpactMetricSchema.extend({
+    hoursSaved7d: z.number(),
+  }),
+  suggestionsAccepted: AiImpactMetricSchema.extend({
+    acceptanceRate7d: z.number(),
+  }),
+  riskAlertsResolved: AiImpactMetricSchema.extend({
+    resolutionRate7d: z.number(),
+  }),
+  requestId: z.string().nullable(),
+});
+
 export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
 export type AiModelStylePreset = z.infer<typeof AiModelStylePresetSchema>;
 export type AiModelConfig = z.infer<typeof AiModelConfigSchema>;
@@ -624,3 +651,4 @@ export type AiModelConfigUpdateResponse = z.infer<typeof AiModelConfigUpdateResp
 export type AiPromptTestFeature = z.infer<typeof AiPromptTestFeatureSchema>;
 export type AiPromptTestRequest = z.infer<typeof AiPromptTestRequestSchema>;
 export type AiPromptTestResponse = z.infer<typeof AiPromptTestResponseSchema>;
+export type AiImpactKpiResponse = z.infer<typeof AiImpactKpiResponseSchema>;

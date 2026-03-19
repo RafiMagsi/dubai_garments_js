@@ -14,6 +14,7 @@ import { runPipelineInsights } from '@/features/admin/ai-sales-agent/api';
 import type { PipelineInsightEnvelope } from '@/features/admin/ai-sales-agent/types';
 import PipelineInsightCards from '@/components/admin/ai-sales-agent/pipeline-insight-cards';
 import NextBestActionCards from '@/components/admin/dashboard/next-best-action-cards';
+import AiImpactKpiBoard from '@/components/admin/ai-sales-agent/ai-impact-kpi-board';
 
 const leadStatuses = ['new', 'qualified', 'quoted', 'won', 'lost'] as const;
 const dealStages = ['new', 'qualified', 'quoted', 'negotiation', 'won', 'lost'] as const;
@@ -188,6 +189,12 @@ export default function AdminDashboardPage() {
             ]}
           />
         </Panel>
+
+        <AiImpactKpiBoard
+          compact
+          title="AI Impact Snapshot"
+          subtitle="Shared KPI view aligned with AI Sales Agent tab."
+        />
 
         <Panel>
           <div className="dg-admin-head">

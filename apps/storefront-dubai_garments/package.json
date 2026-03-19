@@ -16,6 +16,9 @@
     "db:tables": "sh ./scripts/db-tables.sh",
     "db:seed": "./scripts/db-seed.sh",
     "db:seed:users": "./scripts/db-seed-users.sh",
+    "demo:seed:ai": "./scripts/demo-seed-ai-heavy.sh",
+    "demo:verify:ai": "./scripts/demo-verify-ai-determinism.sh",
+    "demo:prepare:ai": "./scripts/demo-prepare-ai.sh",
     "demo:walkthrough": "./scripts/demo-walkthrough.sh",
     "demo:prepare": "./scripts/db-migrate.sh && ./scripts/db-seed.sh && ./scripts/db-seed-users.sh && ./scripts/demo-walkthrough.sh"
   },

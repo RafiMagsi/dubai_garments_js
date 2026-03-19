@@ -32,6 +32,7 @@ This version does four things better than a raw command dump:
 17. Recovery Procedures by Problem Type
 18. Hard Lessons and Operational Rules
 19. Database Command Center (PostgreSQL + Docker Compose)
+20. AI Day 28 Demo Setup Commands
 
 ---
 
@@ -211,6 +212,53 @@ ssh -i ~/.ssh/LightsailDefaultKey-ap-southeast-1.pem bitnami@YOUR_SERVER_IP
 
 Use when:
 - you need terminal access to the server
+
+---
+
+## 20. AI Day 28 Demo Setup Commands
+
+Use these from project root when you need deterministic AI-heavy demo data without resetting DB tables.
+
+### Seed AI-heavy preset only (non-destructive)
+
+```bash
+cd apps/storefront-dubai_garments
+npm run demo:seed:ai
+```
+
+Expected:
+- upserts deterministic demo leads/deals/quotes/activities/automation runs
+- prints deterministic fingerprint
+
+### Verify deterministic fingerprint only
+
+```bash
+cd apps/storefront-dubai_garments
+npm run demo:verify:ai
+```
+
+Expected:
+- runs preset verification pass
+- fails fast if deterministic snapshot drift is detected
+
+### Full one-command AI demo preparation
+
+```bash
+cd apps/storefront-dubai_garments
+npm run demo:prepare:ai
+```
+
+This chains:
+1. `db:migrate`
+2. `db:seed`
+3. `db:seed:users`
+4. `demo:seed:ai`
+5. `demo:verify:ai`
+6. `demo:walkthrough`
+
+Safety:
+- no table/database reset
+- additive upsert behavior only
 
 ---
 

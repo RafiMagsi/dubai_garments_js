@@ -19,6 +19,7 @@ import type {
   AiModelConfigUpdateEnvelope,
   AiPromptTestEnvelope,
   AiPromptTestRequest,
+  AiImpactKpiEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -462,4 +463,19 @@ export async function runAiPromptTest(
   }
 
   return json as AiPromptTestEnvelope;
+}
+
+export async function getAiImpactKpis(): Promise<AiImpactKpiEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/impact-kpis', {
+    method: 'GET',
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load AI impact KPIs.');
+  }
+
+  return json as AiImpactKpiEnvelope;
 }
