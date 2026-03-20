@@ -51,6 +51,10 @@ export async function POST(request: NextRequest) {
     const parsed = AiModelConfigUpdateRequestSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.error('[ai-model-config] invalid payload', {
+        requestId,
+        issues: parsed.error.flatten(),
+      });
       return NextResponse.json(
         {
           ok: false,
@@ -65,9 +69,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const config = AiModelConfigSchema.parse(parsed.data);
+    const payload =
+      'config' in parsed.data
+        ? parsed.data
+        : {
+            config: parsed.data,
+            secrets: undefined,
+          };
+
+    console.info('[ai-model-config] parsed save payload', {
+      requestId,
+      provider: payload.config.provider,
+      fallbackProvider: payload.config.fallbackProvider,
+      fallbackEnabled: payload.config.fallbackEnabled,
+      hasOpenAiApiKey: Boolean(payload.secrets?.openaiApiKey?.trim()),
+      openAiApiKeyLength: payload.secrets?.openaiApiKey?.trim().length ?? 0,
+    });
+
+    const config = AiModelConfigSchema.parse(payload.config);
     const updated = await updateAiModelConfig({
       config,
+      secrets: payload.secrets,
       updatedByUserId: session.sub,
     });
 
@@ -82,6 +104,12 @@ export async function POST(request: NextRequest) {
       error instanceof Error
         ? error.message
         : 'Failed to update AI model config.';
+
+    console.error('[ai-model-config] update failed', {
+      requestId,
+      message,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
     const status = message.includes('Strict env check failed') ? 400 : 500;
     return NextResponse.json({ ok: false, message, requestId }, { status });

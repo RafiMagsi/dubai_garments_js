@@ -15,6 +15,10 @@ type Props = {
   saving: boolean;
   strictEnvChecksPassed: boolean;
   config: AiModelConfig;
+  openAiApiKey: string;
+  openAiKeyPresent: boolean;
+  openAiKeySource: 'env' | 'db' | 'missing';
+  onOpenAiApiKeyChange: (value: string) => void;
   onChange: (partial: Partial<AiModelConfig>) => void;
   onStylePresetChange: (value: AiModelStylePreset) => void;
   onSave: () => Promise<void> | void;
@@ -26,6 +30,10 @@ export default function ModelConfigFormCard({
   saving,
   strictEnvChecksPassed,
   config,
+  openAiApiKey,
+  openAiKeyPresent,
+  openAiKeySource,
+  onOpenAiApiKeyChange,
   onChange,
   onStylePresetChange,
   onSave,
@@ -35,9 +43,12 @@ export default function ModelConfigFormCard({
     name: item.label,
     llm: item.llmEnabled,
   }));
-
   return (
-    <Card className="pins-composer" data-testid="model-settings-config-card">
+    <div>
+      <Card
+        className="pins-composer"
+        data-testid="model-settings-config-card"
+      >
       <p className="pins-kicker">Model Settings</p>
       <p className="pins-muted">
         Configure provider/model routing, fallback behavior, and temperature/style presets.
@@ -59,6 +70,24 @@ export default function ModelConfigFormCard({
             <option value="llm_only">LLM Only</option>
             <option value="fallback_only">Internal Fallback Only</option>
           </SelectField>
+        </div>
+
+        <div>
+          <AisFieldLabel>OpenAI API Key (saved to DB secret)</AisFieldLabel>
+          <TextField
+            className="pins-input"
+            type="password"
+            value={openAiApiKey}
+            onChange={(event) => onOpenAiApiKeyChange(event.target.value)}
+            placeholder="sk-..."
+            disabled={loading || saving}
+            data-testid="model-settings-openai-api-key-input"
+          />
+          <CardText className="pins-muted">
+            {openAiKeyPresent
+              ? `OpenAI key is already available (${openAiKeySource}). Entering a new value will overwrite DB secret.`
+              : 'No OpenAI key detected yet. Add one and save to enable OpenAI provider.'}
+          </CardText>
         </div>
 
         <div>
@@ -265,6 +294,7 @@ export default function ModelConfigFormCard({
           {saving ? 'Saving...' : 'Save Model Settings'}
         </Button>
       </div>
-    </Card>
+      </Card>
+    </div>
   );
 }

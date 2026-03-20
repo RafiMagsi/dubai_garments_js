@@ -570,7 +570,17 @@ export const AiModelConfigResponseSchema = z.object({
   requestId: z.string().nullable(),
 });
 
-export const AiModelConfigUpdateRequestSchema = AiModelConfigSchema;
+export const AiModelSecretsUpdateSchema = z.object({
+  openaiApiKey: z.string().min(1).max(512).optional(),
+});
+
+export const AiModelConfigUpdateRequestSchema = z.union([
+  z.object({
+    config: AiModelConfigSchema,
+    secrets: AiModelSecretsUpdateSchema.optional(),
+  }).strict(),
+  AiModelConfigSchema,
+]);
 export const AiModelConfigUpdateResponseSchema = z.object({
   ok: z.literal(true),
   config: AiModelConfigSchema,
@@ -666,6 +676,7 @@ export type AiModelConfig = z.infer<typeof AiModelConfigSchema>;
 export type AiModelConfigResponse = z.infer<typeof AiModelConfigResponseSchema>;
 export type AiModelConfigUpdateRequest = z.infer<typeof AiModelConfigUpdateRequestSchema>;
 export type AiModelConfigUpdateResponse = z.infer<typeof AiModelConfigUpdateResponseSchema>;
+export type AiModelSecretsUpdate = z.infer<typeof AiModelSecretsUpdateSchema>;
 export type AiPromptTestFeature = z.infer<typeof AiPromptTestFeatureSchema>;
 export type AiPromptTestRequest = z.infer<typeof AiPromptTestRequestSchema>;
 export type AiPromptTestResponse = z.infer<typeof AiPromptTestResponseSchema>;

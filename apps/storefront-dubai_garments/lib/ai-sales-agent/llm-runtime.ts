@@ -96,8 +96,32 @@ async function callOpenAi(input: {
     throw new Error(`OpenAI request failed (${response.status}): ${text}`);
   }
 
-  const json = (await response.json()) as { output_text?: string };
-  return json.output_text ?? '';
+  const json = (await response.json()) as {
+    output_text?: string;
+    output?: Array<{
+      content?: Array<{
+        type?: string;
+        text?: string;
+      }>;
+    }>;
+  };
+
+  if (typeof json.output_text === 'string' && json.output_text.trim().length > 0) {
+    return json.output_text;
+  }
+
+  const stitched =
+    json.output
+      ?.flatMap((item) => item.content ?? [])
+      .map((content) => content.text ?? '')
+      .join('\n')
+      .trim() ?? '';
+
+  if (stitched.length > 0) {
+    return stitched;
+  }
+
+  throw new Error('OpenAI returned empty output text.');
 }
 
 export async function runStructuredWithRuntime<T>(
@@ -164,6 +188,9 @@ export async function runStructuredWithRuntime<T>(
     });
 
     const normalized = stripMarkdownFences(rawOutput);
+    if (!normalized) {
+      throw new Error('Model returned empty content after normalization.');
+    }
     const parsedJson = JSON.parse(normalized);
     const validated = input.outputSchema.safeParse(parsedJson);
 

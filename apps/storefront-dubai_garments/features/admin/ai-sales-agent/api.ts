@@ -15,6 +15,7 @@ import type {
   AutomationTemplateLibraryEnvelope,
   AutomationTemplateToggleEnvelope,
   AiModelConfig,
+  AiModelSecretsUpdate,
   AiModelConfigEnvelope,
   AiModelConfigUpdateEnvelope,
   AiPromptTestEnvelope,
@@ -428,12 +429,13 @@ export async function getAiModelConfig(): Promise<AiModelConfigEnvelope> {
 }
 
 export async function updateAiModelConfig(
-  input: AiModelConfig
+  input: AiModelConfig,
+  secrets?: AiModelSecretsUpdate
 ): Promise<AiModelConfigUpdateEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/model-config', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    body: JSON.stringify({ config: input, secrets }),
     credentials: 'include',
   });
 

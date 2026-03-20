@@ -53,6 +53,7 @@ export default function ModelSettingsPanel() {
   const [providerChecks, setProviderChecks] =
     useState<AiModelConfigEnvelope['providerChecks']>([]);
   const [strictEnvChecksPassed, setStrictEnvChecksPassed] = useState(false);
+  const [openAiApiKey, setOpenAiApiKey] = useState('');
 
   const [testInput, setTestInput] = useState<AiPromptTestRequest>(DEFAULT_TEST_INPUT);
   const [testLoading, setTestLoading] = useState(false);
@@ -95,6 +96,11 @@ export default function ModelSettingsPanel() {
     return !fallback?.present;
   }, [providerChecks, config.provider, config.fallbackEnabled, config.fallbackProvider]);
 
+  const openAiProviderCheck = useMemo(
+    () => providerChecks.find((item) => item.provider === 'openai'),
+    [providerChecks]
+  );
+
   function updateConfig(partial: Partial<AiModelConfig>) {
     setConfig((prev) => ({ ...prev, ...partial }));
   }
@@ -126,10 +132,33 @@ export default function ModelSettingsPanel() {
       setSavedMessage(null);
       setSaving(true);
 
-      const result = await updateAiModelConfig(config);
+      const saveConfig: AiModelConfig = { ...config };
+      const saveOpenAiApiKey = openAiApiKey.trim();
+      if (saveOpenAiApiKey && saveConfig.provider === 'deterministic') {
+        saveConfig.provider = 'openai';
+        setConfig(saveConfig);
+      }
+      console.info('[model-settings-panel] saving config snapshot', {
+        provider: saveConfig.provider,
+        fallbackProvider: saveConfig.fallbackProvider,
+        fallbackEnabled: saveConfig.fallbackEnabled,
+        runtimeMode: saveConfig.runtimeMode,
+        hasOpenAiApiKey: Boolean(saveOpenAiApiKey),
+        openAiApiKeyLength: saveOpenAiApiKey.length,
+      });
+
+      const result = await updateAiModelConfig(
+        saveConfig,
+        saveOpenAiApiKey
+          ? {
+              openaiApiKey: saveOpenAiApiKey,
+            }
+          : undefined
+      );
       setConfig(result.config);
       setStrictEnvChecksPassed(result.strictEnvChecksPassed);
       setSavedMessage('Model settings saved.');
+      setOpenAiApiKey('');
 
       const refreshed = await getAiModelConfig();
       setProviderChecks(refreshed.providerChecks);
@@ -143,8 +172,13 @@ export default function ModelSettingsPanel() {
 
   function handleResetDefaults() {
     setConfig(DEFAULT_MODEL_CONFIG);
+    setOpenAiApiKey('');
     setSavedMessage('Defaults loaded locally. Click Save to persist.');
     setError(null);
+  }
+
+  function handleOpenAiApiKeyChange(value: string) {
+    setOpenAiApiKey(value);
   }
 
   async function handleRunPromptTest() {
@@ -178,6 +212,10 @@ export default function ModelSettingsPanel() {
         saving={saving}
         strictEnvChecksPassed={strictEnvChecksPassed}
         config={config}
+        openAiApiKey={openAiApiKey}
+        openAiKeyPresent={Boolean(openAiProviderCheck?.present)}
+        openAiKeySource={openAiProviderCheck?.source ?? 'missing'}
+        onOpenAiApiKeyChange={handleOpenAiApiKeyChange}
         onChange={updateConfig}
         onStylePresetChange={handleStylePresetChange}
         onSave={handleSave}

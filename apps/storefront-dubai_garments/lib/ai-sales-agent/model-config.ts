@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import {
   AiModelConfigSchema,
   type AiModelConfig,
+  type AiModelSecretsUpdate,
   type AiModelProvider,
   type AiModelStylePreset,
 } from '@/lib/ai-sales-agent/contracts';
@@ -74,8 +75,14 @@ async function getDbSecret(key: string) {
     FROM system_settings
     WHERE is_active = TRUE
       AND key = ${key}
-      AND scope IN ('fastapi', 'global')
-    ORDER BY CASE WHEN scope = 'fastapi' THEN 0 ELSE 1 END, updated_at DESC
+      AND scope IN ('fastapi', 'storefront', 'global')
+    ORDER BY
+      CASE
+        WHEN scope = 'fastapi' THEN 0
+        WHEN scope = 'storefront' THEN 1
+        ELSE 2
+      END,
+      updated_at DESC
     LIMIT 1
   `;
   return rows[0]?.value ?? null;
@@ -188,6 +195,7 @@ export async function resolveProviderChecks(config: AiModelConfig) {
 }
 
 async function upsertSetting(input: {
+  scope?: 'storefront' | 'fastapi' | 'global';
   key: string;
   value: string;
   description: string;
@@ -204,7 +212,7 @@ async function upsertSetting(input: {
         description = ${input.description},
         updated_by_user_id = ${input.updatedByUserId}::uuid,
         updated_at = NOW()
-      WHERE scope = 'storefront'
+      WHERE scope = ${input.scope ?? 'storefront'}
         AND key = ${input.key}
       RETURNING id
     )
@@ -218,7 +226,7 @@ async function upsertSetting(input: {
       updated_by_user_id
     )
     SELECT
-      'storefront',
+      ${input.scope ?? 'storefront'},
       ${input.key},
       ${input.value},
       ${Boolean(input.isSecret)},
@@ -231,16 +239,54 @@ async function upsertSetting(input: {
 
 export async function updateAiModelConfig(input: {
   config: AiModelConfig;
+  secrets?: AiModelSecretsUpdate;
   updatedByUserId: string;
 }) {
+  const maybeKey = input.secrets?.openaiApiKey?.trim();
+  console.info('[ai-model-config] save request secret received', {
+    hasOpenAiApiKey: Boolean(maybeKey),
+    keyLength: maybeKey?.length ?? 0,
+  });
+  if (maybeKey) {
+    await upsertSetting({
+      scope: 'fastapi',
+      key: 'OPENAI_API_KEY',
+      value: maybeKey,
+      isSecret: true,
+      description: 'OpenAI API key for AI Sales Agent model runtime',
+      updatedByUserId: input.updatedByUserId,
+    });
+    await upsertSetting({
+      scope: 'storefront',
+      key: 'OPENAI_API_KEY',
+      value: maybeKey,
+      isSecret: true,
+      description: 'OpenAI API key mirror for storefront scope runtime checks',
+      updatedByUserId: input.updatedByUserId,
+    });
+  }
+
   const providerChecks = await resolveProviderChecks(input.config);
   const strictEnvChecksPassed = computeStrictEnvChecksPassed(
     input.config,
     providerChecks
   );
+  console.info('[ai-model-config] strict checks', {
+    provider: input.config.provider,
+    fallbackProvider: input.config.fallbackProvider,
+    fallbackEnabled: input.config.fallbackEnabled,
+    checks: providerChecks,
+    strictEnvChecksPassed,
+  });
 
   if (!strictEnvChecksPassed) {
-    throw new Error('Strict env check failed: missing provider key for selected model provider.');
+    const missingChecks = providerChecks.filter((check) => !check.present);
+    const details = missingChecks
+      .map((check) => `${check.provider}:${check.requiredKey}`)
+      .join(', ');
+    throw new Error(
+      `Strict env check failed: missing provider key for selected model provider. Missing: ${details || 'unknown'}.`
+    );
   }
 
   await upsertSetting({

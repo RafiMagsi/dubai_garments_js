@@ -453,6 +453,10 @@ export type AiModelConfigUpdateEnvelope = {
   requestId?: string | null;
 };
 
+export type AiModelSecretsUpdate = {
+  openaiApiKey?: string;
+};
+
 export type AiPromptTestFeature = 'copilot' | 'reply_studio' | 'quote_copilot';
 
 export type AiPromptTestRequest = {
