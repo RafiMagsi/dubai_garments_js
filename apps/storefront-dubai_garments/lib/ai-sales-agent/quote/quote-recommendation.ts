@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { QuoteRecommendationPayloadSchema } from '@/lib/ai-sales-agent/contracts';
 import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
+import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 
 type QuoteRecommendationContext = {
   userId: string;
@@ -144,11 +145,12 @@ export async function runQuoteRecommendation(input: {
       confidence: canCreateQuote ? 78 : 61,
     };
   };
+  const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
     feature: 'quote_recommendation',
-    systemPrompt:
-      'You are an AI quote recommendation assistant. Produce product suggestions, missing-data checks, and quote readiness output as structured JSON.',
+    systemPrompt: `${config.prompts.quoteCopilotSystem}
+Task: Produce product suggestions, missing-data checks, and quote readiness output as structured JSON.`,
     userInput: JSON.stringify({
       leadId: input.leadId,
       dealId: input.dealId ?? null,

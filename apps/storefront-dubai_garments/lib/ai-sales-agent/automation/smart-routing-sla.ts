@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
+import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 
 type RoutingContext = {
   userId: string;
@@ -116,11 +117,13 @@ export async function runSmartRoutingSla(input: {
       recommendedAction,
     };
   };
+  const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
     feature: 'smart_routing_sla',
-    systemPrompt:
-      'You are an AI smart-routing and SLA assistant. Recommend owner routing, SLA status, reason, and next action.',
+    systemPrompt: `${config.prompts.copilotSystem}
+Task: Generate routing/SLA reasoning and next action text.
+Important: Owner assignment is deterministic and handled by system rules.`,
     userInput: JSON.stringify({
       leadId: lead?.id ?? null,
       dealId: deal?.id ?? null,
@@ -142,7 +145,11 @@ export async function runSmartRoutingSla(input: {
   const provider = runtimeResult.provider;
   const fallbackUsed = runtimeResult.fallbackUsed;
   const failureReason = runtimeResult.failureReason;
-  const data = runtimeResult.data;
+  const data = {
+    ...runtimeResult.data,
+    // Deterministic guardrail: owner assignment always follows system rule resolution.
+    recommendedOwner: resolvedRecommendedOwner,
+  };
   let assignmentApplied = false;
 
   if (!input.dryRun) {

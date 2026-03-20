@@ -5,6 +5,7 @@ import {
   QuoteCopilotUpsellSchema,
 } from '@/lib/ai-sales-agent/contracts';
 import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
+import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 
 type QuoteCopilotContext = {
   userId: string;
@@ -150,11 +151,12 @@ export async function runQuoteCopilot(input: {
       ],
     };
   };
+  const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
     feature: 'quote_copilot_summary',
-    systemPrompt:
-      'You are an AI quote copilot assistant. Generate a structured quote summary and upsell/cross-sell suggestions.',
+    systemPrompt: `${config.prompts.quoteCopilotSystem}
+Task: Generate a structured quote summary and upsell/cross-sell suggestions.`,
     userInput: JSON.stringify({
       leadId: input.leadId,
       dealId: input.dealId ?? null,

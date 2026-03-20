@@ -27,8 +27,9 @@ P3. **Phase 3: LLM-enable Revenue/Operations Endpoints**
   - `/api/admin/ai-sales-agent/quote-recommendation`
   - `/api/admin/ai-sales-agent/quote-copilot`
   - `/api/admin/ai-sales-agent/pipeline-insights`
-  - optional: `smart-routing-sla` reasoning text generation (keep deterministic assignment rules)
+  - `smart-routing-sla` reasoning text generation (deterministic assignment rules enforced)
 - Continue schema-first parsing + fallback on parse failure.
+- Bind quote/pipeline runtime prompts from model config prompt templates to avoid prompt drift.
 
 P4. **Phase 4: Observability + Safety Hardening**
 - Add per-endpoint LLM telemetry in AI logs:

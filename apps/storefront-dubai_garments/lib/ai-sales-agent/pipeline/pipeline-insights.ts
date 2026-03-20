@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { PipelineInsightPayloadSchema } from '@/lib/ai-sales-agent/contracts';
 import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
+import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 
 type PipelineInsightsContext = {
   userId: string;
@@ -146,11 +147,12 @@ export async function runPipelineInsights(input: {
       nextAction,
     };
   };
+  const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
     feature: 'pipeline_insights',
-    systemPrompt:
-      'You are an AI pipeline insight assistant. Assess stall signals, risk score/reasons, urgency queue, and next action.',
+    systemPrompt: `${config.prompts.copilotSystem}
+Task: Assess stall signals, risk score/reasons, urgency queue, and next action for pipeline operations.`,
     userInput: JSON.stringify({
       leadId: lead?.id ?? null,
       dealId: deal?.id ?? null,

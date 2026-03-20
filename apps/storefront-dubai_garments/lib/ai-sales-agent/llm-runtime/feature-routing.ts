@@ -20,10 +20,10 @@ export const AI_FEATURE_ROUTING: Record<
   copilot_at_risk_deals: { label: 'At-Risk Deals', llmEnabled: false },
   lead_triage: { label: 'Lead Triage', llmEnabled: false },
   reply_studio: { label: 'Reply Studio', llmEnabled: true },
-  quote_recommendation: { label: 'Quote Recommendation', llmEnabled: false },
+  quote_recommendation: { label: 'Quote Recommendation', llmEnabled: true },
   quote_copilot_summary: { label: 'Quote Copilot Summary', llmEnabled: true },
-  pipeline_insights: { label: 'Pipeline Insights', llmEnabled: false },
-  smart_routing_sla: { label: 'Smart Routing + SLA', llmEnabled: false },
+  pipeline_insights: { label: 'Pipeline Insights', llmEnabled: true },
+  smart_routing_sla: { label: 'Smart Routing + SLA', llmEnabled: true },
   fastapi_lead_ai: { label: 'Lead AI (FastAPI)', llmEnabled: true },
   fastapi_email_draft: { label: 'Email Draft (FastAPI)', llmEnabled: true },
 };

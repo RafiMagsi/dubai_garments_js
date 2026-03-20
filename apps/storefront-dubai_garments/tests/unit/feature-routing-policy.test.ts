@@ -12,5 +12,11 @@ describe('LLM feature routing policy (P2 selective deterministic)', () => {
     expect(isFeatureLlmEnabled('copilot_draft_reply')).toBe(true);
     expect(isFeatureLlmEnabled('reply_studio')).toBe(true);
   });
-});
 
+  it('enables revenue/operations endpoints in P3 rollout', () => {
+    expect(isFeatureLlmEnabled('quote_recommendation')).toBe(true);
+    expect(isFeatureLlmEnabled('quote_copilot_summary')).toBe(true);
+    expect(isFeatureLlmEnabled('pipeline_insights')).toBe(true);
+    expect(isFeatureLlmEnabled('smart_routing_sla')).toBe(true);
+  });
+});
