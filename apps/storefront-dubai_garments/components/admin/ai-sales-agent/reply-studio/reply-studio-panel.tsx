@@ -232,7 +232,9 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
               processingMs={response.processingMs}
               fallbackUsed={response.fallbackUsed}
               provider={response.provider}
+              model={response.model}
               source={response.source}
+              schemaValid={response.schemaValid}
             />
 
             <div

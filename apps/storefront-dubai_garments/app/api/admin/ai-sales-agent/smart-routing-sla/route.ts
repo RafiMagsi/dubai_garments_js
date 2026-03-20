@@ -68,11 +68,13 @@ export async function POST(request: NextRequest) {
       dealId: result.dealId,
       source: result.source,
       provider: result.provider,
+      model: result.model,
       fallbackUsed: result.fallbackUsed,
+      schemaValid: result.schemaValid,
       failureReason: result.failureReason,
       dryRun: result.dryRun,
       data: result.data,
-      processingMs: Date.now() - startedAt,
+      processingMs: result.processingMs ?? Date.now() - startedAt,
       requestId,
     });
   } catch (error) {

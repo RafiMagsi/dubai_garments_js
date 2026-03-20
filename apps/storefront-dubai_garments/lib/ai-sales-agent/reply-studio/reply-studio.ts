@@ -204,7 +204,10 @@ Task: Generate structured reply drafts for first reply, follow-up, or clarificat
   const data = runtimeResult.data;
   const source = runtimeResult.source;
   const provider = runtimeResult.provider;
+  const model = runtimeResult.model;
   const fallbackUsed = runtimeResult.fallbackUsed;
+  const schemaValid = runtimeResult.schemaValid;
+  const processingMs = runtimeResult.processingMs;
   const failureReason = runtimeResult.failureReason;
 
   if (!input.dryRun) {
@@ -232,7 +235,10 @@ Task: Generate structured reply drafts for first reply, follow-up, or clarificat
   return {
     source,
     provider,
+    model,
     fallbackUsed,
+    schemaValid,
+    processingMs,
     failureReason,
     dryRun: !!input.dryRun,
     data,

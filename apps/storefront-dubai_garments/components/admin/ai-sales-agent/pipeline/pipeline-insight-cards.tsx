@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui';
 import { executePipelineInsightAction } from '@/features/admin/ai-sales-agent/api';
+import { AisTrustBadges } from '@/components/admin/ai-sales-agent/reusable';
 import type {
   PipelineInsightEnvelope,
   PipelineInsightQueueItem,
@@ -54,6 +55,14 @@ export default function PipelineInsightCards({ response, compact = false }: Prop
           <p className="pins-kicker">Pipeline Insight Summary</p>
         </div>
         <p className="pins-item-text">{response.data.summary}</p>
+        <AisTrustBadges
+          processingMs={response.processingMs}
+          fallbackUsed={response.fallbackUsed}
+          provider={response.provider}
+          model={response.model}
+          source={response.source}
+          schemaValid={response.schemaValid}
+        />
 
         <div className="pins-badges">
           <span className="dg-badge">Risk Score: {response.data.riskScore}</span>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Card, CardText, CardTitle } from '@/components/ui';
+import { AisTrustBadges } from '@/components/admin/ai-sales-agent/reusable';
 import type {
   AiSalesAgentEnvelope,
   LeadTriageEnvelope,
@@ -210,6 +211,33 @@ export default function AiSalesAgentActionCards({
 }: ActionCardsProps) {
   if (!response?.ok) return null;
 
+  const runtimeMeta = {
+    processingMs:
+      typeof response === 'object' && response && 'processingMs' in response
+        ? (response as { processingMs?: number }).processingMs
+        : undefined,
+    fallbackUsed:
+      typeof response === 'object' && response && 'fallbackUsed' in response
+        ? Boolean((response as { fallbackUsed?: boolean }).fallbackUsed)
+        : false,
+    provider:
+      typeof response === 'object' && response && 'provider' in response
+        ? ((response as { provider?: string | null }).provider ?? null)
+        : null,
+    model:
+      typeof response === 'object' && response && 'model' in response
+        ? ((response as { model?: string | null }).model ?? null)
+        : null,
+    source:
+      typeof response === 'object' && response && 'source' in response
+        ? ((response as { source?: string | null }).source ?? null)
+        : null,
+    schemaValid:
+      typeof response === 'object' && response && 'schemaValid' in response
+        ? (response as { schemaValid?: boolean }).schemaValid
+        : undefined,
+  };
+
   const motionStyle = (
     <style jsx>{`
       @keyframes aicReveal {
@@ -304,6 +332,9 @@ export default function AiSalesAgentActionCards({
           >
             {String(triage.classification).toUpperCase()}
           </span>
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <AisTrustBadges {...runtimeMeta} />
         </div>
 
         <div
@@ -420,6 +451,9 @@ export default function AiSalesAgentActionCards({
             </div>
             <Badge text="AI Suggested Queue" tone="blue" />
           </div>
+          <div style={{ marginTop: 10 }}>
+            <AisTrustBadges {...runtimeMeta} />
+          </div>
         </Card>
 
         {data.items.map((item, index) => (
@@ -486,6 +520,7 @@ export default function AiSalesAgentActionCards({
                 </Button>
               ) : null}
             </div>
+            <AisTrustBadges {...runtimeMeta} />
 
             {data.subject ? <Box title="Subject" value={data.subject} /> : null}
             <Box title="Message" value={data.message} />
@@ -524,6 +559,9 @@ export default function AiSalesAgentActionCards({
               <CardTitle style={{ marginTop: 6 }}>{data.summary}</CardTitle>
             </div>
             <Badge text="Deal Risk Queue" tone="red" />
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <AisTrustBadges {...runtimeMeta} />
           </div>
         </Card>
 

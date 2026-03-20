@@ -145,7 +145,10 @@ Important: Owner assignment is deterministic and handled by system rules.`,
 
   const source = runtimeResult.source;
   const provider = runtimeResult.provider;
+  const model = runtimeResult.model;
   const fallbackUsed = runtimeResult.fallbackUsed;
+  const schemaValid = runtimeResult.schemaValid;
+  const processingMs = runtimeResult.processingMs;
   const failureReason = runtimeResult.failureReason;
   const data = {
     ...runtimeResult.data,
@@ -202,7 +205,10 @@ Important: Owner assignment is deterministic and handled by system rules.`,
     dealId: deal?.id ?? null,
     source,
     provider,
+    model,
     fallbackUsed,
+    schemaValid,
+    processingMs,
     failureReason,
     dryRun: !!input.dryRun,
     data,

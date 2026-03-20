@@ -183,7 +183,10 @@ Task: Generate a structured quote summary and upsell/cross-sell suggestions.`,
 
   const source = runtimeResult.source;
   const provider = runtimeResult.provider;
+  const model = runtimeResult.model;
   const fallbackUsed = runtimeResult.fallbackUsed;
+  const schemaValid = runtimeResult.schemaValid;
+  const processingMs = runtimeResult.processingMs;
   const failureReason = runtimeResult.failureReason;
   const summary = runtimeResult.data.summary;
   const upsellSuggestions = runtimeResult.data.upsellSuggestions;
@@ -324,7 +327,10 @@ Task: Generate a structured quote summary and upsell/cross-sell suggestions.`,
     quoteId: input.quoteId ?? null,
     source,
     provider,
+    model,
     fallbackUsed,
+    schemaValid,
+    processingMs,
     failureReason,
       dryRun: !!input.dryRun,
       data: {

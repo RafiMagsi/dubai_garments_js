@@ -67,10 +67,12 @@ export async function POST(request: NextRequest) {
       leadId: parsed.data.leadId,
       source: result.source,
       provider: result.provider,
+      model: result.model,
       fallbackUsed: result.fallbackUsed,
+      schemaValid: result.schemaValid,
       failureReason: result.failureReason,
       dryRun: result.dryRun,
-      processingMs: Date.now() - startedAt,
+      processingMs: result.processingMs ?? Date.now() - startedAt,
       data: result.data,
       requestId,
     });

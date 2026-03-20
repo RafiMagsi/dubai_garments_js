@@ -32,6 +32,10 @@ export type CopilotEnvelope = {
   action?: CopilotAction;
   source?: 'model' | 'fallback';
   schemaValid?: boolean;
+  provider?: string;
+  model?: string;
+  fallbackUsed?: boolean;
+  processingMs?: number;
   dryRun?: boolean;
   executed?: boolean;
   data?: unknown;
@@ -64,6 +68,12 @@ export type LeadTriageEnvelope = {
   ok: boolean;
   dryRun: boolean;
   source: 'model' | 'fallback';
+  provider?: string;
+  model?: string;
+  fallbackUsed?: boolean;
+  schemaValid?: boolean;
+  processingMs?: number;
+  failureReason?: string | null;
   persisted: boolean;
   leadId: string;
   data: LeadTriageOutput;
@@ -166,7 +176,9 @@ export type ReplyStudioEnvelope = {
   leadId: string;
   source: 'model' | 'fallback';
   provider: string;
+  model?: string;
   fallbackUsed: boolean;
+  schemaValid?: boolean;
   failureReason: string | null;
   dryRun: boolean;
   processingMs?: number;
@@ -201,7 +213,9 @@ export type QuoteRecommendationEnvelope = {
   quoteId: string | null;
   source: 'model' | 'fallback';
   provider: string;
+  model?: string;
   fallbackUsed: boolean;
+  schemaValid?: boolean;
   failureReason: string | null;
   dryRun: boolean;
   processingMs?: number;
@@ -244,7 +258,9 @@ export type QuoteCopilotEnvelope = {
   quoteId: string | null;
   source: 'model' | 'fallback';
   provider: string;
+  model?: string;
   fallbackUsed: boolean;
+  schemaValid?: boolean;
   failureReason: string | null;
   dryRun: boolean;
   processingMs?: number;
@@ -295,7 +311,9 @@ export type PipelineInsightEnvelope = {
   dealId: string | null;
   source: 'model' | 'fallback';
   provider: string;
+  model?: string;
   fallbackUsed: boolean;
+  schemaValid?: boolean;
   failureReason: string | null;
   dryRun: boolean;
   processingMs?: number;
@@ -362,7 +380,9 @@ export type SmartRoutingSlaEnvelope = {
   dealId: string | null;
   source: 'model' | 'fallback';
   provider: string;
+  model?: string;
   fallbackUsed: boolean;
+  schemaValid?: boolean;
   failureReason: string | null;
   dryRun: boolean;
   data: {

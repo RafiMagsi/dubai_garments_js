@@ -161,7 +161,9 @@ export default function QuoteCopilotPanel() {
                 processingMs={copilotResponse.processingMs}
                 fallbackUsed={copilotResponse.fallbackUsed}
                 provider={copilotResponse.provider}
+                model={copilotResponse.model}
                 source={copilotResponse.source}
+                schemaValid={copilotResponse.schemaValid}
                 className="qcop-badges"
               />
               <AisBadge tone="slate">Accepted: {copilotResponse.data.summary.acceptedCount}</AisBadge>

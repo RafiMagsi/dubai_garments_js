@@ -183,7 +183,10 @@ Task: Assess stall signals, risk score/reasons, urgency queue, and next action f
 
   const source = runtimeResult.source;
   const provider = runtimeResult.provider;
+  const model = runtimeResult.model;
   const fallbackUsed = runtimeResult.fallbackUsed;
+  const schemaValid = runtimeResult.schemaValid;
+  const processingMs = runtimeResult.processingMs;
   const failureReason = runtimeResult.failureReason;
   const data = runtimeResult.data;
 
@@ -212,7 +215,10 @@ Task: Assess stall signals, risk score/reasons, urgency queue, and next action f
     dealId: deal?.id ?? null,
     source,
     provider,
+    model,
     fallbackUsed,
+    schemaValid,
+    processingMs,
     failureReason,
     dryRun: !!input.dryRun,
     data,

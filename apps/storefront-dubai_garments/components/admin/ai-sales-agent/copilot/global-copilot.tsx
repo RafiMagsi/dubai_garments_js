@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, SelectField, TextField } from '@/components/ui';
 import AiSalesAgentActionCards from '@/components/admin/ai-sales-agent/copilot/action-cards';
+import { AisTrustBadges } from '@/components/admin/ai-sales-agent/reusable';
 import { executeCopilot, queryCopilot, runLeadTriage } from '@/features/admin/ai-sales-agent/api';
 import type {
   AiSalesAgentEnvelope,
@@ -519,12 +520,14 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
 
             {response?.ok ? (
             <div className="dg-mt-4 dg-flex dg-flex-wrap dg-gap-2">
-                {'source' in response && response.source ? (
-                <span className="dg-badge">Source: {response.source}</span>
-                ) : null}
-                {'schemaValid' in response && typeof response.schemaValid === 'boolean' ? (
-                <span className="dg-badge">Schema: {response.schemaValid ? 'valid' : 'fallback'}</span>
-                ) : null}
+                <AisTrustBadges
+                  processingMs={'processingMs' in response ? response.processingMs : undefined}
+                  fallbackUsed={'fallbackUsed' in response ? Boolean(response.fallbackUsed) : false}
+                  provider={'provider' in response ? response.provider : undefined}
+                  model={'model' in response ? response.model : undefined}
+                  source={'source' in response ? response.source : undefined}
+                  schemaValid={'schemaValid' in response ? response.schemaValid : undefined}
+                />
                 {response.requestId ? <span className="dg-badge">Request: {response.requestId}</span> : null}
                 {isCopilotEnvelope(response) && response.auditId ? (
                   <span className="dg-badge">Audit: {response.auditId}</span>

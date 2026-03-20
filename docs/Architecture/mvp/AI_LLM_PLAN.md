@@ -60,6 +60,20 @@ P5. **Phase 5: UX Transparency**
   - schema status (“Validated output”)
 - Keep this consistent across Copilot, Triage, Reply, Quote, Pipeline cards.
 
+P5 Status (implemented):
+- Added a shared runtime transparency badge block used across:
+  - Copilot (including triage output)
+  - Reply Studio
+  - Quote Recommendation + Quote Copilot
+  - Pipeline Insights
+- UI now consistently surfaces:
+  - `Model Used`
+  - `Primary/Fallback`
+  - `Latency`
+  - `Validated Output`
+- Standardized envelope fields were propagated so cards can render consistent metadata:
+  - `provider`, `model`, `fallbackUsed`, `schemaValid`, `processingMs`.
+
 ## Public/API/Type Changes
 1. Extend contracts (if missing) to include runtime metadata uniformly:
 - `provider`, `model`, `source`, `fallbackUsed`, `failureReason`, `processingMs`, `requestId`

@@ -184,14 +184,20 @@ Task: Produce product suggestions, missing-data checks, and quote readiness outp
 
   const source = runtimeResult.source;
   const provider = runtimeResult.provider;
+  const model = runtimeResult.model;
   const fallbackUsed = runtimeResult.fallbackUsed;
+  const schemaValid = runtimeResult.schemaValid;
+  const processingMs = runtimeResult.processingMs;
   const failureReason = runtimeResult.failureReason;
   const data = runtimeResult.data;
 
   return {
     source,
     provider,
+    model,
     fallbackUsed,
+    schemaValid,
+    processingMs,
     failureReason,
     dryRun: !!input.dryRun,
     leadId: input.leadId,

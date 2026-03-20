@@ -226,7 +226,10 @@ export async function runLeadTriage(
 ): Promise<{
   source: 'model' | 'fallback';
   provider: string;
+  model: string;
   fallbackUsed: boolean;
+  schemaValid: boolean;
+  processingMs: number;
   failureReason: string | null;
   persisted: boolean;
   data: LeadTriageOutput;
@@ -315,14 +318,20 @@ export async function runLeadTriage(
   const data: LeadTriageOutput = runtimeResult.data;
   const source = runtimeResult.source;
   const provider = runtimeResult.provider;
+  const model = runtimeResult.model;
   const fallbackUsed = runtimeResult.fallbackUsed;
+  const schemaValid = runtimeResult.schemaValid;
+  const processingMs = runtimeResult.processingMs;
   const failureReason = runtimeResult.failureReason;
 
   if (dryRun) {
     return {
         source,
         provider,
+        model,
         fallbackUsed,
+        schemaValid,
+        processingMs,
         failureReason,
         persisted: false,
         data,
@@ -380,7 +389,10 @@ export async function runLeadTriage(
   return {
     source,
     provider,
+    model,
     fallbackUsed,
+    schemaValid,
+    processingMs,
     failureReason,
     persisted: true,
     data,

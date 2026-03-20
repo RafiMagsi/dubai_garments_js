@@ -135,7 +135,9 @@ export default function QuoteRecommendationPanel({
                 processingMs={response.processingMs}
                 fallbackUsed={response.fallbackUsed}
                 provider={response.provider}
+                model={response.model}
                 source={response.source}
+                schemaValid={response.schemaValid}
                 className="qrec-badges"
               />
               <AisBadge tone="blue">Confidence: {response.data.confidence}%</AisBadge>

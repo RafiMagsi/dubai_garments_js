@@ -120,25 +120,36 @@ export function AisBadge({
 
 type AisTrustBadgesProps = {
   processingMs?: number;
-  fallbackUsed: boolean;
+  fallbackUsed?: boolean;
   provider?: string | null;
+  model?: string | null;
   source?: string | null;
+  schemaValid?: boolean;
   className?: string;
 };
 
 export function AisTrustBadges({
   processingMs,
-  fallbackUsed,
+  fallbackUsed = false,
   provider,
+  model,
   source,
+  schemaValid,
   className,
 }: AisTrustBadgesProps) {
+  const modelLabel = model || provider || 'n/a';
   return (
     <div className={['ars-badges', className].filter(Boolean).join(' ')}>
-      <AisBadge tone="blue">Latency: {processingMs ?? 0}ms</AisBadge>
+      <AisBadge tone="blue">Model Used: {modelLabel}</AisBadge>
       <AisBadge tone={fallbackUsed ? 'amber' : 'green'}>
-        {fallbackUsed ? 'Fallback Active' : 'Primary Path'}
+        Primary/Fallback: {fallbackUsed ? 'Fallback' : 'Primary'}
       </AisBadge>
+      <AisBadge tone="blue">Latency: {processingMs ?? 0}ms</AisBadge>
+      {typeof schemaValid === 'boolean' ? (
+        <AisBadge tone={schemaValid ? 'green' : 'amber'}>
+          Validated Output: {schemaValid ? 'Yes' : 'No'}
+        </AisBadge>
+      ) : null}
       {provider ? <AisBadge tone="slate">Provider: {provider}</AisBadge> : null}
       {source ? <AisBadge tone="slate">Source: {source}</AisBadge> : null}
     </div>
