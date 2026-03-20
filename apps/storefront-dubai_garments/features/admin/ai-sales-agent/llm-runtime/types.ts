@@ -426,6 +426,16 @@ export type AiModelConfig = {
   requestTimeoutMs: number;
   maxRetries: number;
   retryBackoffMs: number;
+  featureFlags: {
+    copilot: boolean;
+    triage: boolean;
+    replyStudio: boolean;
+    quote: boolean;
+    pipeline: boolean;
+    smartRoutingSla: boolean;
+    fastapiLeadAi: boolean;
+    fastapiEmailDraft: boolean;
+  };
   prompts: {
     copilotSystem: string;
     replyStudioSystem: string;

@@ -5,6 +5,7 @@ import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
 type TriageTenantContext = {
   userId?: string | null;
   role: string;
+  requestId?: string;
 };
 
 function normalizeText(value: string | null | undefined) {
@@ -289,6 +290,7 @@ export async function runLeadTriage(
   };
 
   const runtimeResult = await runStructuredWithRuntime({
+    requestId: context.requestId,
     feature: 'lead_triage',
     systemPrompt:
       'You are an AI lead triage assistant for B2B sales. Classify lead intent, urgency, complexity, confidence, score, classification, and next best action.',

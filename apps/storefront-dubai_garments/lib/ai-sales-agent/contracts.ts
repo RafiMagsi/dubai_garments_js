@@ -536,6 +536,27 @@ export const AiModelConfigSchema = z.object({
   requestTimeoutMs: z.number().int().min(1000).max(120000).default(15000),
   maxRetries: z.number().int().min(0).max(5).default(1),
   retryBackoffMs: z.number().int().min(100).max(10000).default(750),
+  featureFlags: z
+    .object({
+      copilot: z.boolean().default(true),
+      triage: z.boolean().default(true),
+      replyStudio: z.boolean().default(true),
+      quote: z.boolean().default(true),
+      pipeline: z.boolean().default(true),
+      smartRoutingSla: z.boolean().default(true),
+      fastapiLeadAi: z.boolean().default(true),
+      fastapiEmailDraft: z.boolean().default(true),
+    })
+    .default({
+      copilot: true,
+      triage: true,
+      replyStudio: true,
+      quote: true,
+      pipeline: true,
+      smartRoutingSla: true,
+      fastapiLeadAi: true,
+      fastapiEmailDraft: true,
+    }),
   prompts: z
     .object({
       copilotSystem: z.string().min(1).max(8000).default('You are an AI sales copilot.'),

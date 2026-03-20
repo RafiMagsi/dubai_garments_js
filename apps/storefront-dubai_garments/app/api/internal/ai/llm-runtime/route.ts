@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
 import { type AiFeatureRoutingKey } from '@/lib/ai-sales-agent/feature-routing';
+import { acquireApiRateLimitSlot } from '@/lib/ai-sales-agent/llm-runtime/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -48,16 +49,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await runStructuredWithRuntime({
-      feature: parsed.data.feature,
-      systemPrompt: parsed.data.systemPrompt,
-      userInput: parsed.data.userInput,
-      schemaLabel: parsed.data.schemaLabel,
-      schemaHint: parsed.data.schemaHint,
-      outputSchema: z.record(z.string(), z.any()),
-      fallbackReasonPrefix: parsed.data.fallbackReasonPrefix,
-      fallback: () => parsed.data.fallbackData ?? {},
+    const limiter = acquireApiRateLimitSlot({
+      endpoint: 'internal-llm-runtime',
+      identity: 'automation',
+      maxPerMinute: Number(process.env.AI_RUNTIME_RATE_LIMIT_PER_MINUTE ?? 30),
+      maxInFlight: Number(process.env.AI_RUNTIME_MAX_INFLIGHT ?? 4),
+      requestId,
     });
+    if (!limiter.ok) {
+      return limiter.response;
+    }
+
+    let result;
+    try {
+      result = await runStructuredWithRuntime({
+        requestId,
+        feature: parsed.data.feature,
+        systemPrompt: parsed.data.systemPrompt,
+        userInput: parsed.data.userInput,
+        schemaLabel: parsed.data.schemaLabel,
+        schemaHint: parsed.data.schemaHint,
+        outputSchema: z.record(z.string(), z.any()),
+        fallbackReasonPrefix: parsed.data.fallbackReasonPrefix,
+        fallback: () => parsed.data.fallbackData ?? {},
+      });
+    } finally {
+      limiter.release();
+    }
 
     return NextResponse.json({
       ok: true,

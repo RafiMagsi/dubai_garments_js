@@ -10,6 +10,7 @@ import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 type QuoteCopilotContext = {
   userId: string;
   role: string;
+  requestId?: string;
 };
 
 const QuoteCopilotGenerationSchema = z.object({
@@ -154,6 +155,7 @@ export async function runQuoteCopilot(input: {
   const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
+    requestId: input.context.requestId,
     feature: 'quote_copilot_summary',
     systemPrompt: `${config.prompts.quoteCopilotSystem}
 Task: Generate a structured quote summary and upsell/cross-sell suggestions.`,

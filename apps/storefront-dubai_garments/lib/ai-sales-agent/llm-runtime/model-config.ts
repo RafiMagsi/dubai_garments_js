@@ -24,6 +24,14 @@ const MODEL_SETTING_KEYS = {
   requestTimeoutMs: 'AI_MODEL_REQUEST_TIMEOUT_MS',
   maxRetries: 'AI_MODEL_MAX_RETRIES',
   retryBackoffMs: 'AI_MODEL_RETRY_BACKOFF_MS',
+  enableCopilot: 'AI_RUNTIME_ENABLE_COPILOT',
+  enableTriage: 'AI_RUNTIME_ENABLE_TRIAGE',
+  enableReplyStudio: 'AI_RUNTIME_ENABLE_REPLY_STUDIO',
+  enableQuote: 'AI_RUNTIME_ENABLE_QUOTE',
+  enablePipeline: 'AI_RUNTIME_ENABLE_PIPELINE',
+  enableSmartRoutingSla: 'AI_RUNTIME_ENABLE_SMART_ROUTING_SLA',
+  enableFastapiLeadAi: 'AI_RUNTIME_ENABLE_FASTAPI_LEAD_AI',
+  enableFastapiEmailDraft: 'AI_RUNTIME_ENABLE_FASTAPI_EMAIL_DRAFT',
   promptCopilot: 'AI_PROMPT_COPILOT_SYSTEM',
   promptReplyStudio: 'AI_PROMPT_REPLY_STUDIO_SYSTEM',
   promptQuoteCopilot: 'AI_PROMPT_QUOTE_COPILOT_SYSTEM',
@@ -40,6 +48,18 @@ function parseBoolean(value: string | undefined, fallback: boolean) {
   if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
   if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
   return fallback;
+}
+
+function parseFlagWithEnv(
+  envKey: string,
+  settingsValue: string | undefined,
+  fallback: boolean
+) {
+  const envValue = process.env[envKey];
+  if (typeof envValue === 'string' && envValue.trim().length > 0) {
+    return parseBoolean(envValue, fallback);
+  }
+  return parseBoolean(settingsValue, fallback);
 }
 
 function parseStylePreset(
@@ -180,6 +200,48 @@ export async function getAiModelConfig() {
       settings.get(MODEL_SETTING_KEYS.retryBackoffMs),
       defaults.retryBackoffMs
     ),
+    featureFlags: {
+      copilot: parseFlagWithEnv(
+        'AI_RUNTIME_ENABLE_COPILOT',
+        settings.get(MODEL_SETTING_KEYS.enableCopilot),
+        defaults.featureFlags.copilot
+      ),
+      triage: parseFlagWithEnv(
+        'AI_RUNTIME_ENABLE_TRIAGE',
+        settings.get(MODEL_SETTING_KEYS.enableTriage),
+        defaults.featureFlags.triage
+      ),
+      replyStudio: parseFlagWithEnv(
+        'AI_RUNTIME_ENABLE_REPLY_STUDIO',
+        settings.get(MODEL_SETTING_KEYS.enableReplyStudio),
+        defaults.featureFlags.replyStudio
+      ),
+      quote: parseFlagWithEnv(
+        'AI_RUNTIME_ENABLE_QUOTE',
+        settings.get(MODEL_SETTING_KEYS.enableQuote),
+        defaults.featureFlags.quote
+      ),
+      pipeline: parseFlagWithEnv(
+        'AI_RUNTIME_ENABLE_PIPELINE',
+        settings.get(MODEL_SETTING_KEYS.enablePipeline),
+        defaults.featureFlags.pipeline
+      ),
+      smartRoutingSla: parseFlagWithEnv(
+        'AI_RUNTIME_ENABLE_SMART_ROUTING_SLA',
+        settings.get(MODEL_SETTING_KEYS.enableSmartRoutingSla),
+        defaults.featureFlags.smartRoutingSla
+      ),
+      fastapiLeadAi: parseFlagWithEnv(
+        'AI_RUNTIME_ENABLE_FASTAPI_LEAD_AI',
+        settings.get(MODEL_SETTING_KEYS.enableFastapiLeadAi),
+        defaults.featureFlags.fastapiLeadAi
+      ),
+      fastapiEmailDraft: parseFlagWithEnv(
+        'AI_RUNTIME_ENABLE_FASTAPI_EMAIL_DRAFT',
+        settings.get(MODEL_SETTING_KEYS.enableFastapiEmailDraft),
+        defaults.featureFlags.fastapiEmailDraft
+      ),
+    },
     prompts: {
       copilotSystem: settings.get(MODEL_SETTING_KEYS.promptCopilot) ?? defaults.prompts.copilotSystem,
       replyStudioSystem:
@@ -371,6 +433,54 @@ export async function updateAiModelConfig(input: {
     key: MODEL_SETTING_KEYS.retryBackoffMs,
     value: String(input.config.retryBackoffMs),
     description: 'AI retry backoff base delay in milliseconds',
+    updatedByUserId: input.updatedByUserId,
+  });
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.enableCopilot,
+    value: String(input.config.featureFlags.copilot),
+    description: 'Enable LLM runtime for copilot features',
+    updatedByUserId: input.updatedByUserId,
+  });
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.enableTriage,
+    value: String(input.config.featureFlags.triage),
+    description: 'Enable LLM runtime for triage features',
+    updatedByUserId: input.updatedByUserId,
+  });
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.enableReplyStudio,
+    value: String(input.config.featureFlags.replyStudio),
+    description: 'Enable LLM runtime for reply studio features',
+    updatedByUserId: input.updatedByUserId,
+  });
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.enableQuote,
+    value: String(input.config.featureFlags.quote),
+    description: 'Enable LLM runtime for quote recommendation/copilot features',
+    updatedByUserId: input.updatedByUserId,
+  });
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.enablePipeline,
+    value: String(input.config.featureFlags.pipeline),
+    description: 'Enable LLM runtime for pipeline insights',
+    updatedByUserId: input.updatedByUserId,
+  });
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.enableSmartRoutingSla,
+    value: String(input.config.featureFlags.smartRoutingSla),
+    description: 'Enable LLM runtime for smart routing + SLA reasoning',
+    updatedByUserId: input.updatedByUserId,
+  });
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.enableFastapiLeadAi,
+    value: String(input.config.featureFlags.fastapiLeadAi),
+    description: 'Enable LLM runtime for FastAPI lead AI calls',
+    updatedByUserId: input.updatedByUserId,
+  });
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.enableFastapiEmailDraft,
+    value: String(input.config.featureFlags.fastapiEmailDraft),
+    description: 'Enable LLM runtime for FastAPI email draft calls',
     updatedByUserId: input.updatedByUserId,
   });
   await upsertSetting({

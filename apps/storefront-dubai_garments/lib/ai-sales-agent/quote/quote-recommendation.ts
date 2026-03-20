@@ -6,6 +6,7 @@ import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 type QuoteRecommendationContext = {
   userId: string;
   role: string;
+  requestId?: string;
 };
 
 function normalizeText(value: string | null | undefined) {
@@ -148,6 +149,7 @@ export async function runQuoteRecommendation(input: {
   const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
+    requestId: input.context.requestId,
     feature: 'quote_recommendation',
     systemPrompt: `${config.prompts.quoteCopilotSystem}
 Task: Produce product suggestions, missing-data checks, and quote readiness output as structured JSON.`,

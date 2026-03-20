@@ -34,6 +34,16 @@ const DEFAULT_MODEL_CONFIG: AiModelConfig = {
   requestTimeoutMs: 15000,
   maxRetries: 1,
   retryBackoffMs: 750,
+  featureFlags: {
+    copilot: true,
+    triage: true,
+    replyStudio: true,
+    quote: true,
+    pipeline: true,
+    smartRoutingSla: true,
+    fastapiLeadAi: true,
+    fastapiEmailDraft: true,
+  },
   prompts: {
     copilotSystem: 'You are an AI sales copilot.',
     replyStudioSystem: 'Generate concise and professional sales replies.',
@@ -106,6 +116,16 @@ export default function ModelSettingsPanel() {
 
   function updateConfig(partial: Partial<AiModelConfig>) {
     setConfig((prev) => ({ ...prev, ...partial }));
+  }
+
+  function updateFeatureFlag(key: keyof AiModelConfig['featureFlags'], value: boolean) {
+    setConfig((prev) => ({
+      ...prev,
+      featureFlags: {
+        ...prev.featureFlags,
+        [key]: value,
+      },
+    }));
   }
 
   function updatePrompt<K extends keyof AiModelConfig['prompts']>(
@@ -220,6 +240,7 @@ export default function ModelSettingsPanel() {
         openAiKeySource={openAiProviderCheck?.source ?? 'missing'}
         onOpenAiApiKeyChange={handleOpenAiApiKeyChange}
         onChange={updateConfig}
+        onFeatureFlagChange={updateFeatureFlag}
         onStylePresetChange={handleStylePresetChange}
         onSave={handleSave}
         onResetDefaults={handleResetDefaults}

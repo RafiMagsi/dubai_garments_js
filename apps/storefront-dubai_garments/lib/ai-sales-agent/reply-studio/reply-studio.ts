@@ -11,6 +11,7 @@ import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 type ReplyStudioContext = {
   userId: string;
   role: string;
+  requestId?: string;
 };
 
 function normalizeText(value: string | null | undefined) {
@@ -178,6 +179,7 @@ export async function runReplyStudio(input: {
   const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
+    requestId: input.context.requestId,
     feature: 'reply_studio',
     systemPrompt: `${config.prompts.replyStudioSystem}
 Task: Generate structured reply drafts for first reply, follow-up, or clarification modes.`,

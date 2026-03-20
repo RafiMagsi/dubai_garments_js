@@ -94,7 +94,10 @@ function getRuntimeFeature(feature: PromptTestFeature) {
   return 'quote_copilot_summary' as const;
 }
 
-export async function runAiPromptTest(rawInput: unknown) {
+export async function runAiPromptTest(
+  rawInput: unknown,
+  options?: { requestId?: string | null }
+) {
   const parsed = AiPromptTestRequestSchema.parse(rawInput);
   const { config } = await getAiModelConfig();
   const prompt = `${parsed.input}\n\nContext: ${JSON.stringify(parsed.context ?? {}, null, 2)}`;
@@ -107,6 +110,7 @@ export async function runAiPromptTest(rawInput: unknown) {
 
     if (parsed.feature === 'copilot') {
       runtimeResult = await runStructuredWithRuntime({
+        requestId: options?.requestId,
         feature: getRuntimeFeature(parsed.feature),
         systemPrompt: resolveSystemPrompt(parsed.feature, config.prompts, parsed.configOverride),
         userInput: prompt,
@@ -119,6 +123,7 @@ export async function runAiPromptTest(rawInput: unknown) {
       });
     } else if (parsed.feature === 'reply_studio') {
       runtimeResult = await runStructuredWithRuntime({
+        requestId: options?.requestId,
         feature: getRuntimeFeature(parsed.feature),
         systemPrompt: resolveSystemPrompt(parsed.feature, config.prompts, parsed.configOverride),
         userInput: prompt,
@@ -131,6 +136,7 @@ export async function runAiPromptTest(rawInput: unknown) {
       });
     } else {
       runtimeResult = await runStructuredWithRuntime({
+        requestId: options?.requestId,
         feature: getRuntimeFeature(parsed.feature),
         systemPrompt: resolveSystemPrompt(parsed.feature, config.prompts, parsed.configOverride),
         userInput: prompt,

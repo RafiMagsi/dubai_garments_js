@@ -6,6 +6,7 @@ import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 type RoutingContext = {
   userId: string;
   role: string;
+  requestId?: string;
 };
 
 const SmartRoutingSlaOutputSchema = z.object({
@@ -120,6 +121,7 @@ export async function runSmartRoutingSla(input: {
   const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
+    requestId: input.context.requestId,
     feature: 'smart_routing_sla',
     systemPrompt: `${config.prompts.copilotSystem}
 Task: Generate routing/SLA reasoning and next action text.

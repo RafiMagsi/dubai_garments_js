@@ -3,6 +3,7 @@ import { PipelineInsightRequestSchema } from '@/lib/ai-sales-agent/contracts';
 import { runPipelineInsights } from '@/lib/ai-sales-agent/pipeline-insights';
 import { getAiPayloadValidationMessage } from '@/lib/ai-sales-agent/validation-messages';
 import { requireAdminApiAccess } from '@/lib/auth/require-admin';
+import { acquireApiRateLimitSlot } from '@/lib/ai-sales-agent/llm-runtime/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -33,13 +34,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await runPipelineInsights({
-      ...parsed.data,
-      context: {
-        userId: session.sub,
-        role: session.role,
-      },
+    const limiter = acquireApiRateLimitSlot({
+      endpoint: 'pipeline-insights',
+      identity: session.sub,
+      maxPerMinute: Number(process.env.AI_RUNTIME_RATE_LIMIT_PER_MINUTE ?? 30),
+      maxInFlight: Number(process.env.AI_RUNTIME_MAX_INFLIGHT ?? 4),
+      requestId,
     });
+    if (!limiter.ok) {
+      return limiter.response;
+    }
+
+    let result;
+    try {
+      result = await runPipelineInsights({
+        ...parsed.data,
+        context: {
+          userId: session.sub,
+          role: session.role,
+          requestId: requestId ?? undefined,
+        },
+      });
+    } finally {
+      limiter.release();
+    }
 
     return NextResponse.json({
       ok: true,

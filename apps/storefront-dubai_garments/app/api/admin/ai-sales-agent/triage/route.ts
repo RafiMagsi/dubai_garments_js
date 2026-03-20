@@ -3,6 +3,7 @@ import { LeadTriageRequestSchema } from '@/lib/ai-sales-agent/contracts';
 import { runLeadTriage } from '@/lib/ai-sales-agent/triage';
 import { getAiPayloadValidationMessage } from '@/lib/ai-sales-agent/validation-messages';
 import { requireAdminApiAccess } from '@/lib/auth/require-admin';
+import { acquireApiRateLimitSlot } from '@/lib/ai-sales-agent/llm-runtime/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,15 +35,32 @@ export async function POST(request: NextRequest) {
     const triageContext = {
       userId: session.sub,
       role: session.role,
+      requestId: requestId ?? undefined,
     };
 
-    // Intentional Phase-2 policy: triage remains deterministic/internal for cost/control.
-    // LLM enablement for triage is deferred to a later phase.
-    const result = await runLeadTriage(
-      parsed.data.leadId,
-      triageContext,
-      parsed.data.dry_run
-    );
+    const limiter = acquireApiRateLimitSlot({
+      endpoint: 'triage',
+      identity: session.sub,
+      maxPerMinute: Number(process.env.AI_RUNTIME_RATE_LIMIT_PER_MINUTE ?? 40),
+      maxInFlight: Number(process.env.AI_RUNTIME_MAX_INFLIGHT ?? 4),
+      requestId,
+    });
+    if (!limiter.ok) {
+      return limiter.response;
+    }
+
+    let result;
+    try {
+      // Intentional Phase-2 policy: triage remains deterministic/internal for cost/control.
+      // LLM enablement for triage is deferred to a later phase.
+      result = await runLeadTriage(
+        parsed.data.leadId,
+        triageContext,
+        parsed.data.dry_run
+      );
+    } finally {
+      limiter.release();
+    }
 
     return NextResponse.json({
         ok: true,

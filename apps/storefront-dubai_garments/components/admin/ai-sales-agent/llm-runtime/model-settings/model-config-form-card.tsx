@@ -20,6 +20,7 @@ type Props = {
   openAiKeySource: 'env' | 'db' | 'missing';
   onOpenAiApiKeyChange: (value: string) => void;
   onChange: (partial: Partial<AiModelConfig>) => void;
+  onFeatureFlagChange: (key: keyof AiModelConfig['featureFlags'], value: boolean) => void;
   onStylePresetChange: (value: AiModelStylePreset) => void;
   onSave: () => Promise<void> | void;
   onResetDefaults: () => void;
@@ -35,13 +36,17 @@ export default function ModelConfigFormCard({
   openAiKeySource,
   onOpenAiApiKeyChange,
   onChange,
+  onFeatureFlagChange,
   onStylePresetChange,
   onSave,
   onResetDefaults,
 }: Props) {
-  const featureRouting = Object.values(AI_FEATURE_ROUTING).map((item) => ({
+  const featureRouting = Object.entries(AI_FEATURE_ROUTING).map(([feature, item]) => ({
+    feature,
     name: item.label,
-    llm: item.llmEnabled,
+    flagKey: item.flagKey,
+    llm: item.llmEnabled && config.featureFlags[item.flagKey],
+    deterministic: !item.llmEnabled,
   }));
   return (
     <div>
@@ -311,6 +316,25 @@ export default function ModelConfigFormCard({
               {item.name}
             </AisBadge>
           ))}
+        </div>
+        <div className="pins-grid">
+          {featureRouting
+            .filter((item) => !item.deterministic)
+            .map((item) => (
+              <label
+                key={item.feature}
+                className="dg-flex dg-items-center dg-justify-between dg-gap-3 dg-text-sm dg-font-semibold pins-input"
+              >
+                <span>{item.name}</span>
+                <input
+                  type="checkbox"
+                  checked={config.featureFlags[item.flagKey]}
+                  onChange={(event) => onFeatureFlagChange(item.flagKey, event.target.checked)}
+                  disabled={loading || saving}
+                  data-testid={`model-settings-feature-flag-${item.feature}`}
+                />
+              </label>
+            ))}
         </div>
       </div>
 

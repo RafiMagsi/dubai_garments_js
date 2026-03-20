@@ -6,6 +6,7 @@ import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 type PipelineInsightsContext = {
   userId: string;
   role: string;
+  requestId?: string;
 };
 
 function daysBetween(value?: Date | string | null) {
@@ -150,6 +151,7 @@ export async function runPipelineInsights(input: {
   const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
+    requestId: input.context.requestId,
     feature: 'pipeline_insights',
     systemPrompt: `${config.prompts.copilotSystem}
 Task: Assess stall signals, risk score/reasons, urgency queue, and next action for pipeline operations.`,

@@ -41,6 +41,19 @@ P4. **Phase 4: Observability + Safety Hardening**
   - etc.
 - Add rate limiting/backpressure for model calls at API route layer.
 
+P4 Status (implemented):
+- Runtime now writes AI telemetry rows for each structured run path (model success, fallback success, and hard failures) with prompt hash and token usage when OpenAI returns usage.
+- Model settings now persist and load staged rollout flags in DB-backed `system_settings`, with env overrides:
+  - `AI_RUNTIME_ENABLE_COPILOT`
+  - `AI_RUNTIME_ENABLE_TRIAGE`
+  - `AI_RUNTIME_ENABLE_REPLY_STUDIO`
+  - `AI_RUNTIME_ENABLE_QUOTE`
+  - `AI_RUNTIME_ENABLE_PIPELINE`
+  - `AI_RUNTIME_ENABLE_SMART_ROUTING_SLA`
+  - `AI_RUNTIME_ENABLE_FASTAPI_LEAD_AI`
+  - `AI_RUNTIME_ENABLE_FASTAPI_EMAIL_DRAFT`
+- API routes now enforce in-memory per-user rate limiting and concurrency backpressure for LLM-heavy endpoints.
+
 P5. **Phase 5: UX Transparency**
 - In AI UI cards, surface:
   - “Model Used”, “Primary/Fallback”, “Latency”

@@ -1,4 +1,5 @@
 import type { ZodType } from 'zod';
+import { createHash, randomUUID } from 'node:crypto';
 import { AiModelConfigSchema, type AiModelConfig } from '@/lib/ai-sales-agent/contracts';
 import {
   getAiModelConfig,
@@ -7,9 +8,10 @@ import {
 } from '@/lib/ai-sales-agent/model-config';
 import { computeStrictEnvChecksPassed } from '@/lib/ai-sales-agent/model-config-strict-checks';
 import {
-  isFeatureLlmEnabled,
+  isFeatureLlmEnabledByConfig,
   type AiFeatureRoutingKey,
 } from '@/lib/ai-sales-agent/feature-routing';
+import { logAiRuntimeTelemetry } from '@/lib/ai-sales-agent/llm-runtime/telemetry';
 
 export type RuntimeResult<T> = {
   data: T;
@@ -25,6 +27,7 @@ export type RuntimeResult<T> = {
 };
 
 type StructuredRuntimeInput<T> = {
+  requestId?: string | null;
   feature: AiFeatureRoutingKey;
   systemPrompt: string;
   userInput: string;
@@ -92,7 +95,14 @@ async function callOpenAi(input: {
   requestTimeoutMs: number;
   maxRetries: number;
   retryBackoffMs: number;
-}) {
+}): Promise<{
+  rawOutput: string;
+  tokenUsage: {
+    inputTokens: number | null;
+    outputTokens: number | null;
+    totalTokens: number | null;
+  } | null;
+}> {
   let lastError: Error | null = null;
   const attempts = Math.max(1, input.maxRetries + 1);
 
@@ -148,6 +158,11 @@ async function callOpenAi(input: {
 
       const json = (await response.json()) as {
         output_text?: string;
+        usage?: {
+          input_tokens?: number;
+          output_tokens?: number;
+          total_tokens?: number;
+        };
         output?: Array<{
           content?: Array<{
             type?: string;
@@ -156,8 +171,17 @@ async function callOpenAi(input: {
         }>;
       };
 
+      const tokenUsage = {
+        inputTokens: json.usage?.input_tokens ?? null,
+        outputTokens: json.usage?.output_tokens ?? null,
+        totalTokens: json.usage?.total_tokens ?? null,
+      };
+
       if (typeof json.output_text === 'string' && json.output_text.trim().length > 0) {
-        return json.output_text;
+        return {
+          rawOutput: json.output_text,
+          tokenUsage,
+        };
       }
 
       const stitched =
@@ -168,7 +192,10 @@ async function callOpenAi(input: {
           .trim() ?? '';
 
       if (stitched.length > 0) {
-        return stitched;
+        return {
+          rawOutput: stitched,
+          tokenUsage,
+        };
       }
 
       throw new Error('OpenAI returned empty output text.');
@@ -199,9 +226,14 @@ async function callOpenAi(input: {
 export async function runStructuredWithRuntime<T>(
   input: StructuredRuntimeInput<T>
 ): Promise<RuntimeResult<T>> {
+  const runtimeRequestId = input.requestId ?? randomUUID();
   const startedAt = Date.now();
   const { config: savedConfig } = await getAiModelConfig();
   const config = mergeConfig(savedConfig, input.configOverride);
+  const promptVersionHash = createHash('sha256')
+    .update(input.systemPrompt)
+    .digest('hex')
+    .slice(0, 12);
   const checks = await resolveProviderChecks(config);
   const strictChecksPassed = computeStrictEnvChecksPassed(config, checks);
 
@@ -210,29 +242,68 @@ export async function runStructuredWithRuntime<T>(
       .filter((item) => !item.present)
       .map((item) => `${item.provider}:${item.requiredKey}`)
       .join(', ');
+    await logAiRuntimeTelemetry({
+      requestId: runtimeRequestId,
+      feature: input.feature,
+      promptVersionHash,
+      provider: config.provider,
+      model: config.model,
+      latencyMs: Date.now() - startedAt,
+      schemaValid: false,
+      fallbackUsed: false,
+      fallbackReason: `Strict env check failed. Missing: ${missing || 'unknown'}.`,
+      source: 'fallback',
+      status: 'failed',
+      tokenUsage: null,
+    });
     throw new Error(`Strict env check failed. Missing: ${missing || 'unknown'}.`);
   }
 
   const runFallback = async (
     reason: string,
-    sourceProvider = 'deterministic'
+    sourceProvider = 'deterministic',
+    options?: {
+      schemaValid?: boolean;
+      rawOutput?: string | null;
+      parseIssues?: string[];
+      tokenUsage?: {
+        inputTokens: number | null;
+        outputTokens: number | null;
+        totalTokens: number | null;
+      } | null;
+    }
   ): Promise<RuntimeResult<T>> => {
     const data = await input.fallback();
-    return {
+    const result: RuntimeResult<T> = {
       data,
       source: 'fallback',
       provider: sourceProvider,
       fallbackUsed: true,
       failureReason: reason,
       model: sourceProvider === 'openai' ? config.fallbackModel : 'deterministic',
-      schemaValid: true,
-      rawOutput: null,
-      parseIssues: [],
+      schemaValid: options?.schemaValid ?? true,
+      rawOutput: options?.rawOutput ?? null,
+      parseIssues: options?.parseIssues ?? [],
       processingMs: Date.now() - startedAt,
     };
+    await logAiRuntimeTelemetry({
+      requestId: runtimeRequestId,
+      feature: input.feature,
+      promptVersionHash,
+      provider: result.provider,
+      model: result.model,
+      latencyMs: result.processingMs,
+      schemaValid: result.schemaValid,
+      fallbackUsed: true,
+      fallbackReason: reason,
+      source: 'fallback',
+      status: 'success',
+      tokenUsage: options?.tokenUsage ?? null,
+    });
+    return result;
   };
 
-  if (input.forceDeterministic || !isFeatureLlmEnabled(input.feature)) {
+  if (input.forceDeterministic || !isFeatureLlmEnabledByConfig(input.feature, config)) {
     return runFallback('Feature policy enforces deterministic/internal execution.');
   }
 
@@ -258,7 +329,7 @@ export async function runStructuredWithRuntime<T>(
   }
 
   try {
-    const rawOutput = await callOpenAi({
+    const callResult = await callOpenAi({
       apiKey: primaryKey,
       model: config.model,
       temperature: config.temperature,
@@ -273,6 +344,7 @@ export async function runStructuredWithRuntime<T>(
       retryBackoffMs: config.retryBackoffMs,
     });
 
+    const rawOutput = callResult.rawOutput;
     const normalized = stripMarkdownFences(rawOutput);
     if (!normalized) {
       throw new Error('Model returned empty content after normalization.');
@@ -289,19 +361,19 @@ export async function runStructuredWithRuntime<T>(
           )}`
         );
       }
-      const fallback = await runFallback(
+      return runFallback(
         `${input.fallbackReasonPrefix} Model output failed schema validation.`,
-        config.fallbackProvider
+        config.fallbackProvider,
+        {
+          schemaValid: false,
+          rawOutput,
+          parseIssues,
+          tokenUsage: callResult.tokenUsage,
+        }
       );
-      return {
-        ...fallback,
-        schemaValid: false,
-        rawOutput,
-        parseIssues,
-      };
     }
 
-    return {
+    const result: RuntimeResult<T> = {
       data: validated.data,
       source: 'model',
       provider: 'openai',
@@ -313,8 +385,37 @@ export async function runStructuredWithRuntime<T>(
       parseIssues: [],
       processingMs: Date.now() - startedAt,
     };
+    await logAiRuntimeTelemetry({
+      requestId: runtimeRequestId,
+      feature: input.feature,
+      promptVersionHash,
+      provider: result.provider,
+      model: result.model,
+      latencyMs: result.processingMs,
+      schemaValid: true,
+      fallbackUsed: false,
+      fallbackReason: null,
+      source: 'model',
+      status: 'success',
+      tokenUsage: callResult.tokenUsage,
+    });
+    return result;
   } catch (error) {
     if (!config.fallbackEnabled || config.runtimeMode === 'llm_only') {
+      await logAiRuntimeTelemetry({
+        requestId: runtimeRequestId,
+        feature: input.feature,
+        promptVersionHash,
+        provider: config.provider,
+        model: config.model,
+        latencyMs: Date.now() - startedAt,
+        schemaValid: false,
+        fallbackUsed: false,
+        fallbackReason: error instanceof Error ? error.message : 'Model request failed.',
+        source: 'model',
+        status: 'failed',
+        tokenUsage: null,
+      });
       throw error;
     }
     return runFallback(
