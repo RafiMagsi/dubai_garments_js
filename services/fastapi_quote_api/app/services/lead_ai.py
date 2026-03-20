@@ -9,12 +9,10 @@ from urllib import request as urllib_request
 from urllib.error import URLError
 
 from app.core.config import (
-    AI_SERVICE_AUTH_TOKEN,
-    AI_SERVICE_ENABLED,
-    AI_SERVICE_TIMEOUT_SECONDS,
-    AI_SERVICE_URL,
+    AI_RUNTIME_TIMEOUT_SECONDS,
+    AI_RUNTIME_URL,
+    AUTOMATION_SHARED_SECRET,
     LEAD_AI_ENABLED,
-    OPENAI_API_KEY,
     OPENAI_MODEL,
 )
 from app.core.db import get_db_connection
@@ -67,7 +65,6 @@ class LeadAIService:
     def __init__(self) -> None:
         self.model = OPENAI_MODEL
         self.enabled = LEAD_AI_ENABLED
-        self.api_key = OPENAI_API_KEY
 
     def analyze_lead(self, lead_id: str) -> Dict[str, Any]:
         started_at = time.perf_counter()
@@ -113,45 +110,13 @@ class LeadAIService:
             )
             return {"processed": True, "data": result}
 
-        if not self.api_key and not AI_SERVICE_ENABLED:
-            _log_event(
-                "lead_ai_skipped",
-                lead_id=lead_id,
-                model=self.model,
-                reason="missing_openai_api_key_and_ai_service_disabled",
-                provider="system",
-            )
-            self._persist_automation_run(
-                status="cancelled",
-                lead_id=lead_id,
-                request_payload=request_payload,
-                response_payload={
-                    "processed": True,
-                    "provider": "system",
-                    "reason": "missing_openai_api_key_and_ai_service_disabled",
-                },
-                error_message="OPENAI_API_KEY is not configured and AI service is disabled. Heuristic system fallback used.",
-            )
-            result = {**heuristic, "provider": "system", "fallback_used": True}
-            self._persist_lead_result(lead_id, result)
-            create_ai_log(
-                workflow_name="lead_ai_processing",
-                status="cancelled",
-                provider="system",
-                model=self.model,
-                trigger_entity_type="lead",
-                trigger_entity_id=lead_id,
-                fallback_used=True,
-                input_payload=request_payload,
-                output_payload=result,
-                error_message="OPENAI_API_KEY is not configured and AI service is disabled. Heuristic system fallback used.",
-                latency_ms=int((time.perf_counter() - started_at) * 1000),
-            )
-            return {"processed": True, "data": result}
-
         try:
             message = self._build_lead_message(lead)
-            response_payload = self._openai_analysis(message, lead_id)
+            runtime_response = self._runtime_analysis(message, lead_id)
+            response_payload = runtime_response.get("data") or {}
+            runtime_provider = str(runtime_response.get("provider") or "system")
+            runtime_fallback_used = bool(runtime_response.get("fallback_used", False))
+            runtime_failure_reason = _normalize_text(runtime_response.get("failure_reason"))
             extracted = {
                 "product": _normalize_text(response_payload.get("product")) or heuristic["product"],
                 "quantity": _normalize_quantity(response_payload.get("quantity")) or heuristic["quantity"],
@@ -165,8 +130,8 @@ class LeadAIService:
                 or heuristic["classification"],
                 "reasoning": self._normalize_reasoning(response_payload.get("reasoning"))
                 or heuristic["reasoning"],
-                "provider": "openai",
-                "fallback_used": False,
+                "provider": runtime_provider,
+                "fallback_used": runtime_fallback_used,
             }
 
             self._persist_lead_result(lead_id, result)
@@ -181,8 +146,8 @@ class LeadAIService:
                 lead_id=lead_id,
                 model=self.model,
                 processed=True,
-                provider="openai",
-                fallback_used=False,
+                provider=runtime_provider,
+                fallback_used=runtime_fallback_used,
                 extracted=extracted,
                 ai_score=result["ai_score"],
                 classification=result["classification"],
@@ -203,13 +168,14 @@ class LeadAIService:
             create_ai_log(
                 workflow_name="lead_ai_processing",
                 status="success",
-                provider=str(result.get("provider") or "openai"),
+                provider=str(result.get("provider") or "system"),
                 model=self.model,
                 trigger_entity_type="lead",
                 trigger_entity_id=lead_id,
                 fallback_used=bool(result.get("fallback_used", False)),
                 input_payload={**request_payload, "message": message},
                 output_payload=result,
+                error_message=runtime_failure_reason,
                 latency_ms=int((time.perf_counter() - started_at) * 1000),
             )
             return {"processed": True, "data": result}
@@ -361,100 +327,38 @@ class LeadAIService:
             "complexity": complexity,
         }
 
-    def _openai_analysis(self, message: str, lead_id: str) -> Dict[str, Any]:
-        if AI_SERVICE_ENABLED:
-            try:
-                return self._remote_ai_service_analysis(message, lead_id)
-            except Exception as error:
-                _log_event(
-                    "lead_ai_service_failure",
-                    lead_id=lead_id,
-                    endpoint=AI_SERVICE_URL,
-                    error=str(error),
-                )
-                if not self.api_key:
-                    raise
-
-        from openai import OpenAI
-
-        _log_event(
-            "lead_ai_openai_request",
-            lead_id=lead_id,
-            model=self.model,
-            message_length=len(message),
-        )
-
-        client = OpenAI(api_key=self.api_key)
-        completion = client.chat.completions.create(
-            model=self.model,
-            response_format={"type": "json_object"},
-            temperature=0,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You extract structured sales lead data from garment order inquiries. "
-                        "Determine lead seriousness and extract data from garment order inquiries. "
-                        "Return strict JSON with keys: ai_score, classification, reasoning, product, quantity, urgency, complexity. "
-                        "classification must be one of: HOT, WARM, COLD. "
-                        "Urgency must be one of: low, medium, high. "
-                        "Complexity must be one of: low, medium, high. "
-                        "reasoning must be an object with keys: summary, signals. "
-                        "signals must be an array of short strings that explain the score. "
-                        "If a value is missing or unclear, return null."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": message,
-                },
-            ],
-        )
-
-        content = completion.choices[0].message.content if completion.choices else None
-        if not content:
-            _log_event(
-                "lead_ai_openai_success",
-                lead_id=lead_id,
-                model=self.model,
-                parsed=False,
-                reason="empty_content",
-            )
-            return {}
-
-        parsed = json.loads(content)
-        if not isinstance(parsed, dict):
-            _log_event(
-                "lead_ai_openai_success",
-                lead_id=lead_id,
-                model=self.model,
-                parsed=False,
-                reason="non_object_payload",
-            )
-            return {}
-
-        _log_event(
-            "lead_ai_openai_success",
-            lead_id=lead_id,
-            model=self.model,
-            parsed=True,
-            keys=sorted(parsed.keys()),
-        )
-        return parsed
-
-    def _remote_ai_service_analysis(self, message: str, lead_id: str) -> Dict[str, Any]:
-        endpoint = f"{AI_SERVICE_URL.rstrip('/')}/api/v1/lead-ai/analyze"
+    def _runtime_analysis(self, message: str, lead_id: str) -> Dict[str, Any]:
+        endpoint = f"{AI_RUNTIME_URL.rstrip('/')}/api/internal/ai/llm-runtime"
         payload = {
-            "lead_id": lead_id,
-            "model": self.model,
-            "message": message,
+            "feature": "fastapi_lead_ai",
+            "systemPrompt": (
+                "You extract structured sales lead data from garment order inquiries. "
+                "Determine lead seriousness and extract data from garment order inquiries. "
+                "Return strict JSON with keys: ai_score, classification, reasoning, product, quantity, urgency, complexity. "
+                "classification must be one of: HOT, WARM, COLD. "
+                "Urgency must be one of: low, medium, high. "
+                "Complexity must be one of: low, medium, high. "
+                "reasoning must be an object with keys: summary, signals. "
+                "signals must be an array of short strings that explain the score. "
+                "If a value is missing or unclear, return null."
+            ),
+            "userInput": message,
+            "schemaLabel": "LeadAIAnalysis",
+            "schemaHint": (
+                "{\"ai_score\":0,\"classification\":\"HOT|WARM|COLD\","
+                "\"reasoning\":{\"summary\":\"string\",\"signals\":[\"string\"]},"
+                "\"product\":\"string|null\",\"quantity\":0,\"urgency\":\"low|medium|high\","
+                "\"complexity\":\"low|medium|high\"}"
+            ),
+            "fallbackReasonPrefix": "LeadAI:",
+            "fallbackData": {},
         }
         headers = {"Content-Type": "application/json"}
-        if AI_SERVICE_AUTH_TOKEN.strip():
-            headers["X-AI-Service-Token"] = AI_SERVICE_AUTH_TOKEN.strip()
+        if AUTOMATION_SHARED_SECRET.strip():
+            headers["x-automation-secret"] = AUTOMATION_SHARED_SECRET.strip()
 
         _log_event(
-            "lead_ai_service_request",
+            "lead_ai_runtime_request",
             lead_id=lead_id,
             endpoint=endpoint,
             model=self.model,
@@ -467,27 +371,41 @@ class LeadAIService:
         )
 
         try:
-            with urllib_request.urlopen(req, timeout=AI_SERVICE_TIMEOUT_SECONDS) as response:
+            with urllib_request.urlopen(req, timeout=AI_RUNTIME_TIMEOUT_SECONDS) as response:
                 body = response.read().decode("utf-8")
         except URLError as error:
-            raise RuntimeError(f"AI service request failed: {error}") from error
+            raise RuntimeError(f"AI runtime request failed: {error}") from error
 
         try:
             parsed = json.loads(body)
         except json.JSONDecodeError as error:
-            raise RuntimeError(f"Invalid AI service JSON response: {error}") from error
+            raise RuntimeError(f"Invalid AI runtime JSON response: {error}") from error
 
         if not isinstance(parsed, dict):
-            raise RuntimeError("AI service response must be a JSON object.")
+            raise RuntimeError("AI runtime response must be a JSON object.")
+
+        if not parsed.get("ok", False):
+            raise RuntimeError(str(parsed.get("message") or "AI runtime returned error."))
+
+        data = parsed.get("data")
+        if not isinstance(data, dict):
+            raise RuntimeError("AI runtime response is missing object data payload.")
 
         _log_event(
-            "lead_ai_service_success",
+            "lead_ai_runtime_success",
             lead_id=lead_id,
             endpoint=endpoint,
             parsed=True,
-            keys=sorted(parsed.keys()),
+            keys=sorted(data.keys()),
         )
-        return parsed
+        return {
+            "data": data,
+            "provider": parsed.get("provider"),
+            "source": parsed.get("source"),
+            "model": parsed.get("model"),
+            "fallback_used": parsed.get("fallbackUsed"),
+            "failure_reason": parsed.get("failureReason"),
+        }
 
     def _normalize_score(self, value: Any) -> Optional[int]:
         if value is None or value == "":

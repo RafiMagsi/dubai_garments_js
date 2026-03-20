@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Card, CardText, CardTitle, TextField } from '@/components/ui';
-import { AisFieldLabel } from '../reusable';
+import { AisFieldLabel } from '@/components/admin/ai-sales-agent/reusable';
 
 type Props = {
   workflowName: string;

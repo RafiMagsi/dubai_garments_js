@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 from typing import Any, Dict, Optional
+from urllib import request as urllib_request
+from urllib.error import URLError
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException
@@ -10,9 +12,10 @@ from pydantic import BaseModel, Field
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 AI_SERVICE_AUTH_TOKEN = os.getenv("AI_SERVICE_AUTH_TOKEN", "").strip()
+STOREFRONT_INTERNAL_URL = os.getenv("STOREFRONT_INTERNAL_URL", "http://storefront:3000").strip()
+AUTOMATION_SHARED_SECRET = os.getenv("AUTOMATION_SHARED_SECRET", "").strip()
+AI_RUNTIME_TIMEOUT_SECONDS = float(os.getenv("AI_RUNTIME_TIMEOUT_SECONDS", "30"))
 
 app = FastAPI(title="Dubai Garments AI OpenAI Service", version="0.1.0")
 
@@ -36,47 +39,57 @@ def analyze_lead(
   if AI_SERVICE_AUTH_TOKEN and x_ai_service_token != AI_SERVICE_AUTH_TOKEN:
     raise HTTPException(status_code=401, detail="Unauthorized AI service token.")
 
-  if not OPENAI_API_KEY:
-    raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not configured.")
+  endpoint = f"{STOREFRONT_INTERNAL_URL.rstrip('/')}/api/internal/ai/llm-runtime"
+  body = {
+    "feature": "fastapi_lead_ai",
+    "systemPrompt": (
+      "You extract structured sales lead data from garment order inquiries. "
+      "Determine lead seriousness and extract data from garment order inquiries. "
+      "Return strict JSON with keys: ai_score, classification, reasoning, product, quantity, urgency, complexity. "
+      "classification must be one of: HOT, WARM, COLD. "
+      "Urgency must be one of: low, medium, high. "
+      "Complexity must be one of: low, medium, high. "
+      "reasoning must be an object with keys: summary, signals. "
+      "signals must be an array of short strings that explain the score. "
+      "If a value is missing or unclear, return null."
+    ),
+    "userInput": payload.message,
+    "schemaLabel": "LeadAIAnalysis",
+    "schemaHint": (
+      "{\"ai_score\":0,\"classification\":\"HOT|WARM|COLD\","
+      "\"reasoning\":{\"summary\":\"string\",\"signals\":[\"string\"]},"
+      "\"product\":\"string|null\",\"quantity\":0,\"urgency\":\"low|medium|high\","
+      "\"complexity\":\"low|medium|high\"}"
+    ),
+    "fallbackReasonPrefix": "LeadAIService:",
+    "fallbackData": {},
+  }
+  headers = {"Content-Type": "application/json"}
+  if AUTOMATION_SHARED_SECRET:
+    headers["x-automation-secret"] = AUTOMATION_SHARED_SECRET
 
-  model = payload.model or OPENAI_MODEL
-
-  from openai import OpenAI
-
-  client = OpenAI(api_key=OPENAI_API_KEY)
-  completion = client.chat.completions.create(
-    model=model,
-    response_format={"type": "json_object"},
-    temperature=0,
-    messages=[
-      {
-        "role": "system",
-        "content": (
-          "You extract structured sales lead data from garment order inquiries. "
-          "Determine lead seriousness and extract data from garment order inquiries. "
-          "Return strict JSON with keys: ai_score, classification, reasoning, product, quantity, urgency, complexity. "
-          "classification must be one of: HOT, WARM, COLD. "
-          "Urgency must be one of: low, medium, high. "
-          "Complexity must be one of: low, medium, high. "
-          "reasoning must be an object with keys: summary, signals. "
-          "signals must be an array of short strings that explain the score. "
-          "If a value is missing or unclear, return null."
-        ),
-      },
-      {"role": "user", "content": payload.message},
-    ],
+  req = urllib_request.Request(
+    endpoint,
+    data=json.dumps(body).encode("utf-8"),
+    headers=headers,
+    method="POST",
   )
-
-  content = completion.choices[0].message.content if completion.choices else None
-  if not content:
-    return {}
+  try:
+    with urllib_request.urlopen(req, timeout=AI_RUNTIME_TIMEOUT_SECONDS) as response:
+      raw = response.read().decode("utf-8")
+  except URLError as error:
+    raise HTTPException(status_code=502, detail=f"Runtime request failed: {error}") from error
 
   try:
-    parsed = json.loads(content)
+    parsed = json.loads(raw)
   except json.JSONDecodeError as error:
-    raise HTTPException(status_code=502, detail=f"Invalid JSON from OpenAI: {error}") from error
+    raise HTTPException(status_code=502, detail=f"Invalid JSON from runtime: {error}") from error
 
-  if not isinstance(parsed, dict):
-    raise HTTPException(status_code=502, detail="OpenAI response was not a JSON object.")
+  if not isinstance(parsed, dict) or not parsed.get("ok", False):
+    raise HTTPException(status_code=502, detail=str(parsed.get("message") if isinstance(parsed, dict) else "Runtime error"))
 
-  return parsed
+  data = parsed.get("data")
+  if not isinstance(data, dict):
+    raise HTTPException(status_code=502, detail="Runtime response was not a JSON object payload.")
+
+  return data

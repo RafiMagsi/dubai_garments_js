@@ -2,7 +2,7 @@
 
 import { Card, CardTitle } from '@/components/ui';
 import type { SmartRoutingSlaEnvelope } from '@/features/admin/ai-sales-agent/types';
-import { AisTrustBadges } from '../reusable';
+import { AisTrustBadges } from '@/components/admin/ai-sales-agent/reusable';
 
 type Props = {
   response: SmartRoutingSlaEnvelope;

@@ -1,6 +1,6 @@
-# AI OpenAI Service
+# AI Runtime Proxy Service
 
-Dedicated AI microservice for OpenAI-based lead extraction/scoring.
+Dedicated microservice that proxies lead AI analysis requests to the shared storefront `llm-runtime`.
 
 ## Endpoints
 

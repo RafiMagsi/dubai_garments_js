@@ -533,6 +533,9 @@ export const AiModelConfigSchema = z.object({
   stylePreset: AiModelStylePresetSchema.default('balanced'),
   temperature: z.number().min(0).max(1.5).default(0.2),
   maxOutputTokens: z.number().int().min(128).max(8192).default(1200),
+  requestTimeoutMs: z.number().int().min(1000).max(120000).default(15000),
+  maxRetries: z.number().int().min(0).max(5).default(1),
+  retryBackoffMs: z.number().int().min(100).max(10000).default(750),
   prompts: z
     .object({
       copilotSystem: z.string().min(1).max(8000).default('You are an AI sales copilot.'),
@@ -616,6 +619,9 @@ export const AiPromptTestRequestSchema = z.object({
       stylePreset: AiModelStylePresetSchema.optional(),
       temperature: z.number().min(0).max(1.5).optional(),
       maxOutputTokens: z.number().int().min(128).max(8192).optional(),
+      requestTimeoutMs: z.number().int().min(1000).max(120000).optional(),
+      maxRetries: z.number().int().min(0).max(5).optional(),
+      retryBackoffMs: z.number().int().min(100).max(10000).optional(),
       prompts: z
         .object({
           copilotSystem: z.string().min(1).max(8000).optional(),

@@ -2,7 +2,7 @@
 
 import { Button, Card, CardTitle } from '@/components/ui';
 import type { AutomationRunDetailEnvelope, AutomationRunDetailItem } from '@/features/admin/ai-sales-agent/types';
-import { AisTrustBadges } from '../reusable';
+import { AisTrustBadges } from '@/components/admin/ai-sales-agent/reusable';
 import { rerunAutomationRun } from '@/features/admin/ai-sales-agent/api';
 import { useState } from 'react';
 

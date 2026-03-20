@@ -138,18 +138,17 @@ WORKER_QUEUES=lead_ai python worker.py
 WORKER_QUEUES=quote_pdf python worker.py
 ```
 
-## Separate AI service (OpenAI)
+## Shared LLM runtime
 
-You can run OpenAI calls through dedicated service:
+FastAPI AI features call the shared storefront runtime endpoint:
 
-- `services/ai_openai_service`
-- Endpoint used by FastAPI: `POST /api/v1/lead-ai/analyze`
+- `POST /api/internal/ai/llm-runtime` (on storefront service)
 
 FastAPI config:
 
-- `AI_SERVICE_ENABLED=true`
-- `AI_SERVICE_URL=http://localhost:8100` (or Docker internal URL)
-- `AI_SERVICE_AUTH_TOKEN=...` (optional shared token)
+- `AI_RUNTIME_URL=http://storefront:3000` (or local URL)
+- `AI_RUNTIME_TIMEOUT_SECONDS=30`
+- `AUTOMATION_SHARED_SECRET=...` (must match storefront)
 
 ## Demo Data Seeder
 

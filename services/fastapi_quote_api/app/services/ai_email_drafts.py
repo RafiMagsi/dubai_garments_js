@@ -2,8 +2,14 @@ from __future__ import annotations
 
 import json
 from typing import Any, Dict, Optional
+from urllib import request as urllib_request
+from urllib.error import URLError
 
-from app.core.config import OPENAI_API_KEY, OPENAI_MODEL
+from app.core.config import (
+    AI_RUNTIME_TIMEOUT_SECONDS,
+    AI_RUNTIME_URL,
+    AUTOMATION_SHARED_SECRET,
+)
 from app.core.db import get_db_connection
 from app.services.ai_logs import create_ai_log
 
@@ -15,53 +21,65 @@ def _normalize_tone(value: Optional[str]) -> str:
     return "professional"
 
 
-def _openai_draft(prompt: str, fallback_subject: str, fallback_message: str) -> Dict[str, Any]:
-    if not OPENAI_API_KEY.strip():
-        return {
-            "provider": "system",
-            "fallback_used": True,
-            "subject": fallback_subject,
-            "message": fallback_message,
-        }
-
+def _runtime_draft(prompt: str, fallback_subject: str, fallback_message: str) -> Dict[str, Any]:
     try:
-        from openai import OpenAI
+        endpoint = f"{AI_RUNTIME_URL.rstrip('/')}/api/internal/ai/llm-runtime"
+        payload = {
+            "feature": "fastapi_email_draft",
+            "systemPrompt": (
+                "You draft concise B2B sales emails for garment manufacturing workflows. "
+                "Return strict JSON with keys: subject, message. "
+                "message must be plain text with line breaks, no markdown."
+            ),
+            "userInput": prompt,
+            "schemaLabel": "EmailDraft",
+            "schemaHint": "{\"subject\":\"string\",\"message\":\"string\"}",
+            "fallbackReasonPrefix": "EmailDraft:",
+            "fallbackData": {
+                "subject": fallback_subject,
+                "message": fallback_message,
+            },
+        }
+        headers = {"Content-Type": "application/json"}
+        if AUTOMATION_SHARED_SECRET.strip():
+            headers["x-automation-secret"] = AUTOMATION_SHARED_SECRET.strip()
 
-        client = OpenAI(api_key=OPENAI_API_KEY)
-        completion = client.chat.completions.create(
-            model=OPENAI_MODEL,
-            response_format={"type": "json_object"},
-            temperature=0.3,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You draft concise B2B sales emails for garment manufacturing workflows. "
-                        "Return strict JSON with keys: subject, message. "
-                        "message must be plain text with line breaks, no markdown."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
+        req = urllib_request.Request(
+            endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
         )
-        content = completion.choices[0].message.content if completion.choices else None
-        if not content:
-            raise ValueError("Empty OpenAI response.")
-        parsed = json.loads(content)
-        subject = str(parsed.get("subject") or "").strip()
-        message = str(parsed.get("message") or "").strip()
+        with urllib_request.urlopen(req, timeout=AI_RUNTIME_TIMEOUT_SECONDS) as response:
+            body = response.read().decode("utf-8")
+
+        parsed = json.loads(body)
+        if not isinstance(parsed, dict) or not parsed.get("ok", False):
+            raise ValueError(str(parsed.get("message") if isinstance(parsed, dict) else "Invalid runtime response"))
+
+        data = parsed.get("data")
+        if not isinstance(data, dict):
+            raise ValueError("Invalid runtime data payload for email draft.")
+        subject = str(data.get("subject") or "").strip()
+        message = str(data.get("message") or "").strip()
         if not subject or not message:
-            raise ValueError("Missing subject or message in OpenAI draft.")
+            raise ValueError("Missing subject or message in runtime draft.")
         return {
-            "provider": "openai",
-            "fallback_used": False,
+            "provider": str(parsed.get("provider") or "system"),
+            "source": str(parsed.get("source") or "fallback"),
+            "model": str(parsed.get("model") or "deterministic"),
+            "fallback_used": bool(parsed.get("fallbackUsed", False)),
+            "failure_reason": parsed.get("failureReason"),
             "subject": subject,
             "message": message,
         }
-    except Exception:
+    except (Exception, URLError):
         return {
             "provider": "system",
+            "source": "fallback",
+            "model": "deterministic",
             "fallback_used": True,
+            "failure_reason": "EmailDraft: runtime request failed, deterministic fallback applied.",
             "subject": fallback_subject,
             "message": fallback_message,
         }
@@ -122,18 +140,19 @@ def draft_lead_reply(lead_id: str, tone: Optional[str], additional_context: Opti
         f"Lead notes: {lead_notes}\n"
         f"Additional context: {additional_context or ''}\n"
     )
-    draft = _openai_draft(prompt, fallback_subject, fallback_message)
+    draft = _runtime_draft(prompt, fallback_subject, fallback_message)
 
     create_ai_log(
         workflow_name="ai_draft_lead_reply",
         status="success",
         provider=draft.get("provider"),
-        model=OPENAI_MODEL,
+        model=str(draft.get("model") or "deterministic"),
         trigger_entity_type="lead",
         trigger_entity_id=lead_id,
         fallback_used=bool(draft.get("fallback_used", False)),
         input_payload={"tone": normalized_tone, "additionalContext": additional_context or ""},
         output_payload={"subject": draft.get("subject"), "message": draft.get("message")},
+        error_message=str(draft.get("failure_reason") or "") or None,
     )
 
     return {
@@ -141,7 +160,10 @@ def draft_lead_reply(lead_id: str, tone: Optional[str], additional_context: Opti
         "subject": draft.get("subject"),
         "message": draft.get("message"),
         "provider": draft.get("provider"),
+        "source": draft.get("source"),
+        "model": draft.get("model"),
         "fallback_used": bool(draft.get("fallback_used", False)),
+        "failure_reason": draft.get("failure_reason"),
     }
 
 
@@ -201,18 +223,19 @@ def draft_deal_reply(deal_id: str, tone: Optional[str], additional_context: Opti
         f"Quantity: {quantity}\n"
         f"Additional context: {additional_context or ''}\n"
     )
-    draft = _openai_draft(prompt, fallback_subject, fallback_message)
+    draft = _runtime_draft(prompt, fallback_subject, fallback_message)
 
     create_ai_log(
         workflow_name="ai_draft_deal_reply",
         status="success",
         provider=draft.get("provider"),
-        model=OPENAI_MODEL,
+        model=str(draft.get("model") or "deterministic"),
         trigger_entity_type="deal",
         trigger_entity_id=deal_id,
         fallback_used=bool(draft.get("fallback_used", False)),
         input_payload={"tone": normalized_tone, "additionalContext": additional_context or ""},
         output_payload={"subject": draft.get("subject"), "message": draft.get("message")},
+        error_message=str(draft.get("failure_reason") or "") or None,
     )
 
     return {
@@ -220,7 +243,10 @@ def draft_deal_reply(deal_id: str, tone: Optional[str], additional_context: Opti
         "subject": draft.get("subject"),
         "message": draft.get("message"),
         "provider": draft.get("provider"),
+        "source": draft.get("source"),
+        "model": draft.get("model"),
         "fallback_used": bool(draft.get("fallback_used", False)),
+        "failure_reason": draft.get("failure_reason"),
     }
 
 
@@ -281,18 +307,19 @@ def draft_quote_email(quote_id: str, tone: Optional[str], additional_context: Op
         f"Valid until: {valid_until}\n"
         f"Additional context: {additional_context or ''}\n"
     )
-    draft = _openai_draft(prompt, fallback_subject, fallback_message)
+    draft = _runtime_draft(prompt, fallback_subject, fallback_message)
 
     create_ai_log(
         workflow_name="ai_draft_quote_email",
         status="success",
         provider=draft.get("provider"),
-        model=OPENAI_MODEL,
+        model=str(draft.get("model") or "deterministic"),
         trigger_entity_type="quote",
         trigger_entity_id=quote_id,
         fallback_used=bool(draft.get("fallback_used", False)),
         input_payload={"tone": normalized_tone, "additionalContext": additional_context or ""},
         output_payload={"subject": draft.get("subject"), "message": draft.get("message")},
+        error_message=str(draft.get("failure_reason") or "") or None,
     )
 
     return {
@@ -300,5 +327,8 @@ def draft_quote_email(quote_id: str, tone: Optional[str], additional_context: Op
         "subject": draft.get("subject"),
         "message": draft.get("message"),
         "provider": draft.get("provider"),
+        "source": draft.get("source"),
+        "model": draft.get("model"),
         "fallback_used": bool(draft.get("fallback_used", False)),
+        "failure_reason": draft.get("failure_reason"),
     }

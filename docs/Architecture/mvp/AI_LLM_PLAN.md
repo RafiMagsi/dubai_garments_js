@@ -5,7 +5,7 @@ Move AI Sales Agent from fallback-first to **LLM-first with safe fallback** by i
 Goal: make daily CRM actions visibly model-driven while preserving deterministic reliability.
 
 ## Implementation Phases
-1. **Phase 1: Shared LLM Runtime Layer**
+P1. **Phase 1: Shared LLM Runtime Layer**
 - Add a reusable `llm-runtime` service in `lib/ai-sales-agent` to:
   - resolve model config (`provider`, `model`, `fallbackEnabled`, `stylePreset`, temperature, tokens)
   - call OpenAI Responses API
@@ -13,7 +13,7 @@ Goal: make daily CRM actions visibly model-driven while preserving deterministic
   - return normalized metadata (`provider`, `model`, `source`, `fallbackUsed`, `latencyMs`, `failureReason`)
 - Reuse existing model settings + strict env checks logic so runtime and test panel use the same rules.
 
-2. **Phase 2: LLM-enable High-Impact Endpoints (first 3)**
+P2. **Phase 2: LLM-enable High-Impact Endpoints (first 3)**
 - Integrate live LLM into:
   - `/api/admin/ai-sales-agent/copilot` (all intents, especially `draft_reply`)
   - `/api/admin/ai-sales-agent/triage`
@@ -22,7 +22,7 @@ Goal: make daily CRM actions visibly model-driven while preserving deterministic
 - Preserve current response contracts; only change source behavior from fallback-default to model-first.
 - Add explicit prompt templates per feature in model config (already scaffolded) and bind them to runtime calls.
 
-3. **Phase 3: LLM-enable Revenue/Operations Endpoints**
+P3. **Phase 3: LLM-enable Revenue/Operations Endpoints**
 - Integrate live LLM into:
   - `/api/admin/ai-sales-agent/quote-recommendation`
   - `/api/admin/ai-sales-agent/quote-copilot`
@@ -30,7 +30,7 @@ Goal: make daily CRM actions visibly model-driven while preserving deterministic
   - optional: `smart-routing-sla` reasoning text generation (keep deterministic assignment rules)
 - Continue schema-first parsing + fallback on parse failure.
 
-4. **Phase 4: Observability + Safety Hardening**
+P4. **Phase 4: Observability + Safety Hardening**
 - Add per-endpoint LLM telemetry in AI logs:
   - request id, feature, prompt version hash, provider/model, latency, token usage (if available), schema-valid flag, fallback reason
 - Add feature flags (env/settings) for staged rollout:
@@ -40,7 +40,7 @@ Goal: make daily CRM actions visibly model-driven while preserving deterministic
   - etc.
 - Add rate limiting/backpressure for model calls at API route layer.
 
-5. **Phase 5: UX Transparency**
+P5. **Phase 5: UX Transparency**
 - In AI UI cards, surface:
   - “Model Used”, “Primary/Fallback”, “Latency”
   - schema status (“Validated output”)
@@ -83,12 +83,12 @@ Goal: make daily CRM actions visibly model-driven while preserving deterministic
 ### Track A: Full Lead-to-Close Process (End-to-End Execution)
 Goal: move from feature-level tools to a single orchestrated sales lifecycle from intake to outcome.
 
-1. **Unified lifecycle state model**
+P1. **Unified lifecycle state model**
 - Standardize stages across lead/deal/quote into one canonical journey:
   - `lead_new -> triaged -> qualified -> reply_sent -> deal_open -> quote_ready -> quote_sent -> negotiation -> won/lost -> post_outcome`
 - Map each stage to required evidence, blockers, and next action.
 
-2. **Lead-to-close orchestration service**
+P2. **Lead-to-close orchestration service**
 - Add orchestration endpoint/service that:
   - computes current lifecycle stage,
   - validates entry/exit criteria,
@@ -96,7 +96,7 @@ Goal: move from feature-level tools to a single orchestrated sales lifecycle fro
   - writes timeline and audit trail.
 - Support manual override with reason capture.
 
-3. **Execution board UI**
+P3. **Execution board UI**
 - Add a dedicated “Lead-to-Close” board:
   - stage progression rail,
   - blocker reasons,
@@ -104,7 +104,7 @@ Goal: move from feature-level tools to a single orchestrated sales lifecycle fro
   - evidence panel per stage.
 - Keep parity with existing Agent Flow and remove duplicated concepts.
 
-4. **Outcome quality controls**
+P4. **Outcome quality controls**
 - Add stage SLAs (time-in-stage alerts).
 - Add guardrails for stage transitions (no quote send if required fields missing).
 - Add close-loop summary (what AI did, what human changed, result).
@@ -112,7 +112,7 @@ Goal: move from feature-level tools to a single orchestrated sales lifecycle fro
 ### Track B: Sales Agent Assignment Management + Agent Pipeline (Twenty-style)
 Goal: give managers visibility/control over agent workload, assignment quality, and stage progress per agent.
 
-1. **Assignment policy engine**
+P1. **Assignment policy engine**
 - Add assignment modes:
   - round-robin,
   - weighted capacity,
@@ -120,7 +120,7 @@ Goal: give managers visibility/control over agent workload, assignment quality, 
   - manual override.
 - Add assignment rule config and fallback assignee.
 
-2. **Sales agent workload model**
+P2. **Sales agent workload model**
 - Track per-agent:
   - active leads,
   - active deals,
@@ -129,14 +129,14 @@ Goal: give managers visibility/control over agent workload, assignment quality, 
   - SLA risk count,
   - conversion and response metrics.
 
-3. **Agent Pipeline view (manager board)**
+P3. **Agent Pipeline view (manager board)**
 - Build a dedicated pipeline UI (similar to Twenty workload visibility):
   - left: all agents with KPI chips,
   - center: assigned leads/deals by stage,
   - right: alerts and rebalance suggestions.
 - Add filters: team, stage, urgency, inactive days, owner.
 
-4. **Assignment operations**
+P4. **Assignment operations**
 - One-click actions:
   - reassign lead/deal,
   - bulk rebalance by criteria,
@@ -159,10 +159,10 @@ Goal: give managers visibility/control over agent workload, assignment quality, 
 5. Reassignment rate and impact on win-rate.
 
 ## Positioning Note (Current vs Target)
-1. Current positioning:
+P1. Current positioning:
 - AI-enabled CRM with staged live LLM rollout in progress.
 - Deterministic-first operations with partial LLM integration.
 
-2. Target positioning after this plan is implemented:
+P2. Target positioning after this plan is implemented:
 - AI-powered Sales CRM.
 - With explainable, auditable, workflow-integrated end-to-end lead-to-close AI orchestration, including assignment intelligence and full-lifecycle automation.
