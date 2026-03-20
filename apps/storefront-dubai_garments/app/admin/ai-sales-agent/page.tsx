@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
@@ -29,7 +30,9 @@ export default function AdminAiSalesAgentPage() {
           }
         />
 
-        <AiSalesAgentTabShell />
+        <Suspense fallback={<Panel>Loading AI Sales Agent...</Panel>}>
+          <AiSalesAgentTabShell />
+        </Suspense>
 
         <div className="dg-grid dg-grid-cols-3 dg-gap-6">
           <Panel>
