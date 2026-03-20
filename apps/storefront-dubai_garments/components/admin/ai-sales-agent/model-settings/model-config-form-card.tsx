@@ -2,7 +2,13 @@
 
 import { Button, Card, CardText, SelectField, TextField } from '@/components/ui';
 import { AisBadge, AisFieldLabel } from '@/components/admin/ai-sales-agent/reusable';
-import type { AiModelConfig, AiModelProvider, AiModelStylePreset } from '@/features/admin/ai-sales-agent/types';
+import { AI_FEATURE_ROUTING } from '@/lib/ai-sales-agent/feature-routing';
+import type {
+  AiModelConfig,
+  AiModelProvider,
+  AiModelStylePreset,
+  AiRuntimeMode,
+} from '@/features/admin/ai-sales-agent/types';
 
 type Props = {
   loading: boolean;
@@ -25,6 +31,11 @@ export default function ModelConfigFormCard({
   onSave,
   onResetDefaults,
 }: Props) {
+  const featureRouting = Object.values(AI_FEATURE_ROUTING).map((item) => ({
+    name: item.label,
+    llm: item.llmEnabled,
+  }));
+
   return (
     <Card className="pins-composer" data-testid="model-settings-config-card">
       <p className="pins-kicker">Model Settings</p>
@@ -33,6 +44,23 @@ export default function ModelConfigFormCard({
       </p>
 
       <div className="pins-grid">
+        <div>
+          <AisFieldLabel>Runtime Mode</AisFieldLabel>
+          <SelectField
+            className="pins-input"
+            value={config.runtimeMode}
+            onChange={(event) =>
+              onChange({ runtimeMode: event.target.value as AiRuntimeMode })
+            }
+            disabled={loading || saving}
+            data-testid="model-settings-runtime-mode-select"
+          >
+            <option value="auto">Auto (LLM + fallback)</option>
+            <option value="llm_only">LLM Only</option>
+            <option value="fallback_only">Internal Fallback Only</option>
+          </SelectField>
+        </div>
+
         <div>
           <AisFieldLabel>Primary Provider</AisFieldLabel>
           <SelectField
@@ -150,6 +178,7 @@ export default function ModelConfigFormCard({
         <AisBadge tone={strictEnvChecksPassed ? 'green' : 'amber'}>
           {strictEnvChecksPassed ? 'Strict Env Checks: Passed' : 'Strict Env Checks: Failed'}
         </AisBadge>
+        <AisBadge tone="slate">Runtime: {config.runtimeMode}</AisBadge>
         <AisBadge tone={config.provider === 'openai' ? 'blue' : 'slate'}>
           Provider: {config.provider}
         </AisBadge>
@@ -195,6 +224,28 @@ export default function ModelConfigFormCard({
       <CardText className="pins-muted">
         Presets auto-adjust style and temperature; you can still override temperature manually.
       </CardText>
+
+      <div className="mt-2 pt-2 border-t border-[var(--color-border)]" />
+
+      <div className="pins-stack" data-testid="model-settings-feature-routing-badges">
+        <div className="dg-flex dg-items-center dg-flex-wrap dg-gap-2">
+          <AisFieldLabel>Feature Routing</AisFieldLabel>
+          <AisBadge tone="green">LLM Enabled</AisBadge>
+          <AisBadge tone="slate">Internal Only</AisBadge>
+        </div>
+        <CardText className="pins-muted">
+          Green badges represent features where LLM usage is enabled.
+        </CardText>
+        <div className="pins-badges">
+          {featureRouting.map((item) => (
+            <AisBadge key={item.name} tone={item.llm ? 'green' : 'slate'}>
+              {item.name}
+            </AisBadge>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-2 pt-2 border-t border-[var(--color-border)]" />
 
       <div className="pins-actions">
         <Button

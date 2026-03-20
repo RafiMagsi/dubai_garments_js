@@ -521,8 +521,10 @@ export type AutomationTemplateToggleResponse = z.infer<typeof AutomationTemplate
 
 export const AiModelProviderSchema = z.enum(['openai', 'deterministic']);
 export const AiModelStylePresetSchema = z.enum(['balanced', 'concise', 'persuasive']);
+export const AiRuntimeModeSchema = z.enum(['auto', 'llm_only', 'fallback_only']);
 
 export const AiModelConfigSchema = z.object({
+  runtimeMode: AiRuntimeModeSchema.default('auto'),
   provider: AiModelProviderSchema.default('deterministic'),
   model: z.string().min(1).max(120).default('gpt-4o-mini'),
   fallbackEnabled: z.boolean().default(true),
@@ -531,11 +533,25 @@ export const AiModelConfigSchema = z.object({
   stylePreset: AiModelStylePresetSchema.default('balanced'),
   temperature: z.number().min(0).max(1.5).default(0.2),
   maxOutputTokens: z.number().int().min(128).max(8192).default(1200),
-  prompts: z.object({
-    copilotSystem: z.string().min(1).max(8000).default('You are an AI sales copilot.'),
-    replyStudioSystem: z.string().min(1).max(8000).default('Generate concise and professional sales replies.'),
-    quoteCopilotSystem: z.string().min(1).max(8000).default('Generate quote guidance with margin-safe recommendations.'),
-  }),
+  prompts: z
+    .object({
+      copilotSystem: z.string().min(1).max(8000).default('You are an AI sales copilot.'),
+      replyStudioSystem: z
+        .string()
+        .min(1)
+        .max(8000)
+        .default('Generate concise and professional sales replies.'),
+      quoteCopilotSystem: z
+        .string()
+        .min(1)
+        .max(8000)
+        .default('Generate quote guidance with margin-safe recommendations.'),
+    })
+    .default({
+      copilotSystem: 'You are an AI sales copilot.',
+      replyStudioSystem: 'Generate concise and professional sales replies.',
+      quoteCopilotSystem: 'Generate quote guidance with margin-safe recommendations.',
+    }),
 });
 
 export const AiModelConfigResponseSchema = z.object({
@@ -581,6 +597,7 @@ export const AiPromptTestRequestSchema = z.object({
     .optional(),
   configOverride: z
     .object({
+      runtimeMode: AiRuntimeModeSchema.optional(),
       provider: AiModelProviderSchema.optional(),
       model: z.string().min(1).max(120).optional(),
       fallbackEnabled: z.boolean().optional(),
@@ -644,6 +661,7 @@ export const AiImpactKpiResponseSchema = z.object({
 
 export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
 export type AiModelStylePreset = z.infer<typeof AiModelStylePresetSchema>;
+export type AiRuntimeMode = z.infer<typeof AiRuntimeModeSchema>;
 export type AiModelConfig = z.infer<typeof AiModelConfigSchema>;
 export type AiModelConfigResponse = z.infer<typeof AiModelConfigResponseSchema>;
 export type AiModelConfigUpdateRequest = z.infer<typeof AiModelConfigUpdateRequestSchema>;

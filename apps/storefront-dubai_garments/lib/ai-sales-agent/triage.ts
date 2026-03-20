@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import type { LeadTriageOutput } from './contracts';
+import { LeadTriageOutputSchema, type LeadTriageOutput } from './contracts';
+import { runStructuredWithRuntime } from './llm-runtime';
 
 type TriageTenantContext = {
   userId?: string | null;
@@ -245,11 +246,6 @@ export async function runLeadTriage(
     throw new Error('Lead not found or not accessible.');
   }
 
-    let source: 'model' | 'fallback' = 'fallback';
-    let provider = 'deterministic';
-    let fallbackUsed = true;
-    let failureReason: string | null = null;
-
   const sourceText = [
     normalizeText(lead.notes),
     normalizeText(lead.company_name),
@@ -260,35 +256,65 @@ export async function runLeadTriage(
     .filter(Boolean)
     .join(' | ');
 
-  const quantity = extractQuantity(sourceText);
-  const intent = inferIntent(sourceText);
-  const urgency = inferUrgency(sourceText);
-  const complexity = inferComplexity(sourceText, quantity);
-  const confidence = computeConfidence(sourceText, quantity);
-  const score = computeScore({
-    urgency,
-    complexity,
-    quantity,
-    intent,
-    confidence,
+  const buildFallback = (): LeadTriageOutput => {
+    const quantity = extractQuantity(sourceText);
+    const intent = inferIntent(sourceText);
+    const urgency = inferUrgency(sourceText);
+    const complexity = inferComplexity(sourceText, quantity);
+    const confidence = computeConfidence(sourceText, quantity);
+    const score = computeScore({
+      urgency,
+      complexity,
+      quantity,
+      intent,
+      confidence,
+    });
+    const classification = classifyLead(score);
+
+    const partial: Omit<LeadTriageOutput, 'nextBestAction'> = {
+      summary: buildSummary(lead, quantity, intent),
+      intent,
+      urgency,
+      complexity,
+      quantity,
+      confidence,
+      score,
+      classification,
+    };
+
+    return {
+      ...partial,
+      nextBestAction: buildNextBestAction(partial),
+    };
+  };
+
+  const runtimeResult = await runStructuredWithRuntime({
+    feature: 'lead_triage',
+    systemPrompt:
+      'You are an AI lead triage assistant for B2B sales. Classify lead intent, urgency, complexity, confidence, score, classification, and next best action.',
+    userInput: JSON.stringify({
+      leadId,
+      notes: normalizeText(lead.notes),
+      companyName: normalizeText(lead.company_name),
+      contactName: normalizeText(lead.contact_name),
+      email: normalizeText(lead.email),
+      aiProduct: normalizeText(lead.ai_product),
+      requestedQty: lead.requested_qty,
+      timelineDate: lead.timeline_date,
+    }),
+    schemaLabel: 'LeadTriageOutput',
+    schemaHint:
+      '{"summary":"string","intent":"quotation_request|product_inquiry|bulk_order|followup_request|general_sales|unknown","urgency":"high|medium|low","complexity":"high|medium|low","quantity":0|null,"confidence":0,"score":0,"classification":"hot|warm|cold","nextBestAction":"string"}',
+    outputSchema: LeadTriageOutputSchema,
+    fallbackReasonPrefix: 'LeadTriage:',
+    fallback: buildFallback,
   });
-  const classification = classifyLead(score);
 
-  const partial: Omit<LeadTriageOutput, 'nextBestAction'> = {
-    summary: buildSummary(lead, quantity, intent),
-    intent,
-    urgency,
-    complexity,
-    quantity,
-    confidence,
-    score,
-    classification,
-  };
-
-  const data: LeadTriageOutput = {
-    ...partial,
-    nextBestAction: buildNextBestAction(partial),
-  };
+  const data: LeadTriageOutput = runtimeResult.data;
+  const source = runtimeResult.source;
+  const provider = runtimeResult.provider;
+  const fallbackUsed = runtimeResult.fallbackUsed;
+  const failureReason = runtimeResult.failureReason;
 
   if (dryRun) {
     return {
@@ -305,13 +331,13 @@ export async function runLeadTriage(
     where: { id: leadId },
     data: {
     ai_processed_at: new Date(),
-    ai_quantity: quantity,
-    ai_urgency: urgency,
-    ai_complexity: complexity,
+    ai_quantity: data.quantity,
+    ai_urgency: data.urgency,
+    ai_complexity: data.complexity,
     ai_provider: provider,
     ai_fallback_used: fallbackUsed,
-    ai_score: score,
-    ai_classification: classification,
+    ai_score: data.score,
+    ai_classification: data.classification,
     ai_reasoning: {
             summary: data.summary,
             intent: data.intent,
@@ -337,7 +363,7 @@ export async function runLeadTriage(
       lead_id: leadId,
       activity_type: 'ai_lead_triage',
       title: 'Ai Sales Agent triaged lead',
-      details: `Lead classified as ${classification} with score ${score}.`,
+      details: `Lead classified as ${data.classification} with score ${data.score}.`,
       metadata: {
         triage: data,
         source,

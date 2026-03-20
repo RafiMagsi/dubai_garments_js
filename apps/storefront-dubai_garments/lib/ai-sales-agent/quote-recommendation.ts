@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { QuoteRecommendationPayloadSchema } from './contracts';
+import { runStructuredWithRuntime } from './llm-runtime';
 
 type QuoteRecommendationContext = {
   userId: string;
@@ -110,39 +112,77 @@ export async function runQuoteRecommendation(input: {
   const quantity = parseRequestedQuantity(contextTexts);
   const variant = detectVariant(contextTexts);
 
-  const recommendations = products.slice(0, 3).map((product: { id: string; name: string }) => ({
-    productId: product.id,
-    productName: product.name,
-    suggestedQuantity: quantity,
-    suggestedVariant: variant,
-    rationale: `Recommended from available catalog context and lead notes for ${product.name}.`,
-  }));
+  const buildFallback = () => {
+    const recommendations = products
+      .slice(0, 3)
+      .map((product: { id: string; name: string }) => ({
+        productId: product.id,
+        productName: product.name,
+        suggestedQuantity: quantity,
+        suggestedVariant: variant,
+        rationale: `Recommended from available catalog context and lead notes for ${product.name}.`,
+      }));
 
-  const missingData = buildMissingData({
-    quantity,
-    variant,
-    lead,
-  });
+    const missingData = buildMissingData({
+      quantity,
+      variant,
+      lead,
+    });
 
-  const canCreateQuote = missingData.length === 0;
+    const canCreateQuote = missingData.length === 0;
 
-  const data = {
-    summary: canCreateQuote
-      ? 'Enough information is available to prepare a quote recommendation.'
-      : 'Important quote inputs are still missing.',
-    recommendations,
-    missingData,
-    canCreateQuote,
-    suggestedNextAction: canCreateQuote
-      ? 'Prepare quote draft from recommended product and quantity.'
-      : 'Collect missing quantity/variant details before creating quote.',
-    confidence: canCreateQuote ? 78 : 61,
+    return {
+      summary: canCreateQuote
+        ? 'Enough information is available to prepare a quote recommendation.'
+        : 'Important quote inputs are still missing.',
+      recommendations,
+      missingData,
+      canCreateQuote,
+      suggestedNextAction: canCreateQuote
+        ? 'Prepare quote draft from recommended product and quantity.'
+        : 'Collect missing quantity/variant details before creating quote.',
+      confidence: canCreateQuote ? 78 : 61,
+    };
   };
 
-  const source: 'model' | 'fallback' = 'fallback';
-  const provider = 'deterministic';
-  const fallbackUsed = true;
-  const failureReason = 'Quote Recommendation is currently using deterministic catalog matching.';
+  const runtimeResult = await runStructuredWithRuntime({
+    feature: 'quote_recommendation',
+    systemPrompt:
+      'You are an AI quote recommendation assistant. Produce product suggestions, missing-data checks, and quote readiness output as structured JSON.',
+    userInput: JSON.stringify({
+      leadId: input.leadId,
+      dealId: input.dealId ?? null,
+      quoteId: input.quoteId ?? null,
+      lead: {
+        companyName: normalizeText(lead.company_name),
+        contactName: normalizeText(lead.contact_name),
+        notes: normalizeText(lead.notes),
+        aiProduct: normalizeText(lead.ai_product),
+      },
+      dealNotes: normalizeText(deal?.notes),
+      quoteNotes: normalizeText(quote?.notes),
+      catalogProducts: products.slice(0, 5).map((product) => ({
+        productId: product.id,
+        productName: product.name,
+      })),
+      parsedSignals: {
+        quantity,
+        variant,
+      },
+    }),
+    schemaLabel: 'QuoteRecommendationPayload',
+    schemaHint:
+      '{"summary":"string","recommendations":[{"productId":"uuid|null","productName":"string","suggestedQuantity":0|null,"suggestedVariant":"string|null","rationale":"string"}],"missingData":[{"field":"string","reason":"string"}],"canCreateQuote":true,"suggestedNextAction":"string","confidence":0}',
+    outputSchema: QuoteRecommendationPayloadSchema,
+    fallbackReasonPrefix: 'QuoteRecommendation:',
+    fallback: buildFallback,
+  });
+
+  const source = runtimeResult.source;
+  const provider = runtimeResult.provider;
+  const fallbackUsed = runtimeResult.fallbackUsed;
+  const failureReason = runtimeResult.failureReason;
+  const data = runtimeResult.data;
 
   return {
     source,

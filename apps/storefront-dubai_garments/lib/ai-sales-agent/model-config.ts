@@ -11,6 +11,7 @@ import {
 } from '@/lib/ai-sales-agent/model-config-strict-checks';
 
 const MODEL_SETTING_KEYS = {
+  runtimeMode: 'AI_RUNTIME_MODE',
   provider: 'AI_MODEL_PROVIDER',
   model: 'AI_MODEL_NAME',
   fallbackEnabled: 'AI_FALLBACK_ENABLED',
@@ -145,6 +146,7 @@ export async function getAiModelConfig() {
   const defaults = AiModelConfigSchema.parse({});
 
   const config = AiModelConfigSchema.parse({
+    runtimeMode: settings.get(MODEL_SETTING_KEYS.runtimeMode) ?? defaults.runtimeMode,
     provider: settings.get(MODEL_SETTING_KEYS.provider) ?? defaults.provider,
     model: settings.get(MODEL_SETTING_KEYS.model) ?? defaults.model,
     fallbackEnabled: parseBoolean(
@@ -241,6 +243,12 @@ export async function updateAiModelConfig(input: {
     throw new Error('Strict env check failed: missing provider key for selected model provider.');
   }
 
+  await upsertSetting({
+    key: MODEL_SETTING_KEYS.runtimeMode,
+    value: input.config.runtimeMode,
+    description: 'Runtime mode for AI execution (auto / llm_only / fallback_only)',
+    updatedByUserId: input.updatedByUserId,
+  });
   await upsertSetting({
     key: MODEL_SETTING_KEYS.provider,
     value: input.config.provider,

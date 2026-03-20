@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma';
-import type {
-  ReplyStudioDraft,
-  ReplyStudioMode,
-  ReplyStudioTone,
+import {
+  ReplyStudioDraftSchema,
+  type ReplyStudioDraft,
+  type ReplyStudioMode,
+  type ReplyStudioTone,
 } from './contracts';
+import { runStructuredWithRuntime } from './llm-runtime';
 
 type ReplyStudioContext = {
   userId: string;
@@ -160,26 +162,46 @@ export async function runReplyStudio(input: {
     quote,
   });
   
-  let data: ReplyStudioDraft;
+  const buildFallback = (): ReplyStudioDraft => {
+    switch (input.mode) {
+      case 'first_reply':
+        return buildFirstReply(contextText, input.tone, input.channel);
+      case 'followup_reply':
+        return buildFollowupReply(contextText, input.tone, input.channel);
+      case 'clarification_questions':
+        return buildClarificationQuestions(contextText, input.tone, input.channel);
+      default:
+        throw new Error('Unsupported reply studio mode.');
+    }
+  };
 
-  switch (input.mode) {
-    case 'first_reply':
-      data = buildFirstReply(contextText, input.tone, input.channel);
-      break;
-    case 'followup_reply':
-      data = buildFollowupReply(contextText, input.tone, input.channel);
-      break;
-    case 'clarification_questions':
-      data = buildClarificationQuestions(contextText, input.tone, input.channel);
-      break;
-    default:
-      throw new Error('Unsupported reply studio mode.');
-  }
+  const runtimeResult = await runStructuredWithRuntime({
+    feature: 'reply_studio',
+    systemPrompt:
+      'You are an AI reply studio assistant for B2B sales. Generate structured reply drafts for first reply, follow-up, or clarification modes.',
+    userInput: JSON.stringify({
+      leadId: input.leadId,
+      dealId: input.dealId ?? null,
+      quoteId: input.quoteId ?? null,
+      mode: input.mode,
+      tone: input.tone,
+      channel: input.channel,
+      userNotes: input.userNotes ?? null,
+      contextText,
+    }),
+    schemaLabel: 'ReplyStudioDraft',
+    schemaHint:
+      '{"mode":"first_reply|followup_reply|clarification_questions","tone":"concise|formal|persuasive","channel":"email|whatsapp","subject":"string|null","message":"string","rationale":"string","suggestedNextAction":"string","confidence":0,"questions":["string"]}',
+    outputSchema: ReplyStudioDraftSchema,
+    fallbackReasonPrefix: 'ReplyStudio:',
+    fallback: buildFallback,
+  });
 
-  const source: 'model' | 'fallback' = 'fallback';
-  const provider = 'deterministic';
-  const fallbackUsed = true;
-  const failureReason = 'Reply Studio is currently using deterministic generation.';
+  const data = runtimeResult.data;
+  const source = runtimeResult.source;
+  const provider = runtimeResult.provider;
+  const fallbackUsed = runtimeResult.fallbackUsed;
+  const failureReason = runtimeResult.failureReason;
 
   if (!input.dryRun) {
     await prisma.activities.create({

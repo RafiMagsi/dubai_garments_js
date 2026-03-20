@@ -411,8 +411,10 @@ export type AutomationTemplateToggleEnvelope = {
 
 export type AiModelProvider = 'openai' | 'deterministic';
 export type AiModelStylePreset = 'balanced' | 'concise' | 'persuasive';
+export type AiRuntimeMode = 'auto' | 'llm_only' | 'fallback_only';
 
 export type AiModelConfig = {
+  runtimeMode: AiRuntimeMode;
   provider: AiModelProvider;
   model: string;
   fallbackEnabled: boolean;

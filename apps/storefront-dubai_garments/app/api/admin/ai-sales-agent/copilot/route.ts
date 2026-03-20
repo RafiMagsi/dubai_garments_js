@@ -12,16 +12,10 @@ import {
 } from '@/lib/ai-sales-agent/fallbacks';
 import { getAiPayloadValidationMessage } from '@/lib/ai-sales-agent/validation-messages';
 import { requireAdminApiAccess } from '@/lib/auth/require-admin';
+import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-async function runModelIntent(_input: unknown): Promise<unknown> {
-  // Day 2 stub:
-  // Replace this later with OpenAI / AI service call.
-  // Return null for now to force fallback until model integration is added.
-  return null;
-}
 
 export async function POST(request: NextRequest) {
   const requestId = request.headers.get('x-request-id');
@@ -54,58 +48,61 @@ export async function POST(request: NextRequest) {
 
     const input = parsed.data;
 
-    let modelPayload: unknown = null;
-    let schemaValid = false;
-    let fallbackReason: string | null = null;
-    let source: 'model' | 'fallback' = 'fallback';
-    let data: unknown;
-
-    try {
-      modelPayload = await runModelIntent(input);
-    } catch {
-      fallbackReason = 'Model call failed.';
-    }
+    let runtimeResult: Awaited<ReturnType<typeof runStructuredWithRuntime<any>>>;
 
     if (input.intent === 'followups_today') {
-      const validated = FollowupsTodayResponseSchema.safeParse(modelPayload);
-      if (validated.success) {
-        schemaValid = true;
-        source = 'model';
-        data = validated.data;
-      } else {
-        fallbackReason = fallbackReason ?? 'Model output failed FollowupsToday schema validation.';
-        data = await fallbackFollowupsToday(requestCtx);
-      }
+      runtimeResult = await runStructuredWithRuntime({
+        feature: 'copilot_followups_today',
+        systemPrompt:
+          'You are an AI sales copilot. Generate follow-up items that sales users should execute today.',
+        userInput: JSON.stringify(input),
+        schemaLabel: 'FollowupsTodayResponse',
+        schemaHint:
+          '{"summary":"string","items":[{"type":"lead|deal|quote","id":"string","title":"string","reason":"string","priority":"high|medium|low","suggestedAction":"string"}]}',
+        outputSchema: FollowupsTodayResponseSchema,
+        fallbackReasonPrefix: 'FollowupsToday:',
+        fallback: () => fallbackFollowupsToday(requestCtx),
+      });
     } else if (input.intent === 'draft_reply') {
-      const validated = DraftReplyResponseSchema.safeParse(modelPayload);
-      if (validated.success) {
-        schemaValid = true;
-        source = 'model';
-        data = validated.data;
-      } else {
-        fallbackReason = fallbackReason ?? 'Model output failed DraftReply schema validation.';
-        data = await fallbackDraftReply(input, requestCtx);
-      }
+      runtimeResult = await runStructuredWithRuntime({
+        feature: 'copilot_draft_reply',
+        systemPrompt:
+          'You are an AI sales copilot. Draft a targeted response for the lead context and include next action.',
+        userInput: JSON.stringify(input),
+        schemaLabel: 'DraftReplyResponse',
+        schemaHint:
+          '{"channel":"email|whatsapp","subject":"string?","message":"string","rationale":"string","suggestedNextAction":"string"}',
+        outputSchema: DraftReplyResponseSchema,
+        fallbackReasonPrefix: 'DraftReply:',
+        fallback: () => fallbackDraftReply(input, requestCtx),
+      });
     } else {
-      const validated = AtRiskDealsResponseSchema.safeParse(modelPayload);
-      if (validated.success) {
-        schemaValid = true;
-        source = 'model';
-        data = validated.data;
-      } else {
-        fallbackReason = fallbackReason ?? 'Model output failed AtRiskDeals schema validation.';
-        data = await fallbackAtRiskDeals(requestCtx);
-      }
+      runtimeResult = await runStructuredWithRuntime({
+        feature: 'copilot_at_risk_deals',
+        systemPrompt:
+          'You are an AI sales copilot. Identify at-risk deals and provide intervention actions.',
+        userInput: JSON.stringify(input),
+        schemaLabel: 'AtRiskDealsResponse',
+        schemaHint:
+          '{"summary":"string","deals":[{"id":"string","stage":"string","riskReason":"string","suggestedAction":"string","priority":"high|medium|low"}]}',
+        outputSchema: AtRiskDealsResponseSchema,
+        fallbackReasonPrefix: 'AtRiskDeals:',
+        fallback: () => fallbackAtRiskDeals(requestCtx),
+      });
     }
 
     return NextResponse.json(
       {
         ok: true,
         intent: input.intent,
-        source,
-        schemaValid,
-        data,
-        fallbackReason,
+        source: runtimeResult.source,
+        schemaValid: runtimeResult.schemaValid,
+        data: runtimeResult.data,
+        fallbackReason: runtimeResult.failureReason,
+        provider: runtimeResult.provider,
+        model: runtimeResult.model,
+        fallbackUsed: runtimeResult.fallbackUsed,
+        processingMs: runtimeResult.processingMs,
         requestId,
       },
       { status: 200 }

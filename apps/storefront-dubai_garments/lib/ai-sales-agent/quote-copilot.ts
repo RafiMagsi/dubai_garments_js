@@ -1,9 +1,20 @@
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+import {
+  QuoteCopilotSummarySchema,
+  QuoteCopilotUpsellSchema,
+} from './contracts';
+import { runStructuredWithRuntime } from './llm-runtime';
 
 type QuoteCopilotContext = {
   userId: string;
   role: string;
 };
+
+const QuoteCopilotGenerationSchema = z.object({
+  summary: QuoteCopilotSummarySchema,
+  upsellSuggestions: z.array(QuoteCopilotUpsellSchema),
+});
 
 type PriceTier = {
   minQty: number;
@@ -104,38 +115,74 @@ export async function runQuoteCopilot(input: {
   const acceptedItems = input.acceptedRecommendations.map((item) => item.productName);
   const generationMode = acceptedCount > 0 ? 'selected_recommendations' as const : 'lead_context_only' as const;
 
-  const summaryTitle = acceptedCount > 0
-    ? 'Quote-ready recommendation summary'
-    : 'Quote context summary';
+  const buildFallbackGeneration = () => {
+    const canProceed = acceptedCount > 0;
+    return {
+      summary: {
+        summaryTitle: acceptedCount > 0
+          ? 'Quote-ready recommendation summary'
+          : 'Quote context summary',
+        summaryText:
+          acceptedCount > 0
+            ? `Prepared quote guidance for ${acceptedCount} accepted recommendation(s) for ${lead.company_name || lead.contact_name || 'this lead'}.`
+            : `Prepared quote guidance from lead/deal context for ${lead.company_name || lead.contact_name || 'this lead'} without selected recommendation lines.`,
+        acceptedCount,
+        acceptedItems,
+        generationMode,
+        canProceed,
+        suggestedNextAction: canProceed
+          ? 'Review quote summary and proceed to quote preparation.'
+          : 'Optionally select recommendation lines, then regenerate for a line-item grounded quote summary.',
+      },
+      upsellSuggestions: [
+        {
+          title: 'Premium variant upgrade',
+          type: 'upsell' as const,
+          rationale:
+            'Offer a higher-value option when the customer is already evaluating a core item.',
+        },
+        {
+          title: 'Complementary add-on item',
+          type: 'cross_sell' as const,
+          rationale:
+            'Bundle a related accessory or add-on to increase total quote value.',
+        },
+      ],
+    };
+  };
 
-  const summaryText =
-    acceptedCount > 0
-      ? `Prepared quote guidance for ${acceptedCount} accepted recommendation(s) for ${lead.company_name || lead.contact_name || 'this lead'}.`
-      : `Prepared quote guidance from lead/deal context for ${lead.company_name || lead.contact_name || 'this lead'} without selected recommendation lines.`;
+  const runtimeResult = await runStructuredWithRuntime({
+    feature: 'quote_copilot_summary',
+    systemPrompt:
+      'You are an AI quote copilot assistant. Generate a structured quote summary and upsell/cross-sell suggestions.',
+    userInput: JSON.stringify({
+      leadId: input.leadId,
+      dealId: input.dealId ?? null,
+      quoteId: input.quoteId ?? null,
+      acceptedCount,
+      acceptedItems,
+      generationMode,
+      companyName: lead.company_name ?? null,
+      contactName: lead.contact_name ?? null,
+      leadNotes: lead.notes ?? null,
+      dealNotes: deal?.notes ?? null,
+      quoteNotes: quote?.notes ?? null,
+      acceptedRecommendations: input.acceptedRecommendations,
+    }),
+    schemaLabel: 'QuoteCopilotGeneration',
+    schemaHint:
+      '{"summary":{"summaryTitle":"string","summaryText":"string","acceptedCount":0,"acceptedItems":["string"],"generationMode":"selected_recommendations|lead_context_only","canProceed":true,"suggestedNextAction":"string"},"upsellSuggestions":[{"title":"string","type":"upsell|cross_sell","rationale":"string"}]}',
+    outputSchema: QuoteCopilotGenerationSchema,
+    fallbackReasonPrefix: 'QuoteCopilot:',
+    fallback: buildFallbackGeneration,
+  });
 
-  const canProceed = acceptedCount > 0;
-
-  const suggestedNextAction = canProceed
-    ? 'Review quote summary and proceed to quote preparation.'
-    : 'Optionally select recommendation lines, then regenerate for a line-item grounded quote summary.';
-
-  const upsellSuggestions = [
-    {
-      title: 'Premium variant upgrade',
-      type: 'upsell' as const,
-      rationale: 'Offer a higher-value option when the customer is already evaluating a core item.',
-    },
-    {
-      title: 'Complementary add-on item',
-      type: 'cross_sell' as const,
-      rationale: 'Bundle a related accessory or add-on to increase total quote value.',
-    },
-  ];
-
-  const source: 'model' | 'fallback' = 'fallback';
-  const provider = 'deterministic';
-  const fallbackUsed = true;
-  const failureReason = 'Quote Copilot is currently using deterministic quote summary generation.';
+  const source = runtimeResult.source;
+  const provider = runtimeResult.provider;
+  const fallbackUsed = runtimeResult.fallbackUsed;
+  const failureReason = runtimeResult.failureReason;
+  const summary = runtimeResult.data.summary;
+  const upsellSuggestions = runtimeResult.data.upsellSuggestions;
 
   const requestedDiscountPct = parseRequestedDiscountPct([
     normalizeText(lead.notes),
@@ -241,8 +288,8 @@ export async function runQuoteCopilot(input: {
           acceptedCount,
           acceptedItems,
           generationMode,
-          canProceed,
-          suggestedNextAction,
+          canProceed: summary.canProceed,
+          suggestedNextAction: summary.suggestedNextAction,
           upsellSuggestions,
           quoteIntelligence: {
             estimatedSubtotalAED: estimatedSubtotalAED > 0 ? Number(estimatedSubtotalAED.toFixed(2)) : null,
@@ -275,17 +322,9 @@ export async function runQuoteCopilot(input: {
     provider,
     fallbackUsed,
     failureReason,
-    dryRun: !!input.dryRun,
-    data: {
-      summary: {
-        summaryTitle,
-        summaryText,
-        acceptedCount,
-        acceptedItems,
-        generationMode,
-        canProceed,
-        suggestedNextAction,
-      },
+      dryRun: !!input.dryRun,
+      data: {
+      summary,
       upsellSuggestions,
       quoteIntelligence: {
         estimatedSubtotalAED: estimatedSubtotalAED > 0 ? Number(estimatedSubtotalAED.toFixed(2)) : null,

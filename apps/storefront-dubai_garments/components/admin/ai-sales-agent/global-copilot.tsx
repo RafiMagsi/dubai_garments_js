@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, SelectField, TextField } from '@/components/ui';
 import AiSalesAgentActionCards from './action-cards';
 import { executeCopilot, queryCopilot, runLeadTriage } from '@/features/admin/ai-sales-agent/api';
@@ -58,15 +59,24 @@ const intentChips: Array<{ label: string; intent: CopilotIntent; prompt: string 
 ];
 
 export default function GlobalAiSalesCopilot({ compact = false }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [expanded, setExpanded] = useState(!compact);
-  const [activeIntent, setActiveIntent] = useState<CopilotIntent>('followups_today');
-  const [copilotLeadInput, setCopilotLeadInput] = useState('');
-  const [copilotDealInput, setCopilotDealInput] = useState('');
-  const [triageLeadInput, setTriageLeadInput] = useState('');
+  const [activeIntent, setActiveIntent] = useState<CopilotIntent>(
+    (searchParams.get('copilotIntent') as CopilotIntent) || 'followups_today'
+  );
+  const [copilotLeadInput, setCopilotLeadInput] = useState(searchParams.get('copilotLeadId') ?? '');
+  const [copilotDealInput, setCopilotDealInput] = useState(searchParams.get('copilotDealId') ?? '');
+  const [triageLeadInput, setTriageLeadInput] = useState(searchParams.get('triageLeadId') ?? '');
   const [userNotes, setUserNotes] = useState('');
-  const [tone, setTone] = useState<'professional' | 'friendly' | 'persuasive'>('professional');
-  const [channel, setChannel] = useState<'email' | 'whatsapp'>('email');
-  const [dryRun, setDryRun] = useState(true);
+  const [tone, setTone] = useState<'professional' | 'friendly' | 'persuasive'>(
+    (searchParams.get('copilotTone') as 'professional' | 'friendly' | 'persuasive') || 'professional'
+  );
+  const [channel, setChannel] = useState<'email' | 'whatsapp'>(
+    (searchParams.get('copilotChannel') as 'email' | 'whatsapp') || 'email'
+  );
+  const [dryRun, setDryRun] = useState(searchParams.get('copilotDryRun') !== 'false');
   const [isLoading, setIsLoading] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +85,56 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
   const [isTriaging, setIsTriaging] = useState(false);
   const isDraftReplyIntent = activeIntent === 'draft_reply';
   const isAtRiskIntent = activeIntent === 'at_risk_deals';
+
+  function syncCopilotQueryParam() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('copilotIntent', activeIntent);
+    params.set('copilotTone', tone);
+    params.set('copilotChannel', channel);
+    params.set('copilotDryRun', String(dryRun));
+    if (copilotLeadInput.trim()) params.set('copilotLeadId', copilotLeadInput);
+    else params.delete('copilotLeadId');
+    if (copilotDealInput.trim()) params.set('copilotDealId', copilotDealInput);
+    else params.delete('copilotDealId');
+    if (triageLeadInput.trim()) params.set('triageLeadId', triageLeadInput);
+    else params.delete('triageLeadId');
+
+    const nextQuery = params.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery === currentQuery) return;
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }
+
+  useEffect(() => {
+    const intent = searchParams.get('copilotIntent');
+    if (
+      intent &&
+      (intent === 'followups_today' || intent === 'draft_reply' || intent === 'at_risk_deals')
+    ) {
+      setActiveIntent((prev) => (prev === intent ? prev : intent));
+    }
+    const nextLeadId = searchParams.get('copilotLeadId') ?? '';
+    setCopilotLeadInput((prev) => (prev === nextLeadId ? prev : nextLeadId));
+    const nextDealId = searchParams.get('copilotDealId') ?? '';
+    setCopilotDealInput((prev) => (prev === nextDealId ? prev : nextDealId));
+    const nextTriageLeadId = searchParams.get('triageLeadId') ?? '';
+    setTriageLeadInput((prev) => (prev === nextTriageLeadId ? prev : nextTriageLeadId));
+    const nextTone = searchParams.get('copilotTone');
+    if (nextTone === 'professional' || nextTone === 'friendly' || nextTone === 'persuasive') {
+      setTone((prev) => (prev === nextTone ? prev : nextTone));
+    }
+    const nextChannel = searchParams.get('copilotChannel');
+    if (nextChannel === 'email' || nextChannel === 'whatsapp') {
+      setChannel((prev) => (prev === nextChannel ? prev : nextChannel));
+    }
+    const nextDryRun = searchParams.get('copilotDryRun') !== 'false';
+    setDryRun((prev) => (prev === nextDryRun ? prev : nextDryRun));
+  }, [searchParams]);
+
+  useEffect(() => {
+    syncCopilotQueryParam();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIntent, copilotLeadInput, copilotDealInput, triageLeadInput, tone, channel, dryRun]);
 
   function applyIntent(intent: CopilotIntent, prompt: string) {
     setActiveIntent(intent);

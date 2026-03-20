@@ -279,6 +279,56 @@ export async function runAiPromptTest(rawInput: unknown) {
   let modelUsed = effectiveConfig.model;
   let fallbackUsed = false;
 
+  if (effectiveConfig.runtimeMode === 'fallback_only') {
+    source = 'fallback';
+    fallbackUsed = true;
+    providerUsed = fallbackProvider;
+    modelUsed =
+      fallbackProvider === 'openai'
+        ? effectiveConfig.fallbackModel
+        : 'deterministic';
+    if (fallbackProvider === 'openai') {
+      const fallbackKey = await getProviderApiKey(fallbackProvider);
+      if (!fallbackKey) {
+        throw new PromptTestConfigError(
+          'Missing OPENAI_API_KEY for fallback provider.'
+        );
+      }
+      rawOutput = await callOpenAi({
+        apiKey: fallbackKey,
+        model: effectiveConfig.fallbackModel,
+        temperature: effectiveConfig.temperature,
+        maxOutputTokens: effectiveConfig.maxOutputTokens,
+        systemPrompt: resolveSystemPrompt(parsed.feature, effectiveConfig),
+        userInput: prompt,
+        feature: parsed.feature,
+        stylePreset: effectiveConfig.stylePreset,
+      });
+    } else {
+      rawOutput = deterministicOutput(parsed);
+    }
+
+    const parsedOutput = parseOutput(parsed.feature, rawOutput);
+    return {
+      feature: parsed.feature,
+      source,
+      provider: providerUsed,
+      model: modelUsed,
+      fallbackUsed,
+      schemaValid: parsedOutput.schemaValid,
+      parsed: parsedOutput.parsed,
+      parseIssues: parsedOutput.parseIssues,
+      rawOutput,
+      latencyMs: Date.now() - startedAt,
+    };
+  }
+
+  if (effectiveConfig.runtimeMode === 'llm_only' && primaryProvider !== 'openai') {
+    throw new PromptTestConfigError(
+      'Runtime mode is llm_only but primary provider is not OpenAI.'
+    );
+  }
+
   try {
     if (primaryProvider === 'openai') {
       const key = await getProviderApiKey(primaryProvider);
@@ -303,6 +353,9 @@ export async function runAiPromptTest(rawInput: unknown) {
       providerUsed = 'deterministic';
     }
   } catch (error) {
+    if (effectiveConfig.runtimeMode === 'llm_only') {
+      throw error;
+    }
     if (!effectiveConfig.fallbackEnabled) {
       throw error;
     }

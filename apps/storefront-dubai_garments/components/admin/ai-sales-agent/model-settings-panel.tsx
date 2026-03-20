@@ -22,6 +22,7 @@ import ProviderChecksCard from '@/components/admin/ai-sales-agent/model-settings
 import { getTemperatureForStylePreset } from '@/lib/ai-sales-agent/model-style-presets';
 
 const DEFAULT_MODEL_CONFIG: AiModelConfig = {
+  runtimeMode: 'auto',
   provider: 'deterministic',
   model: 'gpt-4o-mini',
   fallbackEnabled: true,

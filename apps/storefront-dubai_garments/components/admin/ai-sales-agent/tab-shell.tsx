@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
 import LeadIntelligenceCards from './lead-intelligence-cards';
 import { useLeadById } from '@/features/admin/leads';
@@ -144,13 +145,62 @@ const tabs: AgentTab[] = [
 // const flowSteps = ['Lead Intake', 'AI Analysis', 'Reply Draft', 'Deal Guidance', 'Quote Assist', 'Close Loop'];
 
 export default function AiSalesAgentTabShell() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<AgentTabKey>('copilot');
-  const [expanded, setExpanded] = useState(true);
-  const [leadPreviewId, setLeadPreviewId] = useState('');
+  const [expanded, setExpanded] = useState(searchParams.get('expanded') !== 'false');
+  const [leadPreviewId, setLeadPreviewId] = useState(searchParams.get('leadPreviewId') ?? '');
   const { data: leadPreviewData } = useLeadById(leadPreviewId.trim());
   const previewLead = leadPreviewData?.item;
 
   const currentTab = useMemo(() => tabs.find((tab) => tab.key === activeTab) ?? tabs[0], [activeTab]);
+  const validTabKeys = useMemo(() => new Set(tabs.map((tab) => tab.key)), []);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (!tabParam || !validTabKeys.has(tabParam as AgentTabKey)) {
+      return;
+    }
+    const nextTab = tabParam as AgentTabKey;
+    setActiveTab((prev) => (prev === nextTab ? prev : nextTab));
+  }, [searchParams, validTabKeys]);
+
+  useEffect(() => {
+    const expandedParam = searchParams.get('expanded');
+    const nextExpanded = expandedParam !== 'false';
+    setExpanded((prev) => (prev === nextExpanded ? prev : nextExpanded));
+    const nextLeadPreviewId = searchParams.get('leadPreviewId') ?? '';
+    setLeadPreviewId((prev) => (prev === nextLeadPreviewId ? prev : nextLeadPreviewId));
+  }, [searchParams]);
+
+  function setTabInUrl(nextTab: AgentTabKey) {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set('tab', nextTab);
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }
+
+  function setUiStateInUrl(patch: Partial<{ expanded: boolean; leadPreviewId: string }>) {
+    const nextParams = new URLSearchParams(searchParams.toString());
+
+    if (typeof patch.expanded === 'boolean') {
+      nextParams.set('expanded', String(patch.expanded));
+    }
+    if (typeof patch.leadPreviewId === 'string') {
+      const trimmed = patch.leadPreviewId.trim();
+      if (trimmed) {
+        nextParams.set('leadPreviewId', patch.leadPreviewId);
+      } else {
+        nextParams.delete('leadPreviewId');
+      }
+    }
+
+    const nextQuery = nextParams.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery === currentQuery) return;
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+  }
 
   const healthStyles = {
     healthy: { border: '#a7f3d0', bg: '#ecfdf5', fg: '#047857' },
@@ -172,6 +222,8 @@ export default function AiSalesAgentTabShell() {
                 onClick={() => {
                   setActiveTab(tab.key);
                   setExpanded(true);
+                  setTabInUrl(tab.key);
+                  setUiStateInUrl({ expanded: true });
                 }}
                 className="ais-tab-btn"
                 style={{ animationDelay: `${60 + index * 35}ms`, ...(isActive ? { boxShadow: '0 8px 16px rgba(37,99,235,0.16)' } : undefined) }}
@@ -182,7 +234,17 @@ export default function AiSalesAgentTabShell() {
           })}
 
           <div style={{ marginLeft: 'auto' }}>
-            <Button variant="secondary" size="sm" onClick={() => setExpanded((v) => !v)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() =>
+                setExpanded((v) => {
+                  const next = !v;
+                  setUiStateInUrl({ expanded: next });
+                  return next;
+                })
+              }
+            >
               {expanded ? 'Collapse Overview' : 'Expand Overview'}
             </Button>
           </div>
@@ -257,7 +319,10 @@ export default function AiSalesAgentTabShell() {
               <input
                 className="dg-input"
                 value={leadPreviewId}
-                onChange={(event) => setLeadPreviewId(event.target.value)}
+                onChange={(event) => {
+                  setLeadPreviewId(event.target.value);
+                  setUiStateInUrl({ leadPreviewId: event.target.value });
+                }}
                 placeholder="Paste a Lead ID"
                 data-testid="ai-sales-agent-lead-preview-input"
               />

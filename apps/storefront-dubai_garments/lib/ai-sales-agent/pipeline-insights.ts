@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { PipelineInsightPayloadSchema } from './contracts';
+import { runStructuredWithRuntime } from './llm-runtime';
 
 type PipelineInsightsContext = {
   userId: string;
@@ -70,83 +72,116 @@ export async function runPipelineInsights(input: {
   const stageReference = deal?.updated_at ?? lead?.updated_at ?? lead?.created_at ?? null;
   const stageAgeDays = daysBetween(stageReference);
 
-  const stalled = inactivityDays >= 5 || stageAgeDays >= 7;
+  const buildFallback = () => {
+    const stalled = inactivityDays >= 5 || stageAgeDays >= 7;
 
-  const riskReasons: Array<{ label: string; impact: 'low' | 'medium' | 'high' }> = [];
+    const riskReasons: Array<{ label: string; impact: 'low' | 'medium' | 'high' }> = [];
 
-  if (stalled) {
-    riskReasons.push({
-      label: 'Opportunity appears stalled due to inactivity or aging stage.',
-      impact: 'high',
-    });
-  }
+    if (stalled) {
+      riskReasons.push({
+        label: 'Opportunity appears stalled due to inactivity or aging stage.',
+        impact: 'high',
+      });
+    }
 
-  if (!lead?.ai_processed_at) {
-    riskReasons.push({
-      label: 'Lead still lacks AI analysis/triage.',
-      impact: 'medium',
-    });
-  }
+    if (!lead?.ai_processed_at) {
+      riskReasons.push({
+        label: 'Lead still lacks AI analysis/triage.',
+        impact: 'medium',
+      });
+    }
 
-  if (deal?.stage === 'negotiation') {
-    riskReasons.push({
-      label: 'Deal is in negotiation and may need intervention.',
-      impact: 'medium',
-    });
-  }
+    if (deal?.stage === 'negotiation') {
+      riskReasons.push({
+        label: 'Deal is in negotiation and may need intervention.',
+        impact: 'medium',
+      });
+    }
 
-  if (lead?.status === 'new') {
-    riskReasons.push({
-      label: 'Lead is still in new status and has not progressed.',
-      impact: 'medium',
-    });
-  }
+    if (lead?.status === 'new') {
+      riskReasons.push({
+        label: 'Lead is still in new status and has not progressed.',
+        impact: 'medium',
+      });
+    }
 
-  const riskScore = Math.min(
-    100,
-    (stalled ? 45 : 0) +
-      (inactivityDays >= 3 ? 20 : 0) +
-      (stageAgeDays >= 5 ? 15 : 0) +
-      (deal?.stage === 'negotiation' ? 10 : 0) +
-      (!lead?.ai_processed_at ? 10 : 0)
-  );
+    const riskScore = Math.min(
+      100,
+      (stalled ? 45 : 0) +
+        (inactivityDays >= 3 ? 20 : 0) +
+        (stageAgeDays >= 5 ? 15 : 0) +
+        (deal?.stage === 'negotiation' ? 10 : 0) +
+        (!lead?.ai_processed_at ? 10 : 0)
+    );
 
-  const urgencyQueue = [
-    {
-      title: 'Immediate follow-up',
-      urgency: stalled ? 'critical' as const : 'medium' as const,
-      reason: stalled
-        ? 'Stall signal detected from inactivity/stage aging.'
-        : 'Maintain momentum on current opportunity.',
-    },
-    {
-      title: 'Risk review',
-      urgency: riskScore >= 70 ? 'high' as const : 'medium' as const,
-      reason: `Risk score currently ${riskScore}.`,
-    },
-  ];
+    const urgencyQueue = [
+      {
+        title: 'Immediate follow-up',
+        urgency: stalled ? ('critical' as const) : ('medium' as const),
+        reason: stalled
+          ? 'Stall signal detected from inactivity/stage aging.'
+          : 'Maintain momentum on current opportunity.',
+      },
+      {
+        title: 'Risk review',
+        urgency: riskScore >= 70 ? ('high' as const) : ('medium' as const),
+        reason: `Risk score currently ${riskScore}.`,
+      },
+    ];
 
-  const nextAction = stalled
-    ? 'Review the opportunity now and trigger follow-up or escalation.'
-    : 'Proceed with the next scheduled touchpoint and keep the opportunity moving.';
+    const nextAction = stalled
+      ? 'Review the opportunity now and trigger follow-up or escalation.'
+      : 'Proceed with the next scheduled touchpoint and keep the opportunity moving.';
 
-  const source: 'model' | 'fallback' = 'fallback';
-  const provider = 'deterministic';
-  const fallbackUsed = true;
-  const failureReason = 'Pipeline Insights currently uses deterministic heuristics.';
-
-  const data = {
-    summary: stalled
-      ? 'Pipeline insight detected a stalled or aging opportunity.'
-      : 'Pipeline insight indicates the opportunity is active but should be monitored.',
-    stalled,
-    stageAgeDays,
-    inactivityDays,
-    riskScore,
-    riskReasons,
-    urgencyQueue,
-    nextAction,
+    return {
+      summary: stalled
+        ? 'Pipeline insight detected a stalled or aging opportunity.'
+        : 'Pipeline insight indicates the opportunity is active but should be monitored.',
+      stalled,
+      stageAgeDays,
+      inactivityDays,
+      riskScore,
+      riskReasons,
+      urgencyQueue,
+      nextAction,
+    };
   };
+
+  const runtimeResult = await runStructuredWithRuntime({
+    feature: 'pipeline_insights',
+    systemPrompt:
+      'You are an AI pipeline insight assistant. Assess stall signals, risk score/reasons, urgency queue, and next action.',
+    userInput: JSON.stringify({
+      leadId: lead?.id ?? null,
+      dealId: deal?.id ?? null,
+      leadStatus: lead?.status ?? null,
+      dealStage: deal?.stage ?? null,
+      inactivityDays,
+      stageAgeDays,
+      recentActivities: activities.map((activity) => ({
+        type: activity.activity_type,
+        title: activity.title,
+        occurredAt: activity.created_at,
+      })),
+      leadSummary: {
+        companyName: lead?.company_name ?? null,
+        contactName: lead?.contact_name ?? null,
+        notes: lead?.notes ?? null,
+      },
+    }),
+    schemaLabel: 'PipelineInsightPayload',
+    schemaHint:
+      '{"summary":"string","stalled":true,"stageAgeDays":0,"inactivityDays":0,"riskScore":0,"riskReasons":[{"label":"string","impact":"low|medium|high"}],"urgencyQueue":[{"title":"string","urgency":"low|medium|high|critical","reason":"string"}],"nextAction":"string"}',
+    outputSchema: PipelineInsightPayloadSchema,
+    fallbackReasonPrefix: 'PipelineInsights:',
+    fallback: buildFallback,
+  });
+
+  const source = runtimeResult.source;
+  const provider = runtimeResult.provider;
+  const fallbackUsed = runtimeResult.fallbackUsed;
+  const failureReason = runtimeResult.failureReason;
+  const data = runtimeResult.data;
 
   if (!input.dryRun) {
     await prisma.activities.create({
@@ -156,7 +191,7 @@ export async function runPipelineInsights(input: {
         deal_id: deal?.id ?? null,
         activity_type: 'ai_pipeline_insight',
         title: 'AI Pipeline Insight',
-        details: `Generated pipeline insight with risk score ${riskScore}.`,
+        details: `Generated pipeline insight with risk score ${data.riskScore}.`,
         metadata: {
           source,
           provider,
