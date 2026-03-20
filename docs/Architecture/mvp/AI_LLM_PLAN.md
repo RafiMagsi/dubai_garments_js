@@ -14,13 +14,13 @@ P1. **Phase 1: Shared LLM Runtime Layer**
 - Reuse existing model settings + strict env checks logic so runtime and test panel use the same rules.
 
 P2. **Phase 2: LLM-enable High-Impact Endpoints (first 3)**
-- Integrate live LLM into:
-  - `/api/admin/ai-sales-agent/copilot` (all intents, especially `draft_reply`)
-  - `/api/admin/ai-sales-agent/triage`
-  - `/api/admin/ai-sales-agent/reply-studio`
-- Keep current deterministic logic as fallback path.
-- Preserve current response contracts; only change source behavior from fallback-default to model-first.
-- Add explicit prompt templates per feature in model config (already scaffolded) and bind them to runtime calls.
+- Selective deterministic rollout for cost/control:
+  - **Model-first**: `/api/admin/ai-sales-agent/copilot` intent `draft_reply`, `/api/admin/ai-sales-agent/reply-studio`
+  - **Deterministic-only (internal)**: `/api/admin/ai-sales-agent/copilot` intents `followups_today` + `at_risk_deals`, `/api/admin/ai-sales-agent/triage`
+- Keep deterministic logic as fallback path for model-enabled flows.
+- Preserve existing response contracts; only source behavior changes by feature policy.
+- Bind saved model-config prompts to runtime calls for draft workflows.
+- Upgrade path: triage/followups/at-risk can be LLM-enabled later by policy change after cost/quality validation.
 
 P3. **Phase 3: LLM-enable Revenue/Operations Endpoints**
 - Integrate live LLM into:

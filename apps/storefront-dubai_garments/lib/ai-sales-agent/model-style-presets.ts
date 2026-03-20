@@ -1,1 +1,1 @@
-export * from '@/lib/ai-sales-agent/llm-runtime/model-style-presets';
+export * from './llm-runtime/model-style-presets';

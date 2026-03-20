@@ -1,1 +1,1 @@
-export * from '@/lib/ai-sales-agent/llm-runtime/model-prompt-test-errors';
+export * from './llm-runtime/model-prompt-test-errors';

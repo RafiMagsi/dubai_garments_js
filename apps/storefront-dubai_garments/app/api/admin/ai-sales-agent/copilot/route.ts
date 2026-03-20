@@ -13,6 +13,7 @@ import {
 import { getAiPayloadValidationMessage } from '@/lib/ai-sales-agent/validation-messages';
 import { requireAdminApiAccess } from '@/lib/auth/require-admin';
 import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
+import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.data;
+    const { config } = await getAiModelConfig();
 
     let runtimeResult: Awaited<ReturnType<typeof runStructuredWithRuntime<any>>>;
 
@@ -66,8 +68,8 @@ export async function POST(request: NextRequest) {
     } else if (input.intent === 'draft_reply') {
       runtimeResult = await runStructuredWithRuntime({
         feature: 'copilot_draft_reply',
-        systemPrompt:
-          'You are an AI sales copilot. Draft a targeted response for the lead context and include next action.',
+        systemPrompt: `${config.prompts.copilotSystem}
+Task: Draft a targeted response for the lead context and include next action.`,
         userInput: JSON.stringify(input),
         schemaLabel: 'DraftReplyResponse',
         schemaHint:

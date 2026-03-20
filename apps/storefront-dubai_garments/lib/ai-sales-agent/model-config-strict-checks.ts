@@ -1,1 +1,1 @@
-export * from '@/lib/ai-sales-agent/llm-runtime/model-config-strict-checks';
+export * from './llm-runtime/model-config-strict-checks';

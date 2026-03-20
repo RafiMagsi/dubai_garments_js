@@ -13,6 +13,8 @@ import {
   PromptTestConfigError,
   PromptTestUpstreamError,
 } from '@/lib/ai-sales-agent/model-prompt-test-errors';
+import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
+import { resolveSystemPrompt } from './prompt-resolution';
 
 type PromptTestFeature = AiPromptTestRequest['feature'];
 
@@ -30,22 +32,6 @@ function getSchemaHint(feature: PromptTestFeature) {
     return `{"mode":"first_reply|followup_reply|clarification_questions","tone":"concise|formal|persuasive","channel":"email|whatsapp","subject":"string|null","message":"string","rationale":"string","suggestedNextAction":"string","confidence":0,"questions":["string"]}`;
   }
   return `{"summary":"string","recommendations":[{"productId":"uuid|null","productName":"string","suggestedQuantity":0,"suggestedVariant":"string|null","rationale":"string"}],"missingData":[{"field":"string","reason":"string"}],"canCreateQuote":true,"suggestedNextAction":"string","confidence":0}`;
-}
-
-function resolveSystemPrompt(feature: PromptTestFeature, configOverride?: AiPromptTestRequest['configOverride']) {
-  if (feature === 'copilot') {
-    return configOverride?.prompts?.copilotSystem ?? 'You are an AI sales copilot.';
-  }
-  if (feature === 'reply_studio') {
-    return (
-      configOverride?.prompts?.replyStudioSystem ??
-      'Generate concise and professional sales replies.'
-    );
-  }
-  return (
-    configOverride?.prompts?.quoteCopilotSystem ??
-    'Generate quote guidance with margin-safe recommendations.'
-  );
 }
 
 function deterministicCopilotFallback(input: AiPromptTestRequest): FollowupsTodayResponse {
@@ -110,6 +96,7 @@ function getRuntimeFeature(feature: PromptTestFeature) {
 
 export async function runAiPromptTest(rawInput: unknown) {
   const parsed = AiPromptTestRequestSchema.parse(rawInput);
+  const { config } = await getAiModelConfig();
   const prompt = `${parsed.input}\n\nContext: ${JSON.stringify(parsed.context ?? {}, null, 2)}`;
 
   try {
@@ -121,7 +108,7 @@ export async function runAiPromptTest(rawInput: unknown) {
     if (parsed.feature === 'copilot') {
       runtimeResult = await runStructuredWithRuntime({
         feature: getRuntimeFeature(parsed.feature),
-        systemPrompt: resolveSystemPrompt(parsed.feature, parsed.configOverride),
+        systemPrompt: resolveSystemPrompt(parsed.feature, config.prompts, parsed.configOverride),
         userInput: prompt,
         schemaLabel: getSchemaLabel(parsed.feature),
         schemaHint: getSchemaHint(parsed.feature),
@@ -133,7 +120,7 @@ export async function runAiPromptTest(rawInput: unknown) {
     } else if (parsed.feature === 'reply_studio') {
       runtimeResult = await runStructuredWithRuntime({
         feature: getRuntimeFeature(parsed.feature),
-        systemPrompt: resolveSystemPrompt(parsed.feature, parsed.configOverride),
+        systemPrompt: resolveSystemPrompt(parsed.feature, config.prompts, parsed.configOverride),
         userInput: prompt,
         schemaLabel: getSchemaLabel(parsed.feature),
         schemaHint: getSchemaHint(parsed.feature),
@@ -145,7 +132,7 @@ export async function runAiPromptTest(rawInput: unknown) {
     } else {
       runtimeResult = await runStructuredWithRuntime({
         feature: getRuntimeFeature(parsed.feature),
-        systemPrompt: resolveSystemPrompt(parsed.feature, parsed.configOverride),
+        systemPrompt: resolveSystemPrompt(parsed.feature, config.prompts, parsed.configOverride),
         userInput: prompt,
         schemaLabel: getSchemaLabel(parsed.feature),
         schemaHint: getSchemaHint(parsed.feature),

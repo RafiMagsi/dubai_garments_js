@@ -1,1 +1,1 @@
-export * from '@/lib/ai-sales-agent/llm-runtime/llm-runtime';
+export * from './llm-runtime/llm-runtime';

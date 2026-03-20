@@ -6,6 +6,7 @@ import {
   type ReplyStudioTone,
 } from '@/lib/ai-sales-agent/contracts';
 import { runStructuredWithRuntime } from '@/lib/ai-sales-agent/llm-runtime';
+import { getAiModelConfig } from '@/lib/ai-sales-agent/model-config';
 
 type ReplyStudioContext = {
   userId: string;
@@ -174,11 +175,12 @@ export async function runReplyStudio(input: {
         throw new Error('Unsupported reply studio mode.');
     }
   };
+  const { config } = await getAiModelConfig();
 
   const runtimeResult = await runStructuredWithRuntime({
     feature: 'reply_studio',
-    systemPrompt:
-      'You are an AI reply studio assistant for B2B sales. Generate structured reply drafts for first reply, follow-up, or clarification modes.',
+    systemPrompt: `${config.prompts.replyStudioSystem}
+Task: Generate structured reply drafts for first reply, follow-up, or clarification modes.`,
     userInput: JSON.stringify({
       leadId: input.leadId,
       dealId: input.dealId ?? null,

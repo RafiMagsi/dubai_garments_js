@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
       role: session.role,
     };
 
+    // Intentional Phase-2 policy: triage remains deterministic/internal for cost/control.
+    // LLM enablement for triage is deferred to a later phase.
     const result = await runLeadTriage(
       parsed.data.leadId,
       triageContext,
