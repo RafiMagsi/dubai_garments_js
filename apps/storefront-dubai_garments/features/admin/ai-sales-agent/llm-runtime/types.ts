@@ -84,17 +84,16 @@ export type LeadTriageEnvelope = {
 export type AiSalesAgentEnvelope = CopilotEnvelope | LeadTriageEnvelope;
 
 export type AgentFlowStageKey =
-  | 'lead_received'
-  | 'ai_analysis'
-  | 'qualification'
-  | 'reply_prepared'
-  | 'human_review'
-  | 'quote_preparation'
+  | 'lead_new'
+  | 'triaged'
+  | 'qualified'
+  | 'reply_sent'
+  | 'deal_open'
+  | 'quote_ready'
   | 'quote_sent'
-  | 'followup_automation'
   | 'negotiation'
-  | 'decision'
-  | 'post_outcome_intelligence';
+  | 'won_lost'
+  | 'post_outcome';
 
 export type AgentFlowStageStatus = 'completed' | 'active' | 'pending' | 'blocked';
 

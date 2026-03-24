@@ -111,10 +111,19 @@ P5 Status (implemented):
 ### Track A: Full Lead-to-Close Process (End-to-End Execution)
 Goal: move from feature-level tools to a single orchestrated sales lifecycle from intake to outcome.
 
-P1. **Unified lifecycle state model**
+P1. **Unified lifecycle state model** - done
 - Standardize stages across lead/deal/quote into one canonical journey:
   - `lead_new -> triaged -> qualified -> reply_sent -> deal_open -> quote_ready -> quote_sent -> negotiation -> won/lost -> post_outcome`
 - Map each stage to required evidence, blockers, and next action.
+
+P1 Status (implemented):
+- Canonical lifecycle keys and order are now standardized in Agent Flow:
+  - `lead_new -> triaged -> qualified -> reply_sent -> deal_open -> quote_ready -> quote_sent -> negotiation -> won_lost -> post_outcome`
+- Each stage now has explicit:
+  - completion evidence rules,
+  - blocker detection rules,
+  - recommended next move mapping.
+- Flow view execution/deep-link logic was aligned to the canonical stage keys.
 
 P2. **Lead-to-close orchestration service**
 - Add orchestration endpoint/service that:

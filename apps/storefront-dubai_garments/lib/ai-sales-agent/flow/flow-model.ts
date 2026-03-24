@@ -1,17 +1,16 @@
 import { prisma } from '@/lib/prisma';
 
 export type AgentFlowStageKey =
-  | 'lead_received'
-  | 'ai_analysis'
-  | 'qualification'
-  | 'reply_prepared'
-  | 'human_review'
-  | 'quote_preparation'
+  | 'lead_new'
+  | 'triaged'
+  | 'qualified'
+  | 'reply_sent'
+  | 'deal_open'
+  | 'quote_ready'
   | 'quote_sent'
-  | 'followup_automation'
   | 'negotiation'
-  | 'decision'
-  | 'post_outcome_intelligence';
+  | 'won_lost'
+  | 'post_outcome';
 
 export type AgentFlowStageStatus = 'completed' | 'active' | 'pending' | 'blocked';
 
@@ -72,59 +71,54 @@ const CANONICAL_STAGE_DEFS: Array<{
   description: string;
 }> = [
   {
-    key: 'lead_received',
-    label: 'Lead Received',
-    description: 'Lead was captured and is available for sales handling.',
+    key: 'lead_new',
+    label: 'Lead New',
+    description: 'Lead intake captured and ready for AI triage.',
   },
   {
-    key: 'ai_analysis',
-    label: 'AI Analysis',
-    description: 'AI triage/intelligence has been generated for the lead.',
+    key: 'triaged',
+    label: 'Triaged',
+    description: 'AI triage/intelligence has been generated and persisted.',
   },
   {
-    key: 'qualification',
-    label: 'Qualification',
-    description: 'Lead has been qualified and prioritized.',
+    key: 'qualified',
+    label: 'Qualified',
+    description: 'Lead is commercially qualified for sales progression.',
   },
   {
-    key: 'reply_prepared',
-    label: 'Reply Prepared',
-    description: 'Prepare a draft reply or first response for the lead.',
+    key: 'reply_sent',
+    label: 'Reply Sent',
+    description: 'First response sent to the lead with execution evidence.',
   },
   {
-    key: 'human_review',
-    label: 'Human Review',
-    description: 'A human operator reviewed or acted on the lead.',
+    key: 'deal_open',
+    label: 'Deal Open',
+    description: 'Lead has been converted and an active deal exists.',
   },
   {
-    key: 'quote_preparation',
-    label: 'Quote Preparation',
-    description: 'A quote or deal preparation step has started.',
+    key: 'quote_ready',
+    label: 'Quote Ready',
+    description: 'Quote preparation completed and offer is ready to send.',
   },
   {
     key: 'quote_sent',
     label: 'Quote Sent',
-    description: 'A quote has been sent or commercial offer has been recorded.',
-  },
-  {
-    key: 'followup_automation',
-    label: 'Follow-up Automation',
-    description: 'Automation runs or scheduled follow-up activity exists.',
+    description: 'Quote sent with traceable communication evidence.',
   },
   {
     key: 'negotiation',
     label: 'Negotiation',
-    description: 'The lead/deal is in a negotiation-like stage.',
+    description: 'Commercial negotiation is active with customer feedback loop.',
   },
   {
-    key: 'decision',
-    label: 'Decision',
-    description: 'The opportunity is won, lost, or at a terminal decision stage.',
+    key: 'won_lost',
+    label: 'Won / Lost',
+    description: 'Outcome recorded as won or lost.',
   },
   {
-    key: 'post_outcome_intelligence',
-    label: 'Post-Outcome Intelligence',
-    description: 'Outcome intelligence or post-close reasoning has been captured.',
+    key: 'post_outcome',
+    label: 'Post-Outcome',
+    description: 'Post-outcome intelligence captured for learning and optimization.',
   },
 ];
 
@@ -142,7 +136,7 @@ function stageBlockingReason(
   const automationRuns = source.automationRuns;
 
   switch (key) {
-    case 'ai_analysis': {
+    case 'triaged': {
       const failedLeadAiRun = automationRuns.find(
         (run) =>
           run?.workflow_name === 'lead_ai_processing' &&
@@ -155,14 +149,9 @@ function stageBlockingReason(
       return null;
     }
 
-    case 'followup_automation': {
-      const failedFollowupRun = automationRuns.find(
-        (run) =>
-          ['failed', 'error', 'cancelled'].includes(String(run?.status || '').toLowerCase()) &&
-          (run?.trigger_entity_id === lead?.id || run?.trigger_entity_id === deal?.id)
-      );
-      if (failedFollowupRun) {
-        return 'Automation execution has failed for this opportunity.';
+    case 'quote_ready': {
+      if (!deal && !quote) {
+        return 'Deal is not open yet; quote cannot be prepared.';
       }
       return null;
     }
@@ -170,6 +159,13 @@ function stageBlockingReason(
     case 'quote_sent': {
       if (quote?.status && ['cancelled', 'rejected', 'expired'].includes(String(quote.status).toLowerCase())) {
         return `Quote is ${String(quote.status).toLowerCase()}.`;
+      }
+      return null;
+    }
+
+    case 'won_lost': {
+      if (quote?.status && ['cancelled', 'rejected', 'expired'].includes(String(quote.status).toLowerCase())) {
+        return `Quote is ${String(quote.status).toLowerCase()}; outcome must be reconciled before closure.`;
       }
       return null;
     }
@@ -191,7 +187,7 @@ function stageCompleted(
   const automationRuns = source.automationRuns;
 
   switch (key) {
-    case 'lead_received': {
+    case 'lead_new': {
       if (lead) {
         evidence.push('Lead record exists.');
         return { completed: true, evidence };
@@ -199,7 +195,7 @@ function stageCompleted(
       return { completed: false, evidence };
     }
 
-    case 'ai_analysis': {
+    case 'triaged': {
       if (lead?.ai_processed_at) {
         evidence.push('Lead has ai_processed_at.');
       }
@@ -209,7 +205,7 @@ function stageCompleted(
       return { completed: evidence.length > 0, evidence };
     }
 
-    case 'qualification': {
+    case 'qualified': {
       if (lead?.status === 'qualified') {
         evidence.push('Lead status is qualified.');
       }
@@ -219,35 +215,38 @@ function stageCompleted(
       return { completed: evidence.length > 0, evidence };
     }
 
-    case 'reply_prepared': {
+    case 'reply_sent': {
       if (hasActivity(activities, 'ai_lead_intelligence_action')) {
         evidence.push('AI lead intelligence action activity exists.');
       }
       if (hasActivity(activities, 'email_sent')) {
         evidence.push('Email sent activity exists.');
       }
-      return { completed: evidence.length > 0, evidence };
-    }
-
-    case 'human_review': {
-      if (hasActivity(activities, 'note_added')) {
-        evidence.push('Manual note activity exists.');
-      }
-      if (hasActivity(activities, 'status_changed')) {
-        evidence.push('Status change activity exists.');
-      }
-      if (hasActivity(activities, 'ai_lead_triage')) {
-        evidence.push('AI triage activity exists for operator review context.');
+      if (hasActivity(activities, 'ai_reply_studio_approved_send')) {
+        evidence.push('Reply Studio approved/send activity exists.');
       }
       return { completed: evidence.length > 0, evidence };
     }
 
-    case 'quote_preparation': {
+    case 'deal_open': {
       if (deal) {
         evidence.push('Deal record exists.');
       }
+      if (deal?.stage && !['won', 'lost'].includes(String(deal.stage).toLowerCase())) {
+        evidence.push(`Deal is open in stage ${deal.stage}.`);
+      }
+      return { completed: evidence.length > 0, evidence };
+    }
+
+    case 'quote_ready': {
       if (quote) {
         evidence.push('Quote record exists.');
+      }
+      if (hasActivity(activities, 'ai_quote_recommendation')) {
+        evidence.push('AI quote recommendation activity exists.');
+      }
+      if (hasActivity(activities, 'ai_quote_copilot')) {
+        evidence.push('AI quote copilot activity exists.');
       }
       return { completed: evidence.length > 0, evidence };
     }
@@ -262,16 +261,6 @@ function stageCompleted(
       return { completed: evidence.length > 0, evidence };
     }
 
-    case 'followup_automation': {
-      if (automationRuns.length > 0) {
-        evidence.push('Automation run records exist.');
-      }
-      if (hasActivity(activities, 'followup_scheduled')) {
-        evidence.push('Follow-up scheduled activity exists.');
-      }
-      return { completed: evidence.length > 0, evidence };
-    }
-
     case 'negotiation': {
       if (deal?.stage === 'negotiation') {
         evidence.push('Deal stage is negotiation.');
@@ -282,7 +271,7 @@ function stageCompleted(
       return { completed: evidence.length > 0, evidence };
     }
 
-    case 'decision': {
+    case 'won_lost': {
       if (deal?.stage === 'won') {
         evidence.push('Deal stage is won.');
       }
@@ -298,7 +287,7 @@ function stageCompleted(
       return { completed: evidence.length > 0, evidence };
     }
 
-    case 'post_outcome_intelligence': {
+    case 'post_outcome': {
       if (lead?.ai_reasoning?.postOutcomeSummary) {
         evidence.push('Lead AI reasoning contains postOutcomeSummary.');
       }
@@ -371,12 +360,16 @@ function deriveBlockers(stages: AgentFlowStage[]): string[] {
     blockers.push(`${activeStage.label}: missing evidence to move forward.`);
   }
 
-  if (!stages.find((stage) => stage.key === 'ai_analysis')?.completed) {
-    blockers.push('AI Analysis: lead has not been analyzed yet.');
+  if (!stages.find((stage) => stage.key === 'triaged')?.completed) {
+    blockers.push('Triaged: lead has not been analyzed yet.');
   }
 
-  if (!stages.find((stage) => stage.key === 'reply_prepared')?.completed) {
-    blockers.push('Reply Prepared: no reply draft or email activity detected.');
+  if (!stages.find((stage) => stage.key === 'reply_sent')?.completed) {
+    blockers.push('Reply Sent: no sent reply evidence detected.');
+  }
+
+  if (!stages.find((stage) => stage.key === 'quote_ready')?.completed) {
+    blockers.push('Quote Ready: no quote preparation evidence found yet.');
   }
 
   if (!stages.find((stage) => stage.key === 'quote_sent')?.completed) {
@@ -394,27 +387,25 @@ function deriveRecommendedNextMove(stages: AgentFlowStage[]): string {
   }
 
   switch (activeStage.key) {
-    case 'lead_received':
+    case 'lead_new':
       return 'Review the lead and start AI analysis / triage.';
-    case 'ai_analysis':
+    case 'triaged':
       return 'Run lead triage so the system can generate intelligence and scoring.';
-    case 'qualification':
+    case 'qualified':
       return 'Qualify the lead and confirm commercial readiness.';
-    case 'reply_prepared':
+    case 'reply_sent':
       return 'Generate or send the first reply from the intelligence workflow.';
-    case 'human_review':
-      return 'Have a sales operator review the lead and confirm next action.';
-    case 'quote_preparation':
-      return 'Prepare a deal or quote based on the current lead requirements.';
+    case 'deal_open':
+      return 'Convert the lead to a deal and assign ownership.';
+    case 'quote_ready':
+      return 'Prepare quote recommendations and generate quote-ready summary.';
     case 'quote_sent':
       return 'Send the quote and record the commercial handoff.';
-    case 'followup_automation':
-      return 'Schedule or verify follow-up automation for the opportunity.';
     case 'negotiation':
       return 'Advance negotiation with pricing, scope, or timing clarification.';
-    case 'decision':
+    case 'won_lost':
       return 'Record the final outcome as won or lost.';
-    case 'post_outcome_intelligence':
+    case 'post_outcome':
       return 'Capture post-outcome reasoning and lessons for future AI guidance.';
     default:
       return 'Review the active stage and move the lead forward manually.';
@@ -433,7 +424,7 @@ function deriveMarkers(source: FlowSourceData): AgentFlowMarker[] {
     markers.push({
       type: 'ai_action',
       label: 'AI Triage',
-      stageKey: 'ai_analysis',
+      stageKey: 'triaged',
       details: 'Lead was analyzed by the AI triage pipeline.',
     });
   }
@@ -442,17 +433,26 @@ function deriveMarkers(source: FlowSourceData): AgentFlowMarker[] {
     markers.push({
       type: 'ai_action',
       label: 'AI Lead Intelligence Action',
-      stageKey: 'reply_prepared',
+      stageKey: 'reply_sent',
       details: 'AI-assisted reply, convert, or prioritize action was recorded.',
+    });
+  }
+
+  if (deal) {
+    markers.push({
+      type: 'human_checkpoint',
+      label: 'Deal Open',
+      stageKey: 'deal_open',
+      details: 'Deal record exists and indicates active sales progression.',
     });
   }
 
   if (quote) {
     markers.push({
       type: 'human_checkpoint',
-      label: 'Quote Prepared',
-      stageKey: 'quote_preparation',
-      details: 'A quote record exists and indicates human/operator intervention.',
+      label: 'Quote Ready',
+      stageKey: 'quote_ready',
+      details: 'Quote preparation evidence exists.',
     });
   }
 
@@ -469,7 +469,7 @@ function deriveMarkers(source: FlowSourceData): AgentFlowMarker[] {
     markers.push({
       type: 'automation_action',
       label: 'Automation Run',
-      stageKey: 'followup_automation',
+      stageKey: 'reply_sent',
       details: 'Automation execution records were found for this opportunity.',
     });
   }
@@ -478,17 +478,8 @@ function deriveMarkers(source: FlowSourceData): AgentFlowMarker[] {
     markers.push({
       type: 'automation_action',
       label: 'Follow-up Scheduled',
-      stageKey: 'followup_automation',
+      stageKey: 'reply_sent',
       details: 'A follow-up scheduling activity exists.',
-    });
-  }
-
-  if (activities.some((item) => item.activity_type === 'note_added')) {
-    markers.push({
-      type: 'human_checkpoint',
-      label: 'Operator Review',
-      stageKey: 'human_review',
-      details: 'A human note was added during the flow.',
     });
   }
 
@@ -498,6 +489,15 @@ function deriveMarkers(source: FlowSourceData): AgentFlowMarker[] {
       label: 'Negotiation Review',
       stageKey: 'negotiation',
       details: 'Deal is in negotiation and likely requires human oversight.',
+    });
+  }
+
+  if (deal?.stage === 'won' || deal?.stage === 'lost' || lead?.status === 'won' || lead?.status === 'lost') {
+    markers.push({
+      type: 'human_checkpoint',
+      label: 'Outcome Recorded',
+      stageKey: 'won_lost',
+      details: 'Opportunity outcome has been marked as won/lost.',
     });
   }
 
@@ -554,8 +554,12 @@ function deriveRiskHints(source: FlowSourceData, stages: AgentFlowStage[]): stri
     hints.push('Lead has not been analyzed by AI yet.');
   }
 
-  if (!stages.find((stage) => stage.key === 'reply_prepared')?.completed) {
-    hints.push('No reply preparation evidence detected.');
+  if (!stages.find((stage) => stage.key === 'reply_sent')?.completed) {
+    hints.push('No reply-sent evidence detected.');
+  }
+
+  if (!stages.find((stage) => stage.key === 'quote_ready')?.completed) {
+    hints.push('Quote is not ready yet; missing quote preparation evidence.');
   }
 
   if (!quote) {

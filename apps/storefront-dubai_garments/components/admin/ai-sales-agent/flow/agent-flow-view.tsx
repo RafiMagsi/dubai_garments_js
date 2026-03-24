@@ -142,17 +142,17 @@ export default function AgentFlowView({
     const leadId = flow.leadId ?? undefined;
 
     switch (stageKey) {
-      case 'ai_analysis': {
+      case 'triaged': {
         if (!leadId) throw new Error('Lead ID is required to run triage.');
         await runLeadTriage({ leadId, dry_run: false });
         return 'Lead triage completed and persisted.';
       }
-      case 'qualification': {
+      case 'qualified': {
         if (!leadId) throw new Error('Lead ID is required to prioritize lead.');
         await prioritizeLeadFromIntelligence(leadId);
         return 'Lead prioritized to qualified status.';
       }
-      case 'reply_prepared': {
+      case 'reply_sent': {
         if (!leadId) throw new Error('Lead ID is required to generate draft reply.');
         const result = await draftReplyFromLeadIntelligence({
           leadId,
@@ -162,11 +162,12 @@ export default function AgentFlowView({
         const draft = (result as any)?.data;
         return draft?.subject ? `Draft reply generated: ${draft.subject}` : 'Draft reply generated successfully.';
       }
-      case 'quote_preparation': {
+      case 'deal_open': {
         if (!leadId) throw new Error('Lead ID is required to convert lead to deal.');
         await convertLeadFromIntelligence(leadId);
         return 'Lead converted to deal successfully.';
       }
+      case 'quote_ready':
       case 'quote_sent': {
         throw new Error('Quote send is manual right now. Open Quotes and send the latest quote.');
       }
@@ -236,28 +237,28 @@ export default function AgentFlowView({
     if (!flow?.leadId && !flow?.dealId && !flow?.quoteId) return null;
 
     switch (stageKey) {
-      case 'lead_received':
-      case 'ai_analysis':
-      case 'qualification':
-      case 'reply_prepared':
-      case 'human_review':
+      case 'lead_new':
+      case 'triaged':
+      case 'qualified':
+      case 'reply_sent':
         return flow.leadId ? `/admin/leads/${flow.leadId}` : null;
 
-      case 'quote_preparation':
+      case 'deal_open':
+        if (flow.dealId) return `/admin/deals/${flow.dealId}`;
+        return flow.leadId ? `/admin/leads/${flow.leadId}` : null;
+
+      case 'quote_ready':
       case 'quote_sent':
         if (flow.quoteId) return `/admin/quotes/${flow.quoteId}`;
         if (flow.dealId) return `/admin/deals/${flow.dealId}`;
         return flow.leadId ? `/admin/leads/${flow.leadId}` : null;
 
       case 'negotiation':
-      case 'decision':
+      case 'won_lost':
         if (flow.dealId) return `/admin/deals/${flow.dealId}`;
         return flow.leadId ? `/admin/leads/${flow.leadId}` : null;
 
-      case 'followup_automation':
-        return '/admin/automations';
-
-      case 'post_outcome_intelligence':
+      case 'post_outcome':
         return '/admin/activities';
 
       default:
