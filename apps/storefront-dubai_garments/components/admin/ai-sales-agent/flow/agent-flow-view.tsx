@@ -105,6 +105,7 @@ export default function AgentFlowView({
   const [overrideReason, setOverrideReason] = useState('');
   const [overrideStageKey, setOverrideStageKey] = useState<AgentFlowResponse['activeStageKey']>('lead_new');
   const [overrideForce, setOverrideForce] = useState(false);
+  const [selectedStageKey, setSelectedStageKey] = useState<AgentFlowResponse['activeStageKey']>('lead_new');
 
   async function handleLoadFlow() {
     try {
@@ -206,6 +207,7 @@ export default function AgentFlowView({
   useEffect(() => {
     if (!flow) return;
     setOverrideStageKey(flow.activeStageKey);
+    setSelectedStageKey(flow.activeStageKey);
   }, [flow?.activeStageKey, flow]);
 
   function getStageDeepLink(stageKey: AgentFlowResponse['activeStageKey']) {
@@ -254,7 +256,13 @@ export default function AgentFlowView({
   }, [flow, blockedCount, pendingCount]);
 
   const completionPercent = flow?.completionPercent ?? 0;
-  const activeStageEvidence = activeStage ? normalizeEvidence(activeStage.evidence, activeStage.label) : [];
+  const selectedStage =
+    flow?.stages.find((stage) => stage.key === selectedStageKey) ??
+    activeStage ??
+    null;
+  const selectedStageEvidence = selectedStage
+    ? normalizeEvidence(selectedStage.evidence, selectedStage.label)
+    : [];
   const showPanelLoading = loading && !flow;
 
   return (
@@ -418,7 +426,7 @@ export default function AgentFlowView({
                     size="sm"
                     className="aflow-glow-btn aflow-next-move-btn"
                     onClick={handleRunNextMove}
-                    disabled={nextMoveBusy}
+                    disabled={nextMoveBusy || (overrideEnabled && !overrideReason.trim())}
                   >
                     {nextMoveBusy ? 'Running...' : 'Run Next Move'}
                   </Button>
@@ -539,143 +547,136 @@ export default function AgentFlowView({
             </div>
           </Card>
 
-          <Card className="aflow-track-card">
-            {flow.stages.length > 0 ? (
-              <div className="aflow-track aflow-track-matrix">
-                {flow.stages.map((stage) => (
-                  <article key={stage.key} className={`aflow-stage is-${stage.status}`}>
-                    <div className="aflow-stage-top">
-                      <span className="aflow-stage-step">Step {stage.order}</span>
-                      <span className={`aflow-stage-status is-${stage.status}`}>{toTitle(stage.status)}</span>
-                    </div>
-                    <div className="aflow-stage-node">
-                      <span className={`aflow-stage-dot is-${stage.status}`} aria-hidden="true" />
-                      <p className="aflow-stage-key">{toTitle(stage.key)}</p>
-                    </div>
-                    <h4 className="aflow-stage-title">{stage.label}</h4>
-                    <p className="aflow-stage-text">{stage.description}</p>
-                    <div className="aflow-stage-meter">
-                      <span className={`aflow-stage-meter-fill is-${stage.status}`} style={{ width: `${stageMeterPercent(stage.status)}%` }} />
-                    </div>
-                    {stage.evidence[0] ? (
-                      <p className="aflow-stage-evidence">{stage.evidence[0]}</p>
-                    ) : (
-                      <p className="aflow-stage-evidence is-muted">Waiting for evidence</p>
-                    )}
+          {flow.stages.length > 0 ? (
+            <Card className="aflow-board-card">
+              <div className="aflow-board-head">
+                <div>
+                  <p className="aflow-kicker">Lead-to-Close Execution Board</p>
+                  <CardTitle>Stage Progression Rail</CardTitle>
+                </div>
+                <span className="dg-ai-badge dg-ai-badge-slate">Select stage to inspect evidence</span>
+              </div>
 
-                    {getStageDeepLink(stage.key) ? (
-                      <div className="dg-mt-4">
-                          <a
-                          href={getStageDeepLink(stage.key)!}
-                          className="ui-btn ui-btn-secondary ui-btn-sm"
-                          >
+              <div className="aflow-rail">
+                {flow.stages.map((stage) => (
+                  <button
+                    key={`rail-${stage.key}`}
+                    type="button"
+                    className={`aflow-rail-node is-${stage.status} ${
+                      selectedStage?.key === stage.key ? 'is-selected' : ''
+                    }`.trim()}
+                    onClick={() => setSelectedStageKey(stage.key)}
+                  >
+                    <span className="aflow-rail-step">#{stage.order}</span>
+                    <span className="aflow-rail-label">{stage.label}</span>
+                    <span className={`aflow-stage-status is-${stage.status}`}>{toTitle(stage.status)}</span>
+                  </button>
+                ))}
+              </div>
+
+              {selectedStage ? (
+                <div className="aflow-board-grid">
+                  <section className="aflow-stage-panel">
+                    <div className="aflow-active-head">
+                      <div>
+                        <p className="aflow-kicker">Execution Evidence</p>
+                        <CardTitle>{selectedStage.label}</CardTitle>
+                      </div>
+                      <span className="dg-ai-badge dg-ai-badge-blue">{toTitle(selectedStage.key)}</span>
+                    </div>
+                    <div className="aflow-active-head">
+                      <span className={`aflow-stage-status is-${selectedStage.status}`}>
+                        {stageStatusLabel(selectedStage.status)}
+                      </span>
+                    </div>
+                    <CardText>{stageStatusMessage(selectedStage.status, selectedStageEvidence.length > 0)}</CardText>
+                    <CardText>{selectedStage.description}</CardText>
+                    <div className="aflow-stage-meter">
+                      <span
+                        className={`aflow-stage-meter-fill is-${selectedStage.status}`}
+                        style={{ width: `${stageMeterPercent(selectedStage.status)}%` }}
+                      />
+                    </div>
+                    <div className="aflow-evidence-list">
+                      {(selectedStageEvidence.length > 0
+                        ? selectedStageEvidence
+                        : ['No evidence captured yet for this stage.']).map((item, index) => (
+                        <div className="aflow-evidence-item" key={`${selectedStage.key}-evidence-${index}`}>
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                    {getStageDeepLink(selectedStage.key) ? (
+                      <div className="dg-mt-2">
+                        <a href={getStageDeepLink(selectedStage.key)!} className="ui-btn ui-btn-secondary ui-btn-sm">
                           Open Related Action
-                          </a>
+                        </a>
                       </div>
                     ) : null}
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="aflow-empty">No flow stages were returned for this query.</p>
-            )}
-          </Card>
+                  </section>
 
-          {activeStage ? (
-            <Card className="aflow-active-card">
-              <div className="aflow-active-head">
-                <div>
-                  <p className="aflow-kicker">Execution Evidence</p>
-                  <CardTitle>{activeStage.label}</CardTitle>
-                </div>
-                <span className="dg-ai-badge dg-ai-badge-blue">{toTitle(activeStage.key)}</span>
-              </div>
-              <div className="aflow-active-head">
-                <span className={`aflow-stage-status is-${activeStage.status}`}>
-                  {stageStatusLabel(activeStage.status)}
-                </span>
-              </div>
-              <CardText>{stageStatusMessage(activeStage.status, activeStageEvidence.length > 0)}</CardText>
-              <CardText>{activeStage.description}</CardText>
-              <div className="aflow-override-card">
-                <div className="aflow-override-head">
-                  <p className="aflow-kicker">Manual Override</p>
-                  <label className="aflow-override-toggle">
-                    <input
-                      type="checkbox"
-                      checked={overrideEnabled}
-                      onChange={(event) => setOverrideEnabled(event.target.checked)}
-                    />
-                    <span>Enable</span>
-                  </label>
-                </div>
-                {overrideEnabled ? (
-                  <div className="aflow-override-grid">
-                    <div>
-                      <AisFieldLabel>Override Stage</AisFieldLabel>
-                      <SelectField
-                        value={overrideStageKey}
-                        onChange={(event) =>
-                          setOverrideStageKey(event.target.value as AgentFlowResponse['activeStageKey'])
-                        }
-                        className="dg-mt-1"
-                      >
-                        {flow?.stages.map((stage) => (
-                          <option key={`override-stage-${stage.key}`} value={stage.key}>
-                            {stage.order}. {stage.label}
-                          </option>
-                        ))}
-                      </SelectField>
+                  <section className="aflow-stage-panel">
+                    <div className="aflow-override-card">
+                      <div className="aflow-override-head">
+                        <p className="aflow-kicker">Manual Override</p>
+                        <label className="aflow-override-toggle">
+                          <input
+                            type="checkbox"
+                            checked={overrideEnabled}
+                            onChange={(event) => setOverrideEnabled(event.target.checked)}
+                          />
+                          <span>Enable</span>
+                        </label>
+                      </div>
+                      {overrideEnabled ? (
+                        <div className="aflow-override-grid">
+                          <div>
+                            <AisFieldLabel>Override Stage</AisFieldLabel>
+                            <SelectField
+                              value={overrideStageKey}
+                              onChange={(event) =>
+                                setOverrideStageKey(event.target.value as AgentFlowResponse['activeStageKey'])
+                              }
+                              className="dg-mt-1"
+                            >
+                              {flow.stages.map((stage) => (
+                                <option key={`override-stage-${stage.key}`} value={stage.key}>
+                                  {stage.order}. {stage.label}
+                                </option>
+                              ))}
+                            </SelectField>
+                          </div>
+                          <div>
+                            <AisFieldLabel>Reason (required)</AisFieldLabel>
+                            <TextField
+                              value={overrideReason}
+                              onChange={(event) => setOverrideReason(event.target.value)}
+                              placeholder="Explain why this override is needed..."
+                              className="dg-mt-1"
+                            />
+                          </div>
+                          <label className="aflow-override-force">
+                            <input
+                              type="checkbox"
+                              checked={overrideForce}
+                              onChange={(event) => setOverrideForce(event.target.checked)}
+                            />
+                            <span>Force override if previous stages are incomplete</span>
+                          </label>
+                        </div>
+                      ) : (
+                        <p className="aflow-empty">Run normal active-stage orchestration without override.</p>
+                      )}
                     </div>
-                    <div>
-                      <AisFieldLabel>Reason (required)</AisFieldLabel>
-                      <TextField
-                        value={overrideReason}
-                        onChange={(event) => setOverrideReason(event.target.value)}
-                        placeholder="Explain why this override is needed..."
-                        className="dg-mt-1"
-                      />
-                    </div>
-                    <label className="aflow-override-force">
-                      <input
-                        type="checkbox"
-                        checked={overrideForce}
-                        onChange={(event) => setOverrideForce(event.target.checked)}
-                      />
-                      <span>Force override if previous stages are incomplete</span>
-                    </label>
-                  </div>
-                ) : (
-                  <p className="aflow-empty">Run normal active-stage orchestration without override.</p>
-                )}
-              </div>
-              <div className="aflow-next-move-actions">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="aflow-glow-btn aflow-next-move-btn"
-                  onClick={handleRunNextMove}
-                  disabled={nextMoveBusy || (overrideEnabled && !overrideReason.trim())}
-                >
-                  {nextMoveBusy ? 'Running...' : 'Run Next Move'}
-                </Button>
-                {nextMoveStatus ? <p className="aflow-next-move-status">{nextMoveStatus}</p> : null}
-                {nextMoveError ? <p className="aflow-next-move-error">{nextMoveError}</p> : null}
-              </div>
-              <div className="aflow-evidence-list">
-                {(activeStageEvidence.length > 0
-                  ? activeStageEvidence
-                  : ['No evidence captured yet for this stage.']).map((item, index) => (
-                  <div className="aflow-evidence-item" key={`${activeStage.key}-evidence-${index}`}>
-                    {item}
-                  </div>
-                ))}
-              </div>
+                  </section>
+                </div>
+              ) : (
+                <p className="aflow-empty">No stage selected yet.</p>
+              )}
             </Card>
           ) : (
-            <Card className="aflow-active-card">
-              <p className="aflow-kicker">Execution Evidence</p>
-              <CardText>No active stage selected yet. Run flow query to inspect current execution evidence.</CardText>
+            <Card className="aflow-track-card">
+              <p className="aflow-empty">No flow stages were returned for this query.</p>
             </Card>
           )}
         </>

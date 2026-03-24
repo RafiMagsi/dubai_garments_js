@@ -4359,6 +4359,79 @@ html[data-dg-theme='twenty'] {
     line-height: 1.35;
   }
 
+  .aflow-board-card {
+    display: grid;
+    gap: 0.62rem;
+  }
+
+  .aflow-board-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+  }
+
+  .aflow-rail {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.45rem;
+  }
+
+  .aflow-rail-node {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    background: color-mix(in srgb, var(--dg-card-bg) 96%, white);
+    border-radius: 0.56rem;
+    padding: 0.45rem 0.5rem;
+    display: grid;
+    gap: 0.22rem;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  }
+
+  .aflow-rail-node:hover {
+    border-color: color-mix(in srgb, var(--color-brand-300) 68%, var(--color-border));
+    transform: translateY(-1px);
+  }
+
+  .aflow-rail-node.is-selected {
+    border-color: color-mix(in srgb, var(--color-brand-400) 72%, var(--color-border));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-100) 58%, transparent);
+  }
+
+  .aflow-rail-step {
+    font-size: 0.64rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .aflow-rail-label {
+    font-size: 0.78rem;
+    line-height: 1.28;
+    font-weight: 650;
+    color: #0f172a;
+  }
+
+  .aflow-board-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 0.55rem;
+    align-items: start;
+  }
+
+  .aflow-stage-panel {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    background: color-mix(in srgb, var(--dg-card-bg) 97%, white);
+    border-radius: 0.58rem;
+    padding: 0.58rem;
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
   .aflow-summary-top {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -5822,6 +5895,14 @@ html[data-dg-theme='twenty'] {
     }
 
     .aflow-signals-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .aflow-board-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .aflow-rail {
       grid-template-columns: 1fr;
     }
 

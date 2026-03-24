@@ -133,13 +133,21 @@ P2. **Lead-to-close orchestration service** - done
   - writes timeline and audit trail.
 - Support manual override with reason capture.
 
-P3. **Execution board UI**
+P3. **Execution board UI** - done
 - Add a dedicated “Lead-to-Close” board:
   - stage progression rail,
   - blocker reasons,
   - one-click “Run Next Move” actions,
   - evidence panel per stage.
 - Keep parity with existing Agent Flow and remove duplicated concepts.
+
+P3 Status (implemented):
+- Reworked Agent Flow into a dedicated execution board with:
+  - clickable stage progression rail,
+  - blocker panel and one-click resolve actions,
+  - single canonical `Run Next Move` action path,
+  - per-stage evidence/details panel (select any stage to inspect evidence).
+- Removed duplicated stage/evidence layout concepts by replacing the previous separate track + standalone evidence card pattern with one board structure.
 
 P4. **Outcome quality controls**
 - Add stage SLAs (time-in-stage alerts).
