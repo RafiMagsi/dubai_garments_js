@@ -1,14 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, CardText, CardTitle, TextField } from '@/components/ui';
-import { getAgentFlow } from '@/features/admin/ai-sales-agent/api';
-import {
-  convertLeadFromIntelligence,
-  draftReplyFromLeadIntelligence,
-  prioritizeLeadFromIntelligence,
-  runLeadTriage,
-} from '@/features/admin/ai-sales-agent/api';
+import { Button, Card, CardText, CardTitle, SelectField, TextField } from '@/components/ui';
+import { getAgentFlow, orchestrateAgentFlow } from '@/features/admin/ai-sales-agent/api';
 import type { AgentFlowResponse } from '@/features/admin/ai-sales-agent/types';
 import { AisFieldLabel } from '@/components/admin/ai-sales-agent/reusable';
 
@@ -107,6 +101,10 @@ export default function AgentFlowView({
   const [blockerBusy, setBlockerBusy] = useState<string | null>(null);
   const [blockerStatus, setBlockerStatus] = useState<string | null>(null);
   const [blockerError, setBlockerError] = useState<string | null>(null);
+  const [overrideEnabled, setOverrideEnabled] = useState(false);
+  const [overrideReason, setOverrideReason] = useState('');
+  const [overrideStageKey, setOverrideStageKey] = useState<AgentFlowResponse['activeStageKey']>('lead_new');
+  const [overrideForce, setOverrideForce] = useState(false);
 
   async function handleLoadFlow() {
     try {
@@ -134,48 +132,6 @@ export default function AgentFlowView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLeadId, initialDealId]);
 
-  async function runStageAction(stageKey: AgentFlowResponse['activeStageKey']) {
-    if (!flow) {
-      throw new Error('Flow data is not loaded.');
-    }
-
-    const leadId = flow.leadId ?? undefined;
-
-    switch (stageKey) {
-      case 'triaged': {
-        if (!leadId) throw new Error('Lead ID is required to run triage.');
-        await runLeadTriage({ leadId, dry_run: false });
-        return 'Lead triage completed and persisted.';
-      }
-      case 'qualified': {
-        if (!leadId) throw new Error('Lead ID is required to prioritize lead.');
-        await prioritizeLeadFromIntelligence(leadId);
-        return 'Lead prioritized to qualified status.';
-      }
-      case 'reply_sent': {
-        if (!leadId) throw new Error('Lead ID is required to generate draft reply.');
-        const result = await draftReplyFromLeadIntelligence({
-          leadId,
-          tone: 'professional',
-          channel: 'email',
-        });
-        const draft = (result as any)?.data;
-        return draft?.subject ? `Draft reply generated: ${draft.subject}` : 'Draft reply generated successfully.';
-      }
-      case 'deal_open': {
-        if (!leadId) throw new Error('Lead ID is required to convert lead to deal.');
-        await convertLeadFromIntelligence(leadId);
-        return 'Lead converted to deal successfully.';
-      }
-      case 'quote_ready':
-      case 'quote_sent': {
-        throw new Error('Quote send is manual right now. Open Quotes and send the latest quote.');
-      }
-      default:
-        return 'No direct automation for this stage. Follow recommended manual action.';
-    }
-  }
-
   function stageKeyFromBlocker(blocker: string): AgentFlowResponse['activeStageKey'] | null {
     if (!flow) return null;
     const stageLabel = blocker.split(':')[0]?.trim().toLowerCase();
@@ -191,14 +147,22 @@ export default function AgentFlowView({
       setNextMoveError(null);
       setNextMoveStatus(null);
       setNextMoveBusy(true);
-      const status = await runStageAction(flow.activeStageKey);
-      setNextMoveStatus(status);
-
-      const refreshed = await getAgentFlow({
+      const orchestration = await orchestrateAgentFlow({
         leadId: flow.leadId ?? undefined,
         dealId: flow.dealId ?? undefined,
+        mode: 'single',
+        manualOverride: overrideEnabled
+          ? {
+              enabled: true,
+              stageKey: overrideStageKey,
+              reason: overrideReason.trim(),
+              force: overrideForce,
+            }
+          : undefined,
       });
-      setFlow(refreshed);
+      const latestAction = orchestration.actions[orchestration.actions.length - 1];
+      setNextMoveStatus(latestAction?.message ?? 'Next move orchestration completed.');
+      setFlow(orchestration.flow);
     } catch (err) {
       setNextMoveError(err instanceof Error ? err.message : 'Failed to execute next move.');
     } finally {
@@ -218,20 +182,31 @@ export default function AgentFlowView({
         throw new Error('Unable to map blocker to a stage action.');
       }
 
-      const status = await runStageAction(stageKey);
-      setBlockerStatus(status);
-
-      const refreshed = await getAgentFlow({
+      const orchestration = await orchestrateAgentFlow({
         leadId: flow.leadId ?? undefined,
         dealId: flow.dealId ?? undefined,
+        mode: 'single',
+        manualOverride: {
+          enabled: true,
+          stageKey,
+          reason: `Manual blocker resolution triggered from Flow Blockers panel: ${blocker}`,
+          force: true,
+        },
       });
-      setFlow(refreshed);
+      const latestAction = orchestration.actions[orchestration.actions.length - 1];
+      setBlockerStatus(latestAction?.message ?? 'Blocker resolution executed.');
+      setFlow(orchestration.flow);
     } catch (err) {
       setBlockerError(err instanceof Error ? err.message : 'Failed to resolve blocker.');
     } finally {
       setBlockerBusy(null);
     }
   }
+
+  useEffect(() => {
+    if (!flow) return;
+    setOverrideStageKey(flow.activeStageKey);
+  }, [flow?.activeStageKey, flow]);
 
   function getStageDeepLink(stageKey: AgentFlowResponse['activeStageKey']) {
     if (!flow?.leadId && !flow?.dealId && !flow?.quoteId) return null;
@@ -622,13 +597,65 @@ export default function AgentFlowView({
               </div>
               <CardText>{stageStatusMessage(activeStage.status, activeStageEvidence.length > 0)}</CardText>
               <CardText>{activeStage.description}</CardText>
+              <div className="aflow-override-card">
+                <div className="aflow-override-head">
+                  <p className="aflow-kicker">Manual Override</p>
+                  <label className="aflow-override-toggle">
+                    <input
+                      type="checkbox"
+                      checked={overrideEnabled}
+                      onChange={(event) => setOverrideEnabled(event.target.checked)}
+                    />
+                    <span>Enable</span>
+                  </label>
+                </div>
+                {overrideEnabled ? (
+                  <div className="aflow-override-grid">
+                    <div>
+                      <AisFieldLabel>Override Stage</AisFieldLabel>
+                      <SelectField
+                        value={overrideStageKey}
+                        onChange={(event) =>
+                          setOverrideStageKey(event.target.value as AgentFlowResponse['activeStageKey'])
+                        }
+                        className="dg-mt-1"
+                      >
+                        {flow?.stages.map((stage) => (
+                          <option key={`override-stage-${stage.key}`} value={stage.key}>
+                            {stage.order}. {stage.label}
+                          </option>
+                        ))}
+                      </SelectField>
+                    </div>
+                    <div>
+                      <AisFieldLabel>Reason (required)</AisFieldLabel>
+                      <TextField
+                        value={overrideReason}
+                        onChange={(event) => setOverrideReason(event.target.value)}
+                        placeholder="Explain why this override is needed..."
+                        className="dg-mt-1"
+                      />
+                    </div>
+                    <label className="aflow-override-force">
+                      <input
+                        type="checkbox"
+                        checked={overrideForce}
+                        onChange={(event) => setOverrideForce(event.target.checked)}
+                      />
+                      <span>Force override if previous stages are incomplete</span>
+                    </label>
+                  </div>
+                ) : (
+                  <p className="aflow-empty">Run normal active-stage orchestration without override.</p>
+                )}
+              </div>
               <div className="aflow-next-move-actions">
                 <Button
                   type="button"
                   size="sm"
                   className="aflow-glow-btn aflow-next-move-btn"
                   onClick={handleRunNextMove}
-                  disabled={nextMoveBusy}
+                  disabled={nextMoveBusy || (overrideEnabled && !overrideReason.trim())}
                 >
                   {nextMoveBusy ? 'Running...' : 'Run Next Move'}
                 </Button>

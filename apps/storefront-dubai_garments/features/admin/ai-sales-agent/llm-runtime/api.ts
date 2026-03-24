@@ -21,6 +21,8 @@ import type {
   AiPromptTestEnvelope,
   AiPromptTestRequest,
   AiImpactKpiEnvelope,
+  FlowOrchestrationEnvelope,
+  FlowOrchestrationRequest,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -167,6 +169,25 @@ export async function getAgentFlow(input: { leadId?: string; dealId?: string }) 
   }
 
   return json;
+}
+
+export async function orchestrateAgentFlow(
+  input: FlowOrchestrationRequest
+): Promise<FlowOrchestrationEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/flow/orchestrate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to orchestrate lead-to-close flow.');
+  }
+
+  return json as FlowOrchestrationEnvelope;
 }
 
 export async function runReplyStudio(input: ReplyStudioRequest): Promise<ReplyStudioEnvelope> {

@@ -4272,6 +4272,42 @@ html[data-dg-theme='twenty'] {
     justify-items: start;
   }
 
+  .aflow-override-card {
+    margin-top: 0.2rem;
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 0.58rem;
+    background: color-mix(in srgb, var(--dg-card-bg) 95%, white);
+    padding: 0.52rem 0.58rem;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .aflow-override-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.55rem;
+  }
+
+  .aflow-override-toggle,
+  .aflow-override-force {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    color: #334155;
+  }
+
+  .aflow-override-toggle input,
+  .aflow-override-force input {
+    accent-color: var(--color-brand-500);
+  }
+
+  .aflow-override-grid {
+    display: grid;
+    gap: 0.5rem;
+  }
+
   .aflow-glow-btn {
     position: relative;
     isolation: isolate;

@@ -137,6 +137,46 @@ export type AgentFlowResponse = {
   requestId?: string | null;
 };
 
+export type FlowOrchestrationActionResult = {
+  stageKey: AgentFlowStageKey;
+  status: 'executed' | 'skipped' | 'blocked' | 'failed';
+  message: string;
+  auditActivityId?: string | null;
+  timelineActivityId?: string | null;
+  validation: {
+    entry: string[];
+    exit: string[];
+    passed: boolean;
+  };
+};
+
+export type FlowOrchestrationRequest = {
+  leadId?: string;
+  dealId?: string;
+  mode?: 'single' | 'sequence';
+  maxSteps?: number;
+  manualOverride?: {
+    enabled: boolean;
+    stageKey: AgentFlowStageKey;
+    reason: string;
+    force?: boolean;
+  };
+};
+
+export type FlowOrchestrationEnvelope = {
+  ok: true;
+  requestId?: string | null;
+  leadId?: string | null;
+  dealId?: string | null;
+  quoteId?: string | null;
+  startStageKey: AgentFlowStageKey;
+  endStageKey: AgentFlowStageKey;
+  mode: 'single' | 'sequence';
+  manualOverrideApplied: boolean;
+  actions: FlowOrchestrationActionResult[];
+  flow: AgentFlowResponse;
+};
+
 export type ReplyStudioMode =
   | 'first_reply'
   | 'followup_reply'

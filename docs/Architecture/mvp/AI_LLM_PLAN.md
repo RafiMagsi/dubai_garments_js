@@ -125,7 +125,7 @@ P1 Status (implemented):
   - recommended next move mapping.
 - Flow view execution/deep-link logic was aligned to the canonical stage keys.
 
-P2. **Lead-to-close orchestration service**
+P2. **Lead-to-close orchestration service** - done
 - Add orchestration endpoint/service that:
   - computes current lifecycle stage,
   - validates entry/exit criteria,

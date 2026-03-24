@@ -6,6 +6,19 @@ export const CopilotIntentSchema = z.enum([
   'at_risk_deals',
 ]);
 
+export const AgentFlowStageKeySchema = z.enum([
+  'lead_new',
+  'triaged',
+  'qualified',
+  'reply_sent',
+  'deal_open',
+  'quote_ready',
+  'quote_sent',
+  'negotiation',
+  'won_lost',
+  'post_outcome',
+]);
+
 export const CopilotRequestSchema = z.object({
   intent: CopilotIntentSchema,
   leadId: z.string().uuid().optional(),
