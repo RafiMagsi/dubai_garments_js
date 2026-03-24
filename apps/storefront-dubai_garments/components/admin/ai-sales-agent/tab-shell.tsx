@@ -19,6 +19,7 @@ import AutomationRunsPanel from '@/components/admin/ai-sales-agent/automation-ru
 import GlobalAiSalesCopilot from '@/components/admin/ai-sales-agent/global-copilot';
 import ModelSettingsPanel from '@/components/admin/ai-sales-agent/model-settings-panel';
 import AiImpactKpiBoard from '@/components/admin/ai-sales-agent/ai-impact-kpi-board';
+import AssignmentPolicyPanel from '@/components/admin/ai-sales-agent/assignment-policy-panel';
 
 type AgentTabKey =
   | 'copilot'
@@ -280,7 +281,10 @@ export default function AiSalesAgentTabShell() {
                     <GlobalAiSalesCopilot />
                   </div>
                 ) : currentTab.key === 'agent-flow' ? (
-                  <AgentFlowView showHeader={false} />
+                  <div className="pins-stack">
+                    <AgentFlowView showHeader={false} />
+                    <AssignmentPolicyPanel />
+                  </div>
                 ) : currentTab.key === 'quote-copilot' ? (
                   <QuoteCopilotPanel />
                 ) : currentTab.key === 'reply-studio' ? (

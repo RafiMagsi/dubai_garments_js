@@ -709,6 +709,70 @@ export const AiImpactKpiResponseSchema = z.object({
   requestId: z.string().nullable(),
 });
 
+export const AssignmentModeSchema = z.enum([
+  'round_robin',
+  'weighted_capacity',
+  'skill_tag_based',
+  'manual_override',
+]);
+
+export const AssignmentPolicyConfigSchema = z.object({
+  mode: AssignmentModeSchema.default('round_robin'),
+  fallbackAssigneeUserId: z.string().uuid().nullable().default(null),
+  capacityByUserId: z.record(z.string().uuid(), z.number().int().min(1).max(200)).default({}),
+  skillsByUserId: z
+    .record(z.string().uuid(), z.array(z.string().min(1).max(80)).max(40))
+    .default({}),
+  weightedDealMultiplier: z.number().min(1).max(5).default(1.5),
+  weightedLeadMultiplier: z.number().min(1).max(5).default(1),
+});
+
+export const AssignmentPolicyResponseSchema = z.object({
+  ok: z.literal(true),
+  config: AssignmentPolicyConfigSchema,
+  availableAgents: z.array(
+    z.object({
+      id: z.string().uuid(),
+      fullName: z.string(),
+      email: z.string(),
+      role: z.string(),
+      isActive: z.boolean(),
+      openLeadCount: z.number().int(),
+      openDealCount: z.number().int(),
+      weightedLoad: z.number(),
+      skillTags: z.array(z.string()),
+      capacityWeight: z.number().int(),
+    })
+  ),
+  requestId: z.string().nullable(),
+});
+
+export const AssignmentPolicyUpdateRequestSchema = z.object({
+  config: AssignmentPolicyConfigSchema,
+});
+
+export const AssignmentPolicyExecuteRequestSchema = z.object({
+  leadId: z.string().uuid().optional(),
+  dealId: z.string().uuid().optional(),
+  manualAssigneeUserId: z.string().uuid().optional(),
+  reason: z.string().max(400).optional(),
+  dry_run: z.boolean().optional().default(false),
+});
+
+export const AssignmentPolicyExecuteResponseSchema = z.object({
+  ok: z.literal(true),
+  dryRun: z.boolean(),
+  mode: AssignmentModeSchema,
+  leadId: z.string().uuid().nullable(),
+  dealId: z.string().uuid().nullable(),
+  selectedAssigneeUserId: z.string().uuid().nullable(),
+  selectedAssigneeName: z.string().nullable(),
+  assignmentApplied: z.boolean(),
+  reasoning: z.array(z.string()),
+  fallbackUsed: z.boolean(),
+  requestId: z.string().nullable(),
+});
+
 export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
 export type AiModelStylePreset = z.infer<typeof AiModelStylePresetSchema>;
 export type AiRuntimeMode = z.infer<typeof AiRuntimeModeSchema>;
@@ -721,3 +785,9 @@ export type AiPromptTestFeature = z.infer<typeof AiPromptTestFeatureSchema>;
 export type AiPromptTestRequest = z.infer<typeof AiPromptTestRequestSchema>;
 export type AiPromptTestResponse = z.infer<typeof AiPromptTestResponseSchema>;
 export type AiImpactKpiResponse = z.infer<typeof AiImpactKpiResponseSchema>;
+export type AssignmentMode = z.infer<typeof AssignmentModeSchema>;
+export type AssignmentPolicyConfig = z.infer<typeof AssignmentPolicyConfigSchema>;
+export type AssignmentPolicyResponse = z.infer<typeof AssignmentPolicyResponseSchema>;
+export type AssignmentPolicyUpdateRequest = z.infer<typeof AssignmentPolicyUpdateRequestSchema>;
+export type AssignmentPolicyExecuteRequest = z.infer<typeof AssignmentPolicyExecuteRequestSchema>;
+export type AssignmentPolicyExecuteResponse = z.infer<typeof AssignmentPolicyExecuteResponseSchema>;

@@ -4393,6 +4393,92 @@ html[data-dg-theme='twenty'] {
     min-width: 0;
   }
 
+  .asgn-card {
+    display: grid;
+    gap: 0.58rem;
+  }
+
+  .asgn-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .asgn-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .asgn-panel {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 0.58rem;
+    background: color-mix(in srgb, var(--dg-card-bg) 97%, white);
+    padding: 0.56rem;
+    display: grid;
+    align-content: start;
+    gap: 0.2rem;
+  }
+
+  .asgn-actions {
+    margin-top: 0.35rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .asgn-success {
+    margin: 0;
+    color: #047857;
+    font-size: 0.73rem;
+  }
+
+  .asgn-error {
+    margin: 0;
+    color: #b91c1c;
+    font-size: 0.73rem;
+  }
+
+  .asgn-result {
+    border: 1px solid color-mix(in srgb, var(--color-brand-100) 75%, var(--color-border));
+    background: color-mix(in srgb, var(--color-brand-50) 60%, white);
+    border-radius: 0.58rem;
+    padding: 0.52rem 0.58rem;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .asgn-agent-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .asgn-agent-card {
+    border: 1px solid color-mix(in srgb, var(--color-border) 92%, white);
+    border-radius: 0.54rem;
+    padding: 0.46rem;
+    background: color-mix(in srgb, var(--dg-card-bg) 98%, white);
+    display: grid;
+    gap: 0.16rem;
+  }
+
+  .asgn-agent-name {
+    margin: 0;
+    font-size: 0.76rem;
+    font-weight: 650;
+    color: #0f172a;
+  }
+
+  .asgn-agent-meta,
+  .asgn-agent-tags {
+    margin: 0;
+    font-size: 0.7rem;
+    color: #475569;
+    line-height: 1.35;
+  }
+
   .aflow-board-head {
     display: flex;
     align-items: flex-start;
@@ -5936,6 +6022,11 @@ html[data-dg-theme='twenty'] {
     }
 
     .aflow-quality-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .asgn-grid,
+    .asgn-agent-grid {
       grid-template-columns: 1fr;
     }
 

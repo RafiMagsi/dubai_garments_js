@@ -23,6 +23,10 @@ import type {
   AiImpactKpiEnvelope,
   FlowOrchestrationEnvelope,
   FlowOrchestrationRequest,
+  AssignmentPolicyEnvelope,
+  AssignmentPolicyConfig,
+  AssignmentPolicyExecuteEnvelope,
+  AssignmentPolicyExecuteRequest,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -188,6 +192,50 @@ export async function orchestrateAgentFlow(
   }
 
   return json as FlowOrchestrationEnvelope;
+}
+
+export async function getAssignmentPolicy(): Promise<AssignmentPolicyEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/assignment-policy', {
+    method: 'GET',
+    credentials: 'include',
+  });
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load assignment policy.');
+  }
+  return json as AssignmentPolicyEnvelope;
+}
+
+export async function updateAssignmentPolicy(input: {
+  config: AssignmentPolicyConfig;
+}): Promise<AssignmentPolicyEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/assignment-policy', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to update assignment policy.');
+  }
+  return json as AssignmentPolicyEnvelope;
+}
+
+export async function executeAssignmentPolicy(
+  input: AssignmentPolicyExecuteRequest
+): Promise<AssignmentPolicyExecuteEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/assignment-policy/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to execute assignment policy.');
+  }
+  return json as AssignmentPolicyExecuteEnvelope;
 }
 
 export async function runReplyStudio(input: ReplyStudioRequest): Promise<ReplyStudioEnvelope> {

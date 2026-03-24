@@ -229,6 +229,63 @@ export type ReplyStudioDraft = {
   questions: string[];
 };
 
+export type AssignmentMode =
+  | 'round_robin'
+  | 'weighted_capacity'
+  | 'skill_tag_based'
+  | 'manual_override';
+
+export type AssignmentPolicyConfig = {
+  mode: AssignmentMode;
+  fallbackAssigneeUserId: string | null;
+  capacityByUserId: Record<string, number>;
+  skillsByUserId: Record<string, string[]>;
+  weightedDealMultiplier: number;
+  weightedLeadMultiplier: number;
+};
+
+export type AssignmentPolicyAgent = {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  openLeadCount: number;
+  openDealCount: number;
+  weightedLoad: number;
+  skillTags: string[];
+  capacityWeight: number;
+};
+
+export type AssignmentPolicyEnvelope = {
+  ok: true;
+  config: AssignmentPolicyConfig;
+  availableAgents: AssignmentPolicyAgent[];
+  requestId?: string | null;
+};
+
+export type AssignmentPolicyExecuteRequest = {
+  leadId?: string;
+  dealId?: string;
+  manualAssigneeUserId?: string;
+  reason?: string;
+  dry_run?: boolean;
+};
+
+export type AssignmentPolicyExecuteEnvelope = {
+  ok: true;
+  requestId?: string | null;
+  dryRun: boolean;
+  mode: AssignmentMode;
+  leadId: string | null;
+  dealId: string | null;
+  selectedAssigneeUserId: string | null;
+  selectedAssigneeName: string | null;
+  assignmentApplied: boolean;
+  fallbackUsed: boolean;
+  reasoning: string[];
+};
+
 export type ReplyStudioEnvelope = {
   ok: true;
   leadId: string;

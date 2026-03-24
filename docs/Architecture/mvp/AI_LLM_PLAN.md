@@ -169,13 +169,30 @@ P4 Status (implemented):
 ### Track B: Sales Agent Assignment Management + Agent Pipeline (Twenty-style)
 Goal: give managers visibility/control over agent workload, assignment quality, and stage progress per agent.
 
-P1. **Assignment policy engine**
+P1. **Assignment policy engine** - done
 - Add assignment modes:
   - round-robin,
   - weighted capacity,
   - skill/tag-based,
   - manual override.
 - Add assignment rule config and fallback assignee.
+
+P1 Status (implemented):
+- Added DB-backed assignment policy engine with configurable modes:
+  - `round_robin`
+  - `weighted_capacity`
+  - `skill_tag_based`
+  - `manual_override`
+- Added assignment policy config persistence in `system_settings` with:
+  - fallback assignee,
+  - capacity weights by user,
+  - skill tags by user,
+  - lead/deal weighted multipliers.
+- Added assignment execution API that applies owner assignment to lead/deal and writes audit activity trail.
+- Added manager-facing Assignment Policy panel in AI Sales Agent (Agent Flow tab) with:
+  - policy mode/config controls,
+  - run-assignment action,
+  - per-agent workload/skills visibility.
 
 P2. **Sales agent workload model**
 - Track per-agent:
