@@ -938,6 +938,66 @@ export const AssignmentOperationsResponseSchema = z.object({
   ),
 });
 
+export const AssignmentKpiTargetsResponseSchema = z.object({
+  ok: z.literal(true),
+  generatedAt: z.string(),
+  timeToFirstResponseByAgent: z.array(
+    z.object({
+      userId: z.string().uuid(),
+      fullName: z.string(),
+      avgFirstResponseHours: z.number(),
+      responseRatePct: z.number(),
+      respondedLeadCount: z.number().int(),
+    })
+  ),
+  stageAgingByAgent: z.array(
+    z.object({
+      userId: z.string().uuid(),
+      fullName: z.string(),
+      stages: z.array(
+        z.object({
+          stage: z.string(),
+          avgAgingDays: z.number(),
+          count: z.number().int(),
+        })
+      ),
+    })
+  ),
+  assignmentFairnessIndex: z.object({
+    score: z.number(),
+    meanLoad: z.number(),
+    stdDevLoad: z.number(),
+    minLoad: z.number(),
+    maxLoad: z.number(),
+  }),
+  conversionByOwner: z.array(
+    z.object({
+      userId: z.string().uuid(),
+      fullName: z.string(),
+      wonDeals: z.number().int(),
+      closedDeals: z.number().int(),
+      conversionRatePct: z.number(),
+    })
+  ),
+  conversionByStage: z.array(
+    z.object({
+      stage: z.string(),
+      wonDeals: z.number().int(),
+      totalDeals: z.number().int(),
+      conversionRatePct: z.number(),
+    })
+  ),
+  reassignmentImpact: z.object({
+    reassignmentCount: z.number().int(),
+    assignmentOpsCount: z.number().int(),
+    reassignmentRatePct: z.number(),
+    reassignedClosedWinRatePct: z.number(),
+    baselineClosedWinRatePct: z.number(),
+    winRateDeltaPct: z.number(),
+  }),
+  requestId: z.string().nullable(),
+});
+
 export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
 export type AiModelStylePreset = z.infer<typeof AiModelStylePresetSchema>;
 export type AiRuntimeMode = z.infer<typeof AiRuntimeModeSchema>;
@@ -964,3 +1024,4 @@ export type AgentPipelineBoardResponse = z.infer<typeof AgentPipelineBoardRespon
 export type AssignmentOperationType = z.infer<typeof AssignmentOperationTypeSchema>;
 export type AssignmentOperationsRequest = z.infer<typeof AssignmentOperationsRequestSchema>;
 export type AssignmentOperationsResponse = z.infer<typeof AssignmentOperationsResponseSchema>;
+export type AssignmentKpiTargetsResponse = z.infer<typeof AssignmentKpiTargetsResponseSchema>;

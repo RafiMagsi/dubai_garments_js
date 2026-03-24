@@ -333,6 +333,56 @@ export type AssignmentOperationsEnvelope = {
   availableAgents: AssignmentPolicyAgent[];
 };
 
+export type AssignmentKpiTargetsEnvelope = {
+  ok: true;
+  requestId?: string | null;
+  generatedAt: string;
+  timeToFirstResponseByAgent: Array<{
+    userId: string;
+    fullName: string;
+    avgFirstResponseHours: number;
+    responseRatePct: number;
+    respondedLeadCount: number;
+  }>;
+  stageAgingByAgent: Array<{
+    userId: string;
+    fullName: string;
+    stages: Array<{
+      stage: string;
+      avgAgingDays: number;
+      count: number;
+    }>;
+  }>;
+  assignmentFairnessIndex: {
+    score: number;
+    meanLoad: number;
+    stdDevLoad: number;
+    minLoad: number;
+    maxLoad: number;
+  };
+  conversionByOwner: Array<{
+    userId: string;
+    fullName: string;
+    wonDeals: number;
+    closedDeals: number;
+    conversionRatePct: number;
+  }>;
+  conversionByStage: Array<{
+    stage: string;
+    wonDeals: number;
+    totalDeals: number;
+    conversionRatePct: number;
+  }>;
+  reassignmentImpact: {
+    reassignmentCount: number;
+    assignmentOpsCount: number;
+    reassignmentRatePct: number;
+    reassignedClosedWinRatePct: number;
+    baselineClosedWinRatePct: number;
+    winRateDeltaPct: number;
+  };
+};
+
 export type AgentWorkloadStageDistribution = {
   stage: string;
   count: number;

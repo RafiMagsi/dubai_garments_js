@@ -225,7 +225,7 @@ P4. **Assignment operations** - done
 4. `POST /api/admin/ai-sales-agent/assignments/rebalance`
 5. `PATCH /api/admin/ai-sales-agent/assignments/:entityId`
 
-## Additional KPI Targets
+## Additional KPI Targets - done
 1. Time-to-first-response by agent.
 2. Stage aging by agent.
 3. Assignment fairness index.

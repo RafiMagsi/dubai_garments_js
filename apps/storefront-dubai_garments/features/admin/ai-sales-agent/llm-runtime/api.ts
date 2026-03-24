@@ -29,6 +29,7 @@ import type {
   AssignmentPolicyExecuteRequest,
   AssignmentOperationsRequest,
   AssignmentOperationsEnvelope,
+  AssignmentKpiTargetsEnvelope,
   AgentWorkloadEnvelope,
   AgentPipelineBoardEnvelope,
 } from './types';
@@ -296,6 +297,18 @@ export async function runAssignmentOperation(
     throw new Error(json.message || 'Failed to run assignment operation.');
   }
   return json as AssignmentOperationsEnvelope;
+}
+
+export async function getAssignmentKpiTargets(): Promise<AssignmentKpiTargetsEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/assignment-kpis', {
+    method: 'GET',
+    credentials: 'include',
+  });
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load assignment KPI targets.');
+  }
+  return json as AssignmentKpiTargetsEnvelope;
 }
 
 export async function runReplyStudio(input: ReplyStudioRequest): Promise<ReplyStudioEnvelope> {
