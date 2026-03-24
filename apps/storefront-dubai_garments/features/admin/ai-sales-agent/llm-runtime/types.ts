@@ -134,6 +134,25 @@ export type AgentFlowResponse = {
     value: number;
   }>;
   riskHints: string[];
+  stageSlaAlerts: Array<{
+    stageKey: AgentFlowStageKey;
+    stageLabel: string;
+    elapsedHours: number;
+    slaHours: number;
+    severity: 'warning' | 'critical';
+    message: string;
+  }>;
+  transitionGuardrails: Array<{
+    stageKey: AgentFlowStageKey;
+    rule: string;
+    passed: boolean;
+    message: string;
+  }>;
+  closeLoopSummary: {
+    aiActions: string[];
+    humanChanges: string[];
+    result: string;
+  };
   requestId?: string | null;
 };
 

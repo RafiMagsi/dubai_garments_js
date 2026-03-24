@@ -50,6 +50,25 @@ export type AgentFlowResult = {
     value: number;
   }>;
   riskHints: string[];
+  stageSlaAlerts: Array<{
+    stageKey: AgentFlowStageKey;
+    stageLabel: string;
+    elapsedHours: number;
+    slaHours: number;
+    severity: 'warning' | 'critical';
+    message: string;
+  }>;
+  transitionGuardrails: Array<{
+    stageKey: AgentFlowStageKey;
+    rule: string;
+    passed: boolean;
+    message: string;
+  }>;
+  closeLoopSummary: {
+    aiActions: string[];
+    humanChanges: string[];
+    result: string;
+  };
 };
 
 type FlowRequestContext = {
@@ -63,6 +82,20 @@ type FlowSourceData = {
   quote: any | null;
   activities: any[];
   automationRuns: any[];
+  quoteItemCount: number;
+};
+
+const STAGE_SLA_HOURS: Record<AgentFlowStageKey, number> = {
+  lead_new: 2,
+  triaged: 4,
+  qualified: 8,
+  reply_sent: 12,
+  deal_open: 24,
+  quote_ready: 24,
+  quote_sent: 24,
+  negotiation: 72,
+  won_lost: 120,
+  post_outcome: 168,
 };
 
 const CANONICAL_STAGE_DEFS: Array<{
@@ -581,6 +614,162 @@ function deriveRiskHints(source: FlowSourceData, stages: AgentFlowStage[]): stri
   return Array.from(new Set(hints)).slice(0, 5);
 }
 
+function parseDate(input: unknown): Date | null {
+  if (!input) return null;
+  const date = new Date(String(input));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function getStageStartAt(
+  stageKey: AgentFlowStageKey,
+  source: FlowSourceData
+): Date | null {
+  const lead = source.lead;
+  const deal = source.deal;
+  const quote = source.quote;
+
+  switch (stageKey) {
+    case 'lead_new':
+      return parseDate(lead?.created_at);
+    case 'triaged':
+      return parseDate(lead?.ai_processed_at) ?? parseDate(lead?.updated_at);
+    case 'qualified':
+      return parseDate(lead?.updated_at);
+    case 'reply_sent': {
+      const latestReplyEvidence = source.activities
+        .filter((item) =>
+          ['ai_reply_studio', 'ai_reply_studio_approved_send', 'email_sent'].includes(
+            String(item.activity_type ?? '')
+          )
+        )
+        .sort(
+          (a, b) =>
+            new Date(String(b.created_at ?? b.occurred_at ?? 0)).getTime() -
+            new Date(String(a.created_at ?? a.occurred_at ?? 0)).getTime()
+        )[0];
+      return parseDate(latestReplyEvidence?.created_at ?? latestReplyEvidence?.occurred_at) ?? parseDate(lead?.updated_at);
+    }
+    case 'deal_open':
+      return parseDate(deal?.created_at) ?? parseDate(deal?.updated_at);
+    case 'quote_ready':
+      return parseDate(quote?.created_at) ?? parseDate(quote?.updated_at);
+    case 'quote_sent':
+      return parseDate(quote?.updated_at) ?? parseDate(quote?.created_at);
+    case 'negotiation':
+      return parseDate(deal?.updated_at) ?? parseDate(deal?.created_at);
+    case 'won_lost':
+      return parseDate(deal?.updated_at) ?? parseDate(lead?.updated_at);
+    case 'post_outcome': {
+      const reasoning = lead?.ai_reasoning;
+      const postOutcomeAt =
+        reasoning && typeof reasoning === 'object' ? (reasoning as Record<string, unknown>).postOutcomeAt : null;
+      return parseDate(postOutcomeAt) ?? parseDate(lead?.updated_at);
+    }
+    default:
+      return null;
+  }
+}
+
+function deriveStageSlaAlerts(
+  source: FlowSourceData,
+  stages: AgentFlowStage[]
+): AgentFlowResult['stageSlaAlerts'] {
+  const now = Date.now();
+  const actionable = stages.filter((stage) => stage.status === 'active' || stage.status === 'blocked');
+  const alerts: AgentFlowResult['stageSlaAlerts'] = [];
+
+  for (const stage of actionable) {
+    const startedAt = getStageStartAt(stage.key, source);
+    if (!startedAt) continue;
+    const elapsedHours = Math.max(0, Math.round((now - startedAt.getTime()) / (1000 * 60 * 60)));
+    const slaHours = STAGE_SLA_HOURS[stage.key];
+    if (elapsedHours < slaHours) continue;
+
+    const overrunPct = Math.round((elapsedHours / Math.max(slaHours, 1)) * 100);
+    const severity: 'warning' | 'critical' = overrunPct >= 180 ? 'critical' : 'warning';
+    alerts.push({
+      stageKey: stage.key,
+      stageLabel: stage.label,
+      elapsedHours,
+      slaHours,
+      severity,
+      message:
+        severity === 'critical'
+          ? `${stage.label} exceeded SLA by ${elapsedHours - slaHours}h. Escalate now.`
+          : `${stage.label} reached SLA threshold. Prioritize next action.`,
+    });
+  }
+
+  return alerts.slice(0, 4);
+}
+
+function deriveTransitionGuardrails(source: FlowSourceData): AgentFlowResult['transitionGuardrails'] {
+  const quote = source.quote;
+  const guardrails: AgentFlowResult['transitionGuardrails'] = [];
+
+  const quoteExists = !!quote;
+  guardrails.push({
+    stageKey: 'quote_sent',
+    rule: 'Quote record exists',
+    passed: quoteExists,
+    message: quoteExists ? 'Quote record found.' : 'No quote found. Run Quote Recommendation/Copilot first.',
+  });
+
+  const hasItems = source.quoteItemCount > 0;
+  guardrails.push({
+    stageKey: 'quote_sent',
+    rule: 'Quote has at least one line item',
+    passed: hasItems,
+    message: hasItems ? 'Quote line items present.' : 'Add quote line items before sending.',
+  });
+
+  const total = Number(quote?.total_amount ?? 0);
+  const totalValid = Number.isFinite(total) && total > 0;
+  guardrails.push({
+    stageKey: 'quote_sent',
+    rule: 'Quote total amount is valid',
+    passed: totalValid,
+    message: totalValid ? 'Quote total amount is valid.' : 'Quote total amount is missing or zero.',
+  });
+
+  const validUntil = parseDate(quote?.valid_until);
+  const validUntilOk = !!validUntil;
+  guardrails.push({
+    stageKey: 'quote_sent',
+    rule: 'Quote validity date is set',
+    passed: validUntilOk,
+    message: validUntilOk ? 'Validity date set.' : 'Set quote validity date before sending.',
+  });
+
+  return guardrails;
+}
+
+function deriveCloseLoopSummary(source: FlowSourceData): AgentFlowResult['closeLoopSummary'] {
+  const aiActions = source.activities
+    .filter((item) => String(item.activity_type ?? '').startsWith('ai_'))
+    .slice(-5)
+    .map((item) => `${item.title ?? item.activity_type}`);
+
+  const humanChanges = source.activities
+    .filter((item) => !String(item.activity_type ?? '').startsWith('ai_'))
+    .slice(-5)
+    .map((item) => `${item.title ?? item.activity_type}`);
+
+  const dealStage = String(source.deal?.stage ?? '').toLowerCase();
+  const leadStatus = String(source.lead?.status ?? '').toLowerCase();
+  const quoteStatus = String(source.quote?.status ?? '').toLowerCase();
+  let result = 'In progress';
+  if (dealStage === 'won' || leadStatus === 'won') result = 'Won';
+  else if (dealStage === 'lost' || leadStatus === 'lost') result = 'Lost';
+  else if (quoteStatus === 'sent') result = 'Quote sent, awaiting outcome';
+
+  return {
+    aiActions: aiActions.length > 0 ? aiActions : ['No AI actions recorded yet.'],
+    humanChanges: humanChanges.length > 0 ? humanChanges : ['No human changes recorded yet.'],
+    result,
+  };
+}
+
 function summarizeFlow(stages: AgentFlowStage[]) {
   const completedCount = stages.filter((stage) => stage.completed).length;
   const active = stages.find((stage) => stage.status === 'active') ?? stages[stages.length - 1];
@@ -655,13 +844,22 @@ export async function resolveAgentFlow(input: {
     take: 25,
   });
 
-  const stages = buildStages({
+  const quoteItemCount = quote
+    ? await prisma.quote_items.count({
+        where: { quote_id: quote.id },
+      })
+    : 0;
+
+  const sourceData: FlowSourceData = {
     lead,
     deal,
     quote,
     activities,
     automationRuns,
-  });
+    quoteItemCount,
+  };
+
+  const stages = buildStages(sourceData);
 
   const activeStage =
     stages.find((stage) => stage.status === 'active') ?? stages[stages.length - 1];
@@ -672,29 +870,14 @@ export async function resolveAgentFlow(input: {
 
     const blockers = deriveBlockers(stages);
     const recommendedNextMove = deriveRecommendedNextMove(stages);
-        const markers = deriveMarkers({
-        lead,
-        deal,
-        quote,
-        activities,
-        automationRuns,
-    });
+        const markers = deriveMarkers(sourceData);
     const humanCheckpoints = deriveHumanCheckpoints(markers);
-    const pendingApprovals = derivePendingApprovals(
-        { lead, deal, quote, activities, automationRuns },
-        markers
-    );
-    const confidenceTrend = deriveConfidenceTrend({
-        lead,
-        deal,
-        quote,
-        activities,
-        automationRuns,
-    });
-    const riskHints = deriveRiskHints(
-        { lead, deal, quote, activities, automationRuns },
-        stages
-    );
+    const pendingApprovals = derivePendingApprovals(sourceData, markers);
+    const confidenceTrend = deriveConfidenceTrend(sourceData);
+    const riskHints = deriveRiskHints(sourceData, stages);
+    const stageSlaAlerts = deriveStageSlaAlerts(sourceData, stages);
+    const transitionGuardrails = deriveTransitionGuardrails(sourceData);
+    const closeLoopSummary = deriveCloseLoopSummary(sourceData);
 
     return {
     leadId: lead?.id ?? null,
@@ -711,5 +894,8 @@ export async function resolveAgentFlow(input: {
         pendingApprovals,
         confidenceTrend,
         riskHints,
+        stageSlaAlerts,
+        transitionGuardrails,
+        closeLoopSummary,
     };
 }

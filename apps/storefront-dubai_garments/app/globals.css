@@ -4364,6 +4364,35 @@ html[data-dg-theme='twenty'] {
     gap: 0.62rem;
   }
 
+  .aflow-quality-card {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .aflow-quality-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .aflow-quality-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .aflow-quality-panel {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 0.58rem;
+    background: color-mix(in srgb, var(--dg-card-bg) 97%, white);
+    padding: 0.56rem;
+    display: grid;
+    gap: 0.38rem;
+    min-width: 0;
+  }
+
   .aflow-board-head {
     display: flex;
     align-items: flex-start;
@@ -5903,6 +5932,10 @@ html[data-dg-theme='twenty'] {
     }
 
     .aflow-rail {
+      grid-template-columns: 1fr;
+    }
+
+    .aflow-quality-grid {
       grid-template-columns: 1fr;
     }
 

@@ -395,6 +395,26 @@ async function executeStageAction(input: {
         throw new Error('No quote exists to mark as sent.');
       }
 
+      const guardrailIssues: string[] = [];
+      const quoteItemCount = await prisma.quote_items.count({
+        where: { quote_id: latestQuote.id },
+      });
+      if (quoteItemCount < 1) {
+        guardrailIssues.push('Quote has no line items.');
+      }
+      const total = Number(latestQuote.total_amount ?? 0);
+      if (!Number.isFinite(total) || total <= 0) {
+        guardrailIssues.push('Quote total amount is missing or zero.');
+      }
+      if (!latestQuote.valid_until) {
+        guardrailIssues.push('Quote validity date is not set.');
+      }
+      if (guardrailIssues.length > 0) {
+        throw new Error(
+          `Quote send guardrail failed: ${guardrailIssues.join(' ')}`
+        );
+      }
+
       if (String(latestQuote.status || '').toLowerCase() !== 'sent') {
         await prisma.quotes.update({
           where: { id: latestQuote.id },
@@ -690,4 +710,3 @@ export async function orchestrateLeadToClose(
     flow: currentFlow,
   };
 }
-

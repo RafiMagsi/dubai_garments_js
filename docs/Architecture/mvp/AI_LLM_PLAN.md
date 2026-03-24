@@ -149,10 +149,22 @@ P3 Status (implemented):
   - per-stage evidence/details panel (select any stage to inspect evidence).
 - Removed duplicated stage/evidence layout concepts by replacing the previous separate track + standalone evidence card pattern with one board structure.
 
-P4. **Outcome quality controls**
+P4. **Outcome quality controls** - done
 - Add stage SLAs (time-in-stage alerts).
 - Add guardrails for stage transitions (no quote send if required fields missing).
 - Add close-loop summary (what AI did, what human changed, result).
+
+P4 Status (implemented):
+- Added stage SLA alerts in flow resolution for active/blocked stages with warning/critical severities.
+- Added transition guardrails (quote send checks) to flow response and enforced in orchestration execution:
+  - quote exists,
+  - line items exist,
+  - total amount is valid,
+  - validity date is set.
+- Added close-loop summary surface in execution board:
+  - recent AI actions,
+  - recent human changes,
+  - current lifecycle result.
 
 ### Track B: Sales Agent Assignment Management + Agent Pipeline (Twenty-style)
 Goal: give managers visibility/control over agent workload, assignment quality, and stage progress per agent.
