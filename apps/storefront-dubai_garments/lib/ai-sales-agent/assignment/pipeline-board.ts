@@ -30,6 +30,7 @@ type PipelineStageKey =
 type BoardItem = {
   itemId: string;
   itemType: 'lead' | 'deal';
+  customerId: string | null;
   ownerUserId: string;
   ownerName: string;
   title: string;
@@ -161,6 +162,7 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
       },
       select: {
         id: true,
+        customer_id: true,
         assigned_to_user_id: true,
         contact_name: true,
         company_name: true,
@@ -179,6 +181,7 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
       },
       select: {
         id: true,
+        customer_id: true,
         owner_user_id: true,
         title: true,
         stage: true,
@@ -198,6 +201,7 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
       return {
         itemId: lead.id,
         itemType: 'lead',
+        customerId: lead.customer_id,
         ownerUserId: lead.assigned_to_user_id!,
         ownerName: owner?.fullName ?? 'Unknown',
         title: lead.contact_name || lead.company_name || `Lead ${lead.id.slice(0, 8)}`,
@@ -216,6 +220,7 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
       return {
         itemId: deal.id,
         itemType: 'deal',
+        customerId: deal.customer_id,
         ownerUserId: deal.owner_user_id!,
         ownerName: owner?.fullName ?? 'Unknown',
         title: deal.title || `Deal ${deal.id.slice(0, 8)}`,
@@ -310,20 +315,42 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
     }
   }
 
-  const rebalancedSuggestions: string[] = [];
+  const rebalancedSuggestions: Array<{
+    id: string;
+    title: string;
+    detail: string;
+    fromOwnerUserId: string | null;
+    toOwnerUserId: string | null;
+    stage: string | null;
+    limit: number | null;
+  }> = [];
   if (filteredAgents.length >= 2) {
     const byLoad = [...filteredAgents].sort((a, b) => b.itemCount - a.itemCount);
     const high = byLoad[0];
     const low = byLoad[byLoad.length - 1];
     if (high && low && high.userId !== low.userId && high.itemCount - low.itemCount >= 3) {
-      rebalancedSuggestions.push(
-        `Rebalance ownership: move ${Math.floor((high.itemCount - low.itemCount) / 2)} item(s) from ${high.fullName} to ${low.fullName}.`
-      );
+      rebalancedSuggestions.push({
+        id: 'load-rebalance',
+        title: 'Redistribute overloaded owner queue',
+        detail: `Move ${Math.floor((high.itemCount - low.itemCount) / 2)} item(s) from ${high.fullName} to ${low.fullName}.`,
+        fromOwnerUserId: high.userId,
+        toOwnerUserId: low.userId,
+        stage: null,
+        limit: Math.floor((high.itemCount - low.itemCount) / 2),
+      });
     }
   }
 
   if (stageBuckets.find((stage) => stage.key === 'reply_sent')?.total === 0) {
-    rebalancedSuggestions.push('No active Reply Sent workload. Trigger draft + send actions for qualified leads.');
+    rebalancedSuggestions.push({
+      id: 'reply-queue-empty',
+      title: 'Reply queue is empty',
+      detail: 'No active Reply Sent workload. Open qualified stage queue and trigger reply execution.',
+      fromOwnerUserId: filteredAgents[0]?.userId ?? null,
+      toOwnerUserId: null,
+      stage: 'qualified',
+      limit: 6,
+    });
   }
 
   if (alerts.length === 0) {
@@ -335,7 +362,15 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
   }
 
   if (rebalancedSuggestions.length === 0) {
-    rebalancedSuggestions.push('Current distribution is balanced. Keep monitoring SLA and inactivity trends.');
+    rebalancedSuggestions.push({
+      id: 'balanced',
+      title: 'Distribution is balanced',
+      detail: 'No immediate rebalance needed. Keep monitoring SLA and inactivity trends.',
+      fromOwnerUserId: filteredAgents[0]?.userId ?? null,
+      toOwnerUserId: null,
+      stage: null,
+      limit: null,
+    });
   }
 
   return {

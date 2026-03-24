@@ -27,6 +27,8 @@ import type {
   AssignmentPolicyConfig,
   AssignmentPolicyExecuteEnvelope,
   AssignmentPolicyExecuteRequest,
+  AssignmentOperationsRequest,
+  AssignmentOperationsEnvelope,
   AgentWorkloadEnvelope,
   AgentPipelineBoardEnvelope,
 } from './types';
@@ -278,6 +280,22 @@ export async function getAgentPipelineBoard(input?: {
     throw new Error(json.message || 'Failed to load agent pipeline board.');
   }
   return json as AgentPipelineBoardEnvelope;
+}
+
+export async function runAssignmentOperation(
+  input: AssignmentOperationsRequest
+): Promise<AssignmentOperationsEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/assignment-operations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to run assignment operation.');
+  }
+  return json as AssignmentOperationsEnvelope;
 }
 
 export async function runReplyStudio(input: ReplyStudioRequest): Promise<ReplyStudioEnvelope> {

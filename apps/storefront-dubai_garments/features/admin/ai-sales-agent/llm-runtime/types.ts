@@ -286,6 +286,53 @@ export type AssignmentPolicyExecuteEnvelope = {
   reasoning: string[];
 };
 
+export type AssignmentOperationAction =
+  | 'reassign'
+  | 'bulk_rebalance'
+  | 'auto_assign_unowned'
+  | 'lock_owner';
+
+export type AssignmentOperationsRequest = {
+  action: AssignmentOperationAction;
+  leadId?: string;
+  dealId?: string;
+  targetUserId?: string;
+  customerId?: string;
+  reason?: string;
+  filters?: {
+    team?: string;
+    stage?: string;
+    urgency?: string;
+    inactiveDays?: number;
+    ownerUserId?: string;
+  };
+  limit?: number;
+  dry_run?: boolean;
+};
+
+export type AssignmentOperationsEnvelope = {
+  ok: true;
+  requestId?: string | null;
+  action: AssignmentOperationAction;
+  dryRun: boolean;
+  summary: string;
+  changedCount: number;
+  skippedCount: number;
+  changes: Array<{
+    leadId: string | null;
+    dealId: string | null;
+    customerId: string | null;
+    fromUserId: string | null;
+    toUserId: string | null;
+    toUserName: string | null;
+    applied: boolean;
+    reason: string;
+    timelineActivityId: string | null;
+    auditActivityId: string | null;
+  }>;
+  availableAgents: AssignmentPolicyAgent[];
+};
+
 export type AgentWorkloadStageDistribution = {
   stage: string;
   count: number;
@@ -323,6 +370,7 @@ export type AgentWorkloadEnvelope = {
 export type AgentPipelineBoardItem = {
   itemId: string;
   itemType: 'lead' | 'deal';
+  customerId: string | null;
   ownerUserId: string;
   ownerName: string;
   title: string;
@@ -379,7 +427,15 @@ export type AgentPipelineBoardEnvelope = {
       title: string;
       detail: string;
     }>;
-    rebalanceSuggestions: string[];
+    rebalanceSuggestions: Array<{
+      id: string;
+      title: string;
+      detail: string;
+      fromOwnerUserId: string | null;
+      toOwnerUserId: string | null;
+      stage: string | null;
+      limit: number | null;
+    }>;
   };
 };
 

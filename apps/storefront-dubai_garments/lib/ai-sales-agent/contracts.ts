@@ -810,6 +810,7 @@ export const AgentWorkloadResponseSchema = z.object({
 export const AgentPipelineItemSchema = z.object({
   itemId: z.string().uuid(),
   itemType: z.enum(['lead', 'deal']),
+  customerId: z.string().uuid().nullable(),
   ownerUserId: z.string().uuid(),
   ownerName: z.string(),
   title: z.string(),
@@ -871,9 +872,70 @@ export const AgentPipelineBoardResponseSchema = z.object({
         detail: z.string(),
       })
     ),
-    rebalanceSuggestions: z.array(z.string()),
+    rebalanceSuggestions: z.array(
+      z.object({
+        id: z.string(),
+        title: z.string(),
+        detail: z.string(),
+        fromOwnerUserId: z.string().uuid().nullable(),
+        toOwnerUserId: z.string().uuid().nullable(),
+        stage: z.string().nullable(),
+        limit: z.number().int().nullable(),
+      })
+    ),
   }),
   requestId: z.string().nullable(),
+});
+
+export const AssignmentOperationTypeSchema = z.enum([
+  'reassign',
+  'bulk_rebalance',
+  'auto_assign_unowned',
+  'lock_owner',
+]);
+
+export const AssignmentOperationsRequestSchema = z.object({
+  action: AssignmentOperationTypeSchema,
+  leadId: z.string().uuid().optional(),
+  dealId: z.string().uuid().optional(),
+  targetUserId: z.string().uuid().optional(),
+  customerId: z.string().uuid().optional(),
+  reason: z.string().max(400).optional(),
+  filters: z
+    .object({
+      team: z.string().optional(),
+      stage: z.string().optional(),
+      urgency: z.string().optional(),
+      inactiveDays: z.number().int().min(0).max(365).optional(),
+      ownerUserId: z.string().uuid().optional(),
+    })
+    .optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  dry_run: z.boolean().optional().default(false),
+});
+
+export const AssignmentOperationsResponseSchema = z.object({
+  ok: z.literal(true),
+  action: AssignmentOperationTypeSchema,
+  dryRun: z.boolean(),
+  requestId: z.string().nullable(),
+  summary: z.string(),
+  changedCount: z.number().int(),
+  skippedCount: z.number().int(),
+  changes: z.array(
+    z.object({
+      leadId: z.string().uuid().nullable(),
+      dealId: z.string().uuid().nullable(),
+      customerId: z.string().uuid().nullable(),
+      fromUserId: z.string().uuid().nullable(),
+      toUserId: z.string().uuid().nullable(),
+      toUserName: z.string().nullable(),
+      applied: z.boolean(),
+      reason: z.string(),
+      timelineActivityId: z.string().uuid().nullable(),
+      auditActivityId: z.string().uuid().nullable(),
+    })
+  ),
 });
 
 export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
@@ -899,3 +961,6 @@ export type AgentWorkloadItem = z.infer<typeof AgentWorkloadItemSchema>;
 export type AgentWorkloadResponse = z.infer<typeof AgentWorkloadResponseSchema>;
 export type AgentPipelineItem = z.infer<typeof AgentPipelineItemSchema>;
 export type AgentPipelineBoardResponse = z.infer<typeof AgentPipelineBoardResponseSchema>;
+export type AssignmentOperationType = z.infer<typeof AssignmentOperationTypeSchema>;
+export type AssignmentOperationsRequest = z.infer<typeof AssignmentOperationsRequestSchema>;
+export type AssignmentOperationsResponse = z.infer<typeof AssignmentOperationsResponseSchema>;

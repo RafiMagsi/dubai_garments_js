@@ -210,7 +210,7 @@ P3. **Agent Pipeline view (manager board)** - done
   - right: alerts and rebalance suggestions.
 - Add filters: team, stage, urgency, inactive days, owner.
 
-P4. **Assignment operations**
+P4. **Assignment operations** - done
 - One-click actions:
   - reassign lead/deal,
   - bulk rebalance by criteria,
