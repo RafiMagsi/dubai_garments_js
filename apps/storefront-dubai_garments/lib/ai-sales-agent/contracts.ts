@@ -773,6 +773,40 @@ export const AssignmentPolicyExecuteResponseSchema = z.object({
   requestId: z.string().nullable(),
 });
 
+export const AgentStageDistributionSchema = z.object({
+  stage: z.string(),
+  count: z.number().int(),
+});
+
+export const AgentWorkloadItemSchema = z.object({
+  userId: z.string().uuid(),
+  fullName: z.string(),
+  email: z.string(),
+  role: z.string(),
+  activeLeads: z.number().int(),
+  activeDeals: z.number().int(),
+  stageDistribution: z.array(AgentStageDistributionSchema),
+  overdueFollowups: z.number().int(),
+  slaRiskCount: z.number().int(),
+  wonDeals: z.number().int(),
+  closedDeals: z.number().int(),
+  conversionRatePct: z.number(),
+  respondedLeadCount: z.number().int(),
+  responseRatePct: z.number(),
+  avgFirstResponseHours: z.number(),
+});
+
+export const AgentWorkloadResponseSchema = z.object({
+  ok: z.literal(true),
+  generatedAt: z.string(),
+  slaRules: z.object({
+    leadResponseHours: z.number().int(),
+    dealAgingHours: z.number().int(),
+  }),
+  agents: z.array(AgentWorkloadItemSchema),
+  requestId: z.string().nullable(),
+});
+
 export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
 export type AiModelStylePreset = z.infer<typeof AiModelStylePresetSchema>;
 export type AiRuntimeMode = z.infer<typeof AiRuntimeModeSchema>;
@@ -791,3 +825,6 @@ export type AssignmentPolicyResponse = z.infer<typeof AssignmentPolicyResponseSc
 export type AssignmentPolicyUpdateRequest = z.infer<typeof AssignmentPolicyUpdateRequestSchema>;
 export type AssignmentPolicyExecuteRequest = z.infer<typeof AssignmentPolicyExecuteRequestSchema>;
 export type AssignmentPolicyExecuteResponse = z.infer<typeof AssignmentPolicyExecuteResponseSchema>;
+export type AgentStageDistribution = z.infer<typeof AgentStageDistributionSchema>;
+export type AgentWorkloadItem = z.infer<typeof AgentWorkloadItemSchema>;
+export type AgentWorkloadResponse = z.infer<typeof AgentWorkloadResponseSchema>;

@@ -286,6 +286,40 @@ export type AssignmentPolicyExecuteEnvelope = {
   reasoning: string[];
 };
 
+export type AgentWorkloadStageDistribution = {
+  stage: string;
+  count: number;
+};
+
+export type AgentWorkloadItem = {
+  userId: string;
+  fullName: string;
+  email: string;
+  role: string;
+  activeLeads: number;
+  activeDeals: number;
+  stageDistribution: AgentWorkloadStageDistribution[];
+  overdueFollowups: number;
+  slaRiskCount: number;
+  wonDeals: number;
+  closedDeals: number;
+  conversionRatePct: number;
+  respondedLeadCount: number;
+  responseRatePct: number;
+  avgFirstResponseHours: number;
+};
+
+export type AgentWorkloadEnvelope = {
+  ok: true;
+  requestId?: string | null;
+  generatedAt: string;
+  slaRules: {
+    leadResponseHours: number;
+    dealAgingHours: number;
+  };
+  agents: AgentWorkloadItem[];
+};
+
 export type ReplyStudioEnvelope = {
   ok: true;
   leadId: string;

@@ -194,7 +194,7 @@ P1 Status (implemented):
   - run-assignment action,
   - per-agent workload/skills visibility.
 
-P2. **Sales agent workload model**
+P2. **Sales agent workload model** - done
 - Track per-agent:
   - active leads,
   - active deals,

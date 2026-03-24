@@ -27,6 +27,7 @@ import type {
   AssignmentPolicyConfig,
   AssignmentPolicyExecuteEnvelope,
   AssignmentPolicyExecuteRequest,
+  AgentWorkloadEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -236,6 +237,18 @@ export async function executeAssignmentPolicy(
     throw new Error(json.message || 'Failed to execute assignment policy.');
   }
   return json as AssignmentPolicyExecuteEnvelope;
+}
+
+export async function getAgentWorkload(): Promise<AgentWorkloadEnvelope> {
+  const response = await fetch('/api/admin/ai-sales-agent/agent-workload', {
+    method: 'GET',
+    credentials: 'include',
+  });
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load sales agent workload.');
+  }
+  return json as AgentWorkloadEnvelope;
 }
 
 export async function runReplyStudio(input: ReplyStudioRequest): Promise<ReplyStudioEnvelope> {
