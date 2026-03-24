@@ -807,6 +807,75 @@ export const AgentWorkloadResponseSchema = z.object({
   requestId: z.string().nullable(),
 });
 
+export const AgentPipelineItemSchema = z.object({
+  itemId: z.string().uuid(),
+  itemType: z.enum(['lead', 'deal']),
+  ownerUserId: z.string().uuid(),
+  ownerName: z.string(),
+  title: z.string(),
+  stage: z.string(),
+  urgency: z.enum(['low', 'medium', 'high', 'critical', 'unknown']),
+  inactiveDays: z.number().int(),
+  lastActivityAt: z.string(),
+  createdAt: z.string(),
+});
+
+export const AgentPipelineBoardResponseSchema = z.object({
+  ok: z.literal(true),
+  generatedAt: z.string(),
+  filtersApplied: z.object({
+    team: z.string(),
+    stage: z.string(),
+    urgency: z.string(),
+    inactiveDays: z.number().int(),
+    ownerUserId: z.string().uuid().nullable(),
+  }),
+  filterOptions: z.object({
+    teams: z.array(z.string()),
+    stages: z.array(z.string()),
+    urgencies: z.array(z.string()),
+    owners: z.array(
+      z.object({
+        userId: z.string().uuid(),
+        fullName: z.string(),
+      })
+    ),
+  }),
+  left: z.object({
+    agents: z.array(
+      AgentWorkloadItemSchema.extend({
+        team: z.string(),
+        itemCount: z.number().int(),
+        highUrgencyCount: z.number().int(),
+        maxInactiveDays: z.number().int(),
+      })
+    ),
+  }),
+  center: z.object({
+    stages: z.array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        total: z.number().int(),
+        leads: z.number().int(),
+        deals: z.number().int(),
+        items: z.array(AgentPipelineItemSchema),
+      })
+    ),
+  }),
+  right: z.object({
+    alerts: z.array(
+      z.object({
+        severity: z.enum(['warning', 'critical', 'info']),
+        title: z.string(),
+        detail: z.string(),
+      })
+    ),
+    rebalanceSuggestions: z.array(z.string()),
+  }),
+  requestId: z.string().nullable(),
+});
+
 export type AiModelProvider = z.infer<typeof AiModelProviderSchema>;
 export type AiModelStylePreset = z.infer<typeof AiModelStylePresetSchema>;
 export type AiRuntimeMode = z.infer<typeof AiRuntimeModeSchema>;
@@ -828,3 +897,5 @@ export type AssignmentPolicyExecuteResponse = z.infer<typeof AssignmentPolicyExe
 export type AgentStageDistribution = z.infer<typeof AgentStageDistributionSchema>;
 export type AgentWorkloadItem = z.infer<typeof AgentWorkloadItemSchema>;
 export type AgentWorkloadResponse = z.infer<typeof AgentWorkloadResponseSchema>;
+export type AgentPipelineItem = z.infer<typeof AgentPipelineItemSchema>;
+export type AgentPipelineBoardResponse = z.infer<typeof AgentPipelineBoardResponseSchema>;

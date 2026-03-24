@@ -28,6 +28,7 @@ import type {
   AssignmentPolicyExecuteEnvelope,
   AssignmentPolicyExecuteRequest,
   AgentWorkloadEnvelope,
+  AgentPipelineBoardEnvelope,
 } from './types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
@@ -249,6 +250,34 @@ export async function getAgentWorkload(): Promise<AgentWorkloadEnvelope> {
     throw new Error(json.message || 'Failed to load sales agent workload.');
   }
   return json as AgentWorkloadEnvelope;
+}
+
+export async function getAgentPipelineBoard(input?: {
+  team?: string;
+  stage?: string;
+  urgency?: string;
+  inactiveDays?: number;
+  ownerUserId?: string;
+}): Promise<AgentPipelineBoardEnvelope> {
+  const query = new URLSearchParams();
+  if (input?.team && input.team !== 'all') query.set('team', input.team);
+  if (input?.stage && input.stage !== 'all') query.set('stage', input.stage);
+  if (input?.urgency && input.urgency !== 'all') query.set('urgency', input.urgency);
+  if (typeof input?.inactiveDays === 'number' && input.inactiveDays > 0) {
+    query.set('inactiveDays', String(Math.max(0, Math.floor(input.inactiveDays))));
+  }
+  if (input?.ownerUserId) query.set('ownerUserId', input.ownerUserId);
+
+  const suffix = query.toString();
+  const response = await fetch(`/api/admin/ai-sales-agent/agent-pipeline${suffix ? `?${suffix}` : ''}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  const json = await response.json();
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to load agent pipeline board.');
+  }
+  return json as AgentPipelineBoardEnvelope;
 }
 
 export async function runReplyStudio(input: ReplyStudioRequest): Promise<ReplyStudioEnvelope> {

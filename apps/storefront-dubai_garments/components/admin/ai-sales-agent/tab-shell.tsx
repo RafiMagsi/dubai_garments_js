@@ -21,6 +21,7 @@ import ModelSettingsPanel from '@/components/admin/ai-sales-agent/model-settings
 import AiImpactKpiBoard from '@/components/admin/ai-sales-agent/ai-impact-kpi-board';
 import AssignmentPolicyPanel from '@/components/admin/ai-sales-agent/assignment-policy-panel';
 import AgentWorkloadPanel from '@/components/admin/ai-sales-agent/agent-workload-panel';
+import AgentPipelineBoard from '@/components/admin/ai-sales-agent/agent-pipeline-board';
 
 type AgentTabKey =
   | 'copilot'
@@ -286,6 +287,7 @@ export default function AiSalesAgentTabShell() {
                     <AgentFlowView showHeader={false} />
                     <AssignmentPolicyPanel />
                     <AgentWorkloadPanel />
+                    <AgentPipelineBoard />
                   </div>
                 ) : currentTab.key === 'quote-copilot' ? (
                   <QuoteCopilotPanel />

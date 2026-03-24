@@ -320,6 +320,69 @@ export type AgentWorkloadEnvelope = {
   agents: AgentWorkloadItem[];
 };
 
+export type AgentPipelineBoardItem = {
+  itemId: string;
+  itemType: 'lead' | 'deal';
+  ownerUserId: string;
+  ownerName: string;
+  title: string;
+  stage: string;
+  urgency: 'low' | 'medium' | 'high' | 'critical' | 'unknown';
+  inactiveDays: number;
+  lastActivityAt: string;
+  createdAt: string;
+};
+
+export type AgentPipelineBoardEnvelope = {
+  ok: true;
+  requestId?: string | null;
+  generatedAt: string;
+  filtersApplied: {
+    team: string;
+    stage: string;
+    urgency: string;
+    inactiveDays: number;
+    ownerUserId: string | null;
+  };
+  filterOptions: {
+    teams: string[];
+    stages: string[];
+    urgencies: string[];
+    owners: Array<{
+      userId: string;
+      fullName: string;
+    }>;
+  };
+  left: {
+    agents: Array<
+      AgentWorkloadItem & {
+        team: string;
+        itemCount: number;
+        highUrgencyCount: number;
+        maxInactiveDays: number;
+      }
+    >;
+  };
+  center: {
+    stages: Array<{
+      key: string;
+      label: string;
+      total: number;
+      leads: number;
+      deals: number;
+      items: AgentPipelineBoardItem[];
+    }>;
+  };
+  right: {
+    alerts: Array<{
+      severity: 'warning' | 'critical' | 'info';
+      title: string;
+      detail: string;
+    }>;
+    rebalanceSuggestions: string[];
+  };
+};
+
 export type ReplyStudioEnvelope = {
   ok: true;
   leadId: string;

@@ -203,7 +203,7 @@ P2. **Sales agent workload model** - done
   - SLA risk count,
   - conversion and response metrics.
 
-P3. **Agent Pipeline view (manager board)**
+P3. **Agent Pipeline view (manager board)** - done
 - Build a dedicated pipeline UI (similar to Twenty workload visibility):
   - left: all agents with KPI chips,
   - center: assigned leads/deals by stage,
