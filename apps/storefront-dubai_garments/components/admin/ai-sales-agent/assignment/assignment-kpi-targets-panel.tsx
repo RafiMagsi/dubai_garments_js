@@ -11,6 +11,12 @@ function toneClass(value: number) {
   return 'is-bad';
 }
 
+function signedPercent(value: number) {
+  if (value > 0) return `+${value}%`;
+  if (value < 0) return `${value}%`;
+  return '0%';
+}
+
 export default function AssignmentKpiTargetsPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,8 +54,20 @@ export default function AssignmentKpiTargetsPanel() {
     };
   }, [data]);
 
+  const riskScore = useMemo(() => {
+    if (!data) return 0;
+    const stability = 100 - data.reassignmentImpact.reassignmentRatePct;
+    const response = data.timeToFirstResponseByAgent.length
+      ? Math.round(
+          data.timeToFirstResponseByAgent.reduce((sum, item) => sum + item.responseRatePct, 0) /
+            data.timeToFirstResponseByAgent.length
+        )
+      : 0;
+    return Math.max(0, Math.min(100, Math.round((top.fairness * 0.4) + (stability * 0.35) + (response * 0.25))));
+  }, [data, top.fairness]);
+
   return (
-    <Card className="asgn-kpi-targets-card">
+    <Card className="asgn-kpi-targets-card asgn-kpi-targets-card-twenty">
       <div className="asgn-kpi-targets-head">
         <div>
           <p className="aflow-kicker">Additional KPI Targets</p>
@@ -65,18 +83,26 @@ export default function AssignmentKpiTargetsPanel() {
 
       {error ? <p className="asgn-error">{error}</p> : null}
 
-      <div className="asgn-kpi-targets-rail">
-        <div className={`asgn-kpi-target-chip ${toneClass(top.fairness)}`}>
-          <span>Assignment Fairness Index</span>
+      <div className="asgn-kpi-targets-rail asgn-kpi-targets-rail-twenty">
+        <div className={`asgn-kpi-target-chip asgn-kpi-target-chip-main ${toneClass(top.fairness)}`}>
+          <span>Assignment Fairness</span>
           <strong>{top.fairness}%</strong>
+          <em>Load spread quality across agents</em>
         </div>
         <div className={`asgn-kpi-target-chip ${toneClass(100 - top.reassignmentRate)}`}>
           <span>Reassignment Rate</span>
           <strong>{top.reassignmentRate}%</strong>
+          <em>Lower means more stable ownership</em>
         </div>
         <div className={`asgn-kpi-target-chip ${toneClass(top.winImpact + 50)}`}>
           <span>Win-Rate Impact</span>
-          <strong>{top.winImpact}%</strong>
+          <strong>{signedPercent(top.winImpact)}</strong>
+          <em>Reassigned vs baseline close-win delta</em>
+        </div>
+        <div className={`asgn-kpi-target-chip ${toneClass(riskScore)}`}>
+          <span>Assignment Health</span>
+          <strong>{riskScore}%</strong>
+          <em>Composite of fairness, stability, response</em>
         </div>
       </div>
 
@@ -86,10 +112,11 @@ export default function AssignmentKpiTargetsPanel() {
         <div className="asgn-kpi-targets-grid">
           <div className="asgn-kpi-targets-panel">
             <p className="aflow-mini-title">1. Time-to-first-response by agent</p>
-            <ul className="aflow-mini-list">
+            <ul className="aflow-mini-list asgn-kpi-list-tight">
               {data.timeToFirstResponseByAgent.slice(0, 6).map((item) => (
                 <li key={`tfr-${item.userId}`}>
-                  {item.fullName}: {item.avgFirstResponseHours}h avg · {item.responseRatePct}% response ({item.respondedLeadCount} leads)
+                  <strong>{item.fullName}</strong> · {item.avgFirstResponseHours}h avg · {item.responseRatePct}% response (
+                  {item.respondedLeadCount} leads)
                 </li>
               ))}
             </ul>
@@ -97,10 +124,11 @@ export default function AssignmentKpiTargetsPanel() {
 
           <div className="asgn-kpi-targets-panel">
             <p className="aflow-mini-title">2. Stage aging by agent</p>
-            <ul className="aflow-mini-list">
+            <ul className="aflow-mini-list asgn-kpi-list-tight">
               {data.stageAgingByAgent.slice(0, 5).map((agent) => (
                 <li key={`aging-${agent.userId}`}>
-                  {agent.fullName}: {agent.stages.slice(0, 2).map((stage) => `${stage.stage} ${stage.avgAgingDays}d`).join(' · ')}
+                  <strong>{agent.fullName}</strong> ·{' '}
+                  {agent.stages.slice(0, 2).map((stage) => `${stage.stage} ${stage.avgAgingDays}d`).join(' · ')}
                 </li>
               ))}
             </ul>
@@ -108,7 +136,7 @@ export default function AssignmentKpiTargetsPanel() {
 
           <div className="asgn-kpi-targets-panel">
             <p className="aflow-mini-title">3. Assignment fairness index</p>
-            <ul className="aflow-mini-list">
+            <ul className="aflow-mini-list asgn-kpi-list-tight">
               <li>Score: {data.assignmentFairnessIndex.score}%</li>
               <li>Mean load: {data.assignmentFairnessIndex.meanLoad}</li>
               <li>StdDev load: {data.assignmentFairnessIndex.stdDevLoad}</li>
@@ -120,10 +148,10 @@ export default function AssignmentKpiTargetsPanel() {
 
           <div className="asgn-kpi-targets-panel">
             <p className="aflow-mini-title">4. Conversion by owner and stage</p>
-            <ul className="aflow-mini-list">
+            <ul className="aflow-mini-list asgn-kpi-list-tight">
               {data.conversionByOwner.slice(0, 5).map((owner) => (
                 <li key={`owner-conv-${owner.userId}`}>
-                  {owner.fullName}: {owner.conversionRatePct}% ({owner.wonDeals}/{owner.closedDeals})
+                  <strong>{owner.fullName}</strong>: {owner.conversionRatePct}% ({owner.wonDeals}/{owner.closedDeals})
                 </li>
               ))}
             </ul>
@@ -138,14 +166,14 @@ export default function AssignmentKpiTargetsPanel() {
 
           <div className="asgn-kpi-targets-panel">
             <p className="aflow-mini-title">5. Reassignment rate and impact on win-rate</p>
-            <ul className="aflow-mini-list">
+            <ul className="aflow-mini-list asgn-kpi-list-tight">
               <li>
                 Reassignment rate: {data.reassignmentImpact.reassignmentRatePct}% ({data.reassignmentImpact.reassignmentCount}/
                 {data.reassignmentImpact.assignmentOpsCount})
               </li>
               <li>Reassigned closed win-rate: {data.reassignmentImpact.reassignedClosedWinRatePct}%</li>
               <li>Baseline closed win-rate: {data.reassignmentImpact.baselineClosedWinRatePct}%</li>
-              <li>Delta: {data.reassignmentImpact.winRateDeltaPct}%</li>
+              <li>Delta: {signedPercent(data.reassignmentImpact.winRateDeltaPct)}</li>
             </ul>
           </div>
         </div>

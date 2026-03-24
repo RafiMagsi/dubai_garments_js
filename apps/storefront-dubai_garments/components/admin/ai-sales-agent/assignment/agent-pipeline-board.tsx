@@ -33,6 +33,15 @@ function stageToneClass(stageKey: string) {
   return 'is-neutral';
 }
 
+function stagePipelineClass(stageKey: string) {
+  if (['lead_new', 'triaged'].includes(stageKey)) return 'new';
+  if (['qualified'].includes(stageKey)) return 'qualified';
+  if (['reply_sent', 'quote_ready', 'quote_sent'].includes(stageKey)) return 'quoted';
+  if (['negotiation'].includes(stageKey)) return 'negotiation';
+  if (['won_lost', 'post_outcome'].includes(stageKey)) return 'won';
+  return 'new';
+}
+
 function alertToneClass(severity: 'warning' | 'critical' | 'info') {
   if (severity === 'critical') return 'is-critical';
   if (severity === 'warning') return 'is-warning';
@@ -43,6 +52,23 @@ function toInt(input: string) {
   const parsed = Number(input);
   if (!Number.isFinite(parsed)) return 0;
   return Math.max(0, Math.floor(parsed));
+}
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+function prettyRole(role: string) {
+  return role
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
 }
 
 export default function AgentPipelineBoard() {
@@ -250,48 +276,78 @@ export default function AgentPipelineBoard() {
       {opError ? <p className="asgn-error">{opError}</p> : null}
       {opSuccess ? <p className="asgn-success">{opSuccess}</p> : null}
 
-      <div className="asgn-pipe-grid" data-testid="agent-pipeline-board">
-        <div className="asgn-pipe-col asgn-pipe-left">
+      <div className="asgn-pipe-grid asgn-pipe-grid-twenty" data-testid="agent-pipeline-board">
+        <div className="asgn-pipe-col asgn-pipe-left dg-pipeline-column">
           <p className="asgn-pipe-col-title">Agents</p>
           {data?.left.agents.length ? (
-            data.left.agents.map((agent) => (
-              <div className="asgn-pipe-agent" key={`pipe-agent-${agent.userId}`}>
+            <div className="asgn-pipe-agent-list">
+              {data.left.agents.map((agent) => (
+                <div className="asgn-pipe-agent" key={`pipe-agent-${agent.userId}`}>
                 <div className="asgn-pipe-agent-head">
-                  <strong>{agent.fullName}</strong>
-                  <span>{agent.team}</span>
+                  <div className="asgn-pipe-agent-identity">
+                    <span className="asgn-pipe-agent-avatar">{initials(agent.fullName)}</span>
+                    <div className="asgn-pipe-agent-copy">
+                      <strong>{agent.fullName}</strong>
+                      <span>{prettyRole(agent.role)}</span>
+                    </div>
+                  </div>
+                  <span className="asgn-pipe-team-badge">{agent.team}</span>
                 </div>
-                <div className="asgn-pipe-chip-row">
-                  <span className="asgn-pipe-chip">Leads {agent.activeLeads}</span>
-                  <span className="asgn-pipe-chip">Deals {agent.activeDeals}</span>
-                  <span className="asgn-pipe-chip">SLA {agent.slaRiskCount}</span>
-                  <span className="asgn-pipe-chip">Overdue {agent.overdueFollowups}</span>
-                  <span className="asgn-pipe-chip">Conv {agent.conversionRatePct}%</span>
-                  <span className="asgn-pipe-chip">Resp {agent.responseRatePct}%</span>
+                <div className="asgn-pipe-agent-kpi-grid">
+                  <div className="asgn-pipe-agent-kpi">
+                    <span>Leads</span>
+                    <strong>{agent.activeLeads}</strong>
+                  </div>
+                  <div className="asgn-pipe-agent-kpi">
+                    <span>Deals</span>
+                    <strong>{agent.activeDeals}</strong>
+                  </div>
+                  <div className="asgn-pipe-agent-kpi">
+                    <span>SLA Risk</span>
+                    <strong>{agent.slaRiskCount}</strong>
+                  </div>
+                  <div className="asgn-pipe-agent-kpi">
+                    <span>Overdue</span>
+                    <strong>{agent.overdueFollowups}</strong>
+                  </div>
+                  <div className="asgn-pipe-agent-kpi">
+                    <span>Conv</span>
+                    <strong>{agent.conversionRatePct}%</strong>
+                  </div>
+                  <div className="asgn-pipe-agent-kpi">
+                    <span>Resp</span>
+                    <strong>{agent.responseRatePct}%</strong>
+                  </div>
                 </div>
-              </div>
-            ))
+                </div>
+              ))}
+            </div>
           ) : (
             <p className="aflow-empty">No agents in selected filters.</p>
           )}
         </div>
 
-        <div className="asgn-pipe-col asgn-pipe-center">
+        <div className="asgn-pipe-col asgn-pipe-center dg-pipeline-column">
           <p className="asgn-pipe-col-title">Assigned Leads/Deals by Stage</p>
-          <div className="asgn-pipe-lanes">
+          <div className="asgn-pipe-lanes dg-pipeline-grid">
             {data?.center.stages.map((lane) => (
-              <div className={`asgn-pipe-lane ${stageToneClass(lane.key)}`} key={`lane-${lane.key}`}>
+              <div
+                className={`asgn-pipe-lane ${stageToneClass(lane.key)} dg-pipeline-column dg-pipeline-column--${stagePipelineClass(lane.key)}`}
+                key={`lane-${lane.key}`}
+              >
                 <div className="asgn-pipe-lane-head">
-                  <strong>{lane.label}</strong>
-                  <span>
-                    {lane.total} · L{lane.leads}/D{lane.deals}
-                  </span>
+                  <div className="dg-pipeline-stage-head">
+                    <span className={`dg-pipeline-stage-chip dg-pipeline-stage-chip--${stagePipelineClass(lane.key)}`}>{lane.label}</span>
+                    <span className="dg-pipeline-stage-count">{lane.total}</span>
+                  </div>
+                  <span>L{lane.leads}/D{lane.deals}</span>
                 </div>
                 {lane.items.length > 0 ? (
-                  <div className="asgn-pipe-item-list">
+                  <div className="asgn-pipe-item-list dg-pipeline-cards">
                     {lane.items.slice(0, 4).map((item) => (
                       <button
                         type="button"
-                        className={`asgn-pipe-item ${selectedItem?.itemId === item.itemId && selectedItem?.itemType === item.itemType ? 'is-selected' : ''}`}
+                        className={`asgn-pipe-item dg-pipeline-card ${selectedItem?.itemId === item.itemId && selectedItem?.itemType === item.itemType ? 'is-selected' : ''}`}
                         key={`${lane.key}-${item.itemType}-${item.itemId}`}
                         onClick={() => {
                           setSelectedItem(item);
@@ -320,7 +376,7 @@ export default function AgentPipelineBoard() {
           </div>
         </div>
 
-        <div className="asgn-pipe-col asgn-pipe-right">
+        <div className="asgn-pipe-col asgn-pipe-right dg-pipeline-column">
           <p className="asgn-pipe-col-title">Alerts & Rebalance Suggestions</p>
 
           <div className="asgn-pipe-alerts">

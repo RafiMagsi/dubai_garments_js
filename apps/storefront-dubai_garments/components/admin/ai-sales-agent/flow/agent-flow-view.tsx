@@ -270,7 +270,7 @@ export default function AgentFlowView({
       <Card className={`aflow-shell ${showHeader ? '' : 'aflow-shell-embedded'}`.trim()}>
         {showHeader ? (
           <>
-            <div className="aflow-header">
+            <div className="aflow-header aflow-shell-topline">
               <CardTitle>Lead-to-Close Agent Flow</CardTitle>
               {flow ? <span className="dg-ai-badge dg-ai-badge-violet">Completion {completionPercent}%</span> : null}
             </div>
@@ -308,7 +308,7 @@ export default function AgentFlowView({
             <Button type="button" onClick={handleLoadFlow} disabled={loading}>
               {loading ? 'Loading...' : 'Run Agent Flow'}
             </Button>
-            <p className="dg-text-xs dg-text-neutral-500">Enter Lead ID, Deal ID, or both.</p>
+            <p className="aflow-query-hint">Enter Lead ID, Deal ID, or both.</p>
           </div>
         </div>
       </Card>
@@ -421,29 +421,25 @@ export default function AgentFlowView({
                 </div>
                 <div className="aflow-next-move">{flow.recommendedNextMove}</div>
                 <div className="aflow-next-move-actions">
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="aflow-glow-btn aflow-next-move-btn"
-                    onClick={handleRunNextMove}
-                    disabled={nextMoveBusy || (overrideEnabled && !overrideReason.trim())}
-                  >
-                    {nextMoveBusy ? 'Running...' : 'Run Next Move'}
-                  </Button>
+                  <div className="aflow-next-move-cta-row">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="aflow-glow-btn aflow-next-move-btn"
+                      onClick={handleRunNextMove}
+                      disabled={nextMoveBusy || (overrideEnabled && !overrideReason.trim())}
+                    >
+                      {nextMoveBusy ? 'Running...' : 'Run Next Move'}
+                    </Button>
+                    {flow.activeStageKey && getStageDeepLink(flow.activeStageKey) ? (
+                      <a href={getStageDeepLink(flow.activeStageKey)!} className="ui-btn ui-btn-primary ui-btn-sm aflow-link-btn">
+                        Open Next Action
+                      </a>
+                    ) : null}
+                  </div>
                   {nextMoveStatus ? <p className="aflow-next-move-status">{nextMoveStatus}</p> : null}
                   {nextMoveError ? <p className="aflow-next-move-error">{nextMoveError}</p> : null}
                 </div>
-
-                {flow.activeStageKey && getStageDeepLink(flow.activeStageKey) ? (
-                    <div className="dg-mt-4">
-                        <a
-                        href={getStageDeepLink(flow.activeStageKey)!}
-                        className="ui-btn ui-btn-primary ui-btn-sm"
-                        >
-                        Open Next Action
-                        </a>
-                    </div>
-                ) : null}
               </section>
             </div>
           </Card>
@@ -682,8 +678,8 @@ export default function AgentFlowView({
                       ))}
                     </div>
                     {getStageDeepLink(selectedStage.key) ? (
-                      <div className="dg-mt-2">
-                        <a href={getStageDeepLink(selectedStage.key)!} className="ui-btn ui-btn-secondary ui-btn-sm">
+                      <div className="aflow-stage-action-row">
+                        <a href={getStageDeepLink(selectedStage.key)!} className="ui-btn ui-btn-secondary ui-btn-sm aflow-link-btn">
                           Open Related Action
                         </a>
                       </div>
