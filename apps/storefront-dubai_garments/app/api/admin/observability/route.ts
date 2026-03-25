@@ -9,6 +9,7 @@ type TargetKey =
   | 'storefront_metrics'
   | 'ai_health'
   | 'fastapi_health'
+  | 'fastapi_db_health'
   | 'storefront_health';
 
 async function getServiceConfig(origin: string) {
@@ -49,6 +50,10 @@ async function getServiceConfig(origin: string) {
     fastapi_health: {
       label: 'FastAPI Health',
       url: `${fastApiBaseUrl.replace(/\/$/, '')}/health`,
+    },
+    fastapi_db_health: {
+      label: 'FastAPI DB Health',
+      url: `${fastApiBaseUrl.replace(/\/$/, '')}/health/db`,
     },
     storefront_health: {
       label: 'Storefront DB Health',

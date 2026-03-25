@@ -38,6 +38,7 @@ if command -v curl >/dev/null 2>&1; then
   echo "Health checks:"
   curl -fsS "$APP_BASE_URL/api/health/db" >/dev/null && echo "  [OK] Next.js DB health" || echo "  [WARN] Next.js DB health failed"
   curl -fsS "$FASTAPI_BASE_URL/health" >/dev/null && echo "  [OK] FastAPI health" || echo "  [WARN] FastAPI health failed"
+  curl -fsS "$FASTAPI_BASE_URL/health/db" >/dev/null && echo "  [OK] FastAPI DB health" || echo "  [WARN] FastAPI DB health failed"
 fi
 
 if [ -n "${DATABASE_URL:-}" ] && command -v psql >/dev/null 2>&1; then

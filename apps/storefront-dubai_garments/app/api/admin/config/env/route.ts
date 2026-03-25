@@ -22,6 +22,8 @@ const ENV_DEFS: EnvDef[] = [
   { key: 'AUTH_SESSION_SECRET', target: 'storefront', description: 'Session signing secret for Next.js auth cookies', secret: true },
   { key: 'DATABASE_URL', target: 'storefront', description: 'PostgreSQL connection string for Next.js/Prisma', secret: true },
   { key: 'FASTAPI_BASE_URL', target: 'storefront', description: 'Server-side FastAPI base URL for admin APIs', secret: false },
+  { key: 'FASTAPI_PROXY_TIMEOUT_MS', target: 'storefront', description: 'FastAPI proxy timeout in milliseconds for admin API calls', secret: false },
+  { key: 'FASTAPI_PROXY_RETRY_COUNT', target: 'storefront', description: 'FastAPI proxy retry count for transient GET failures (0-3)', secret: false },
   { key: 'AUTOMATION_SHARED_SECRET', target: 'storefront', description: 'Shared automation token used by scheduler/followup endpoints', secret: true },
   { key: 'BRAND_NAME', target: 'storefront', description: 'Brand display name used in storefront/admin branding surfaces', secret: false },
   { key: 'BRAND_TAGLINE', target: 'storefront', description: 'Brand tagline/subtitle used in header and admin shell', secret: false },
