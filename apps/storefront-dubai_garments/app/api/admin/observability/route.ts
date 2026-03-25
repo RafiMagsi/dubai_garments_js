@@ -78,6 +78,21 @@ async function proxyObservabilityGet(url: string, token: string) {
   return { response, payload };
 }
 
+async function directScrapeTarget(target: string, url: string) {
+  const startedAt = Date.now();
+  const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+  const raw = await response.text();
+  const preview = raw.length > 2000 ? `${raw.slice(0, 2000)}...` : raw;
+  return {
+    ok: response.ok,
+    target,
+    url,
+    status: response.status,
+    durationMs: Date.now() - startedAt,
+    preview,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const sessionOrResponse = await requireAdminSession();
   if (sessionOrResponse instanceof NextResponse) {
@@ -126,10 +141,19 @@ export async function GET(request: NextRequest) {
         `${observabilityServiceUrl}/api/v1/scrape?target=${encodeURIComponent(target)}`,
         observabilityServiceToken
       );
+      if (response.status === 404) {
+        const fallbackPayload = await directScrapeTarget(target, targets[target].url);
+        return NextResponse.json(fallbackPayload, { status: fallbackPayload.ok ? 200 : fallbackPayload.status });
+      }
       return NextResponse.json(payload, { status: response.ok ? 200 : response.status });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to scrape observability target.';
-      return NextResponse.json({ message }, { status: 502 });
+      try {
+        const fallbackPayload = await directScrapeTarget(target, targets[target].url);
+        return NextResponse.json(fallbackPayload, { status: fallbackPayload.ok ? 200 : fallbackPayload.status });
+      } catch {
+        const message = error instanceof Error ? error.message : 'Failed to scrape observability target.';
+        return NextResponse.json({ message }, { status: 502 });
+      }
     }
   }
 
