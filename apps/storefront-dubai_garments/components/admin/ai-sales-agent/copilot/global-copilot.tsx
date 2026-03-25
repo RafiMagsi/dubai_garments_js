@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, SelectField, TextField } from '@/components/ui';
 import AiSalesAgentActionCards from '@/components/admin/ai-sales-agent/copilot/action-cards';
@@ -60,6 +61,7 @@ const intentChips: Array<{ label: string; intent: CopilotIntent; prompt: string 
 ];
 
 export default function GlobalAiSalesCopilot({ compact = false }: Props) {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -246,6 +248,17 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             leadId: normalizedLeadId,
             dry_run: dryRun,
             });
+
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ['lead', normalizedLeadId] }),
+              queryClient.invalidateQueries({ queryKey: ['leads'] }),
+              queryClient.invalidateQueries({ queryKey: ['activities'] }),
+            ]);
+            await Promise.all([
+              queryClient.refetchQueries({ queryKey: ['lead', normalizedLeadId], type: 'active' }),
+              queryClient.refetchQueries({ queryKey: ['leads'], type: 'active' }),
+              queryClient.refetchQueries({ queryKey: ['activities'], type: 'active' }),
+            ]);
 
             setResponse(result);
             setUiState('success');

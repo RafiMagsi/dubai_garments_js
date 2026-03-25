@@ -162,6 +162,16 @@ function classifyLead(score: number): LeadTriageOutput['classification'] {
   return 'cold';
 }
 
+function toDbClassification(classification: LeadTriageOutput['classification']): 'HOT' | 'WARM' | 'COLD' {
+  if (classification === 'hot') return 'HOT';
+  if (classification === 'warm') return 'WARM';
+  return 'COLD';
+}
+
+function toDbProvider(provider: string): 'openai' | 'system' {
+  return provider.toLowerCase() === 'openai' ? 'openai' : 'system';
+}
+
 function buildNextBestAction(output: Omit<LeadTriageOutput, 'nextBestAction'>): string {
   if (output.classification === 'hot' && output.intent === 'quotation_request') {
     return 'Prepare and send a quote quickly, then follow up for blockers.';
@@ -345,10 +355,10 @@ export async function runLeadTriage(
     ai_quantity: data.quantity,
     ai_urgency: data.urgency,
     ai_complexity: data.complexity,
-    ai_provider: provider,
+    ai_provider: toDbProvider(provider),
     ai_fallback_used: fallbackUsed,
     ai_score: data.score,
-    ai_classification: data.classification,
+    ai_classification: toDbClassification(data.classification),
     ai_reasoning: {
             summary: data.summary,
             intent: data.intent,

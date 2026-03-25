@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { HTMLAttributes } from 'react';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button, Card, CardText, CardTitle } from '@/components/ui';
 // import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
 import {
@@ -188,6 +189,7 @@ export default function LeadIntelligenceCards({
   className,
   ...props
 }: LeadIntelligenceCardsProps) {
+  const queryClient = useQueryClient();
   const [triageBusy, setTriageBusy] = useState(false);
   const [triageStatus, setTriageStatus] = useState<string | null>(null);
   const [triageError, setTriageError] = useState<string | null>(null);
@@ -266,12 +268,26 @@ export default function LeadIntelligenceCards({
     },
   ] as const;
 
+  async function refreshLeadViews(targetLeadId: string) {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['lead', targetLeadId] }),
+      queryClient.invalidateQueries({ queryKey: ['leads'] }),
+      queryClient.invalidateQueries({ queryKey: ['activities'] }),
+    ]);
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: ['lead', targetLeadId], type: 'active' }),
+      queryClient.refetchQueries({ queryKey: ['leads'], type: 'active' }),
+      queryClient.refetchQueries({ queryKey: ['activities'], type: 'active' }),
+    ]);
+  }
+
   async function handleRunLeadTriage() {
     try {
       setTriageError(null);
       setTriageStatus(null);
       setTriageBusy(true);
       const result = await runLeadTriage({ leadId, dry_run: false });
+      await refreshLeadViews(leadId);
       setTriageStatus(
         result.persisted
           ? 'Lead triage completed and persisted.'
@@ -352,6 +368,7 @@ export default function LeadIntelligenceCards({
             result,
         },
         });
+        await refreshLeadViews(leadId);
 
         setActionStatus('Lead converted to deal successfully.');
     } catch (error) {
@@ -390,6 +407,7 @@ export default function LeadIntelligenceCards({
             result,
         },
         });
+        await refreshLeadViews(leadId);
 
         setActionStatus('Lead prioritized successfully.');
     } catch (error) {

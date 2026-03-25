@@ -9,7 +9,6 @@ import AgentFlowView from '@/components/admin/ai-sales-agent/agent-flow-view';
 import ReplyStudioPanel from '@/components/admin/ai-sales-agent/reply-studio-panel';
 import {
   AisEmptyState,
-  AisFeatureCard,
   AisKpiPill,
   AisSectionEyebrow,
 } from './reusable';
@@ -275,82 +274,95 @@ export default function AiSalesAgentTabShell() {
 
             {expanded ? (
               <div className="ais-tab-content">
-                {currentTab.key === 'copilot' ? (
-                  <div className="pins-stack">
-                    <AiImpactKpiBoard
-                      title="AI Impact KPI Board"
-                      subtitle="Time saved, suggestion acceptance, and risk-resolution outcomes from recent AI activity."
-                    />
-                    <GlobalAiSalesCopilot />
-                  </div>
-                ) : currentTab.key === 'agent-flow' ? (
-                  <div className="pins-stack">
-                    <AgentFlowView showHeader={false} />
-                    <AssignmentPolicyPanel />
-                    <AgentWorkloadPanel />
-                    <AssignmentKpiTargetsPanel />
-                    <AgentPipelineBoard />
-                  </div>
-                ) : currentTab.key === 'quote-copilot' ? (
-                  <QuoteCopilotPanel />
-                ) : currentTab.key === 'reply-studio' ? (
-                  <ReplyStudioPanel showHeading={false} />
-                ) : currentTab.key === 'pipeline-insights' ? (
-                  <PipelineInsightsPanel />
-                ) : currentTab.key === 'automation-runs' ? (
-                  <AutomationRunsPanel />
-                ) : currentTab.key === 'model-settings' ? (
-                  <ModelSettingsPanel />
-                ) : (
-                  <div className="dg-grid dg-grid-cols-3 dg-gap-4">
-                    {currentTab.features.map((feature, index) => (
-                      <AisFeatureCard
-                        key={`${currentTab.key}-feature-${index}`}
-                        title={feature}
-                        text={`Operational capability for ${currentTab.label.toLowerCase()}.`}
+                <div className="ais-tab-panel-surface">
+                  {currentTab.key === 'copilot' ? (
+                    <div className="pins-stack">
+                      <AiImpactKpiBoard
+                        title="AI Impact KPI Board"
+                        subtitle="Time saved, suggestion acceptance, and risk-resolution outcomes from recent AI activity."
                       />
-                    ))}
-                  </div>
-                )}
+                      <GlobalAiSalesCopilot />
+                    </div>
+                  ) : currentTab.key === 'agent-flow' ? (
+                    <div className="pins-stack">
+                      <AgentFlowView showHeader={false} />
+                      <AssignmentPolicyPanel />
+                      <AgentWorkloadPanel />
+                      <AssignmentKpiTargetsPanel />
+                      <AgentPipelineBoard />
+                    </div>
+                  ) : currentTab.key === 'quote-copilot' ? (
+                    <QuoteCopilotPanel />
+                  ) : currentTab.key === 'reply-studio' ? (
+                    <ReplyStudioPanel showHeading={false} />
+                  ) : currentTab.key === 'pipeline-insights' ? (
+                    <PipelineInsightsPanel />
+                  ) : currentTab.key === 'automation-runs' ? (
+                    <AutomationRunsPanel />
+                  ) : currentTab.key === 'model-settings' ? (
+                    <ModelSettingsPanel />
+                  ) : currentTab.key === 'lead-intelligence' ? (
+                    <div>
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        <div>
+                          <p className="qrec-kicker">Lead Intelligence Preview</p>
+                          <p className="qrec-subtitle">
+                            Paste a Lead ID to load the same intelligence cards used on Lead Detail page.
+                          </p>
+                        </div>
+                        <input
+                          className="dg-input"
+                          value={leadPreviewId}
+                          onChange={(event) => {
+                            setLeadPreviewId(event.target.value);
+                            setUiStateInUrl({ leadPreviewId: event.target.value });
+                          }}
+                          placeholder="Paste a Lead ID"
+                          data-testid="ai-sales-agent-lead-preview-input"
+                        />
+                        {previewLead ? (
+                          <div data-testid="ai-sales-agent-lead-preview-cards" className="ais-preview-pane">
+                            <LeadIntelligenceCards
+                              lead={previewLead}
+                              title="AI Sales Agent > Lead Intelligence"
+                              data-testid="ai-sales-agent-lead-intelligence-preview"
+                              compact
+                            />
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gap: 10 }}>
+                            <AisEmptyState message="No lead loaded yet. Enter a valid lead ID to preview intelligence output." />
+                            <div className="qrec-card ais-capabilities-row" data-testid="ai-lead-preview-capabilities">
+                              <span className="ais-capabilities-label">Capabilities</span>
+                              <div className="ais-capabilities-chips">
+                                {currentTab.features.map((feature, index) => (
+                                  <span key={`lead-preview-feature-${index}`} className="dg-status-pill dg-status-pill-neutral">
+                                    {feature}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="qrec-card ais-capabilities-row" data-testid={`ai-tab-capabilities-${currentTab.key}`}>
+                      <span className="ais-capabilities-label">Capabilities</span>
+                      <div className="ais-capabilities-chips">
+                        {currentTab.features.map((feature, index) => (
+                          <span key={`${currentTab.key}-feature-${index}`} className="dg-status-pill dg-status-pill-neutral">
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : null}
           </div>
         </Card>
-
-        {activeTab === 'lead-intelligence' ? (
-          <Card className="ais-preview-card">
-            <div style={{ display: 'grid', gap: 10 }}>
-              <div>
-                <AisSectionEyebrow>Lead Intelligence Preview</AisSectionEyebrow>
-                <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
-                  Paste a Lead ID to load the same intelligence cards used on Lead Detail page.
-                </p>
-              </div>
-              <input
-                className="dg-input"
-                value={leadPreviewId}
-                onChange={(event) => {
-                  setLeadPreviewId(event.target.value);
-                  setUiStateInUrl({ leadPreviewId: event.target.value });
-                }}
-                placeholder="Paste a Lead ID"
-                data-testid="ai-sales-agent-lead-preview-input"
-              />
-              {previewLead ? (
-                <div data-testid="ai-sales-agent-lead-preview-cards" className="ais-preview-pane">
-                  <LeadIntelligenceCards
-                    lead={previewLead}
-                    title="AI Sales Agent > Lead Intelligence"
-                    data-testid="ai-sales-agent-lead-intelligence-preview"
-                    compact
-                  />
-                </div>
-              ) : (
-                <AisEmptyState message="No lead loaded yet. Enter a valid lead ID to preview intelligence output." />
-              )}
-            </div>
-          </Card>
-        ) : null}
       </div>
       <style jsx>{`
         .ais-shell {
@@ -367,8 +379,31 @@ export default function AiSalesAgentTabShell() {
           display: grid;
           gap: 0.9rem;
         }
-        .ais-preview-card {
-          margin-top: 0.18rem;
+        .ais-tab-panel-surface {
+          border: 1px solid color-mix(in srgb, var(--color-border) 86%, var(--color-brand-100));
+          background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+          border-radius: 0.62rem;
+          padding: 0.72rem;
+          display: grid;
+          gap: 0.66rem;
+        }
+        .ais-capabilities-row {
+          margin-top: 0.08rem;
+          padding: 0.62rem;
+          display: grid;
+          gap: 0.45rem;
+        }
+        .ais-capabilities-label {
+          font-size: 0.72rem;
+          letter-spacing: 0.09em;
+          text-transform: uppercase;
+          font-weight: 700;
+          color: #64748b;
+        }
+        .ais-capabilities-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.4rem;
         }
         .ais-preview-pane {
           margin-top: 0.15rem;
@@ -382,9 +417,6 @@ export default function AiSalesAgentTabShell() {
         }
         .ais-flow-step {
           animation: ais-step-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-        .ais-feature-card {
-          animation: ais-card-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
         @keyframes ais-in {
           from {
@@ -426,22 +458,11 @@ export default function AiSalesAgentTabShell() {
             transform: translateY(0);
           }
         }
-        @keyframes ais-card-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
         @media (prefers-reduced-motion: reduce) {
           .ais-shell,
           .ais-tab-btn,
           .ais-overview,
-          .ais-flow-step,
-          .ais-feature-card {
+          .ais-flow-step {
             animation: none !important;
           }
         }
