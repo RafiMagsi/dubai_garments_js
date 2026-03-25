@@ -58,6 +58,13 @@ export default function AdminLeadDetailsPage() {
         meta: null,
       })) ?? [];
 
+    const activityTypes = new Set(
+      (data?.activities ?? []).map((activity) => String(activity.activity_type || '').toLowerCase())
+    );
+    const hasLeadCreatedActivity = activityTypes.has('lead_created');
+    const hasLeadUpdatedActivity =
+      activityTypes.has('lead_updated') || activityTypes.has('lead_status_changed');
+
     const communicationEvents = communications.map((communication) => ({
       id: `comm:${communication.id}`,
       occurredAt: communication.sent_at || communication.created_at,
@@ -68,7 +75,7 @@ export default function AdminLeadDetailsPage() {
     }));
 
     const systemEvents: RecordTimelineEvent[] = [];
-    if (lead?.created_at) {
+    if (lead?.created_at && !hasLeadCreatedActivity) {
       systemEvents.push({
         id: `system:lead-created:${lead.id}`,
         occurredAt: lead.created_at,
@@ -78,7 +85,13 @@ export default function AdminLeadDetailsPage() {
         meta: lead.company_name || lead.contact_name || null,
       });
     }
-    if (lead?.updated_at) {
+    const createdAtMs = lead?.created_at ? Date.parse(lead.created_at) : NaN;
+    const updatedAtMs = lead?.updated_at ? Date.parse(lead.updated_at) : NaN;
+    const hasMeaningfulUpdateTimestamp =
+      Number.isFinite(createdAtMs) &&
+      Number.isFinite(updatedAtMs) &&
+      Math.abs(updatedAtMs - createdAtMs) > 1000;
+    if (lead?.updated_at && hasMeaningfulUpdateTimestamp && !hasLeadUpdatedActivity) {
       systemEvents.push({
         id: `system:lead-updated:${lead.id}`,
         occurredAt: lead.updated_at,

@@ -129,6 +129,34 @@ function cleanLeadNotesForSummary(notes: string | null): string | null {
   return collapsed || null;
 }
 
+function isSyntheticContactOrCompany(value: string): boolean {
+  const v = value.trim();
+  if (!v) return false;
+  return /^regression\s+\d+$/i.test(v) || /^qa-\d+$/i.test(v);
+}
+
+function buildContactSummary(contactName: string | null, companyName: string | null): string | null {
+  const contact = normalizeText(contactName);
+  const company = normalizeText(companyName);
+  const contactLooksSynthetic = contact ? isSyntheticContactOrCompany(contact) : false;
+  const companyLooksSynthetic = company ? isSyntheticContactOrCompany(company) : false;
+
+  // Suppress QA/regression placeholders from generated test data in human-facing AI summary.
+  if ((contactLooksSynthetic || !contact) && (companyLooksSynthetic || !company)) {
+    return null;
+  }
+
+  if (contact && !contactLooksSynthetic) {
+    return `Contact: ${contact}${company && !companyLooksSynthetic ? ` (${company})` : ''}.`;
+  }
+
+  if (company && !companyLooksSynthetic) {
+    return `Company: ${company}.`;
+  }
+
+  return null;
+}
+
 function computeScore(params: {
   urgency: LeadTriageOutput['urgency'];
   complexity: LeadTriageOutput['complexity'];
@@ -201,8 +229,6 @@ function buildSummary(lead: {
   timeline_date: Date | null;
 }, quantity: number | null, intent: LeadTriageOutput['intent']) {
   const intentText = intent.replace(/_/g, ' ');
-  const contact = normalizeText(lead.contact_name) || 'Unknown contact';
-  const company = normalizeText(lead.company_name);
   const timeline = lead.timeline_date
     ? new Date(lead.timeline_date).toISOString().slice(0, 10)
     : null;
@@ -219,7 +245,7 @@ function buildSummary(lead: {
 
   const parts = [
     `Intent: ${intentText}.`,
-    `Contact: ${contact}${company ? ` (${company})` : ''}.`,
+    buildContactSummary(lead.contact_name, lead.company_name),
     quantity !== null ? `Quantity: ${quantity} units.` : null,
     timeline ? `Timeline: ${timeline}.` : null,
     productSignal && !isUuidLike ? `Product signal: ${productSignal}.` : null,
