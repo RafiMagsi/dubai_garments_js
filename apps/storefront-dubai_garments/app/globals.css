@@ -2267,6 +2267,21 @@
         margin-top: 0.15rem;
     }
 
+    .dg-admin-topbar-search-row {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+
+    .dg-admin-topbar-search-row .dg-input {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .dg-admin-topbar-search-row .ui-btn {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
     .dg-admin-user-pill {
         border-radius: 9999px;
         background-color: color-mix(in srgb, var(--color-brand-50) 60%, #ffffff);
@@ -3402,6 +3417,10 @@ html[data-dg-theme='twenty'] {
   .dg-admin-topbar {
     border-radius: 0.8rem;
     padding: 0.72rem 0.8rem;
+  }
+
+  .dg-admin-topbar-search-row {
+    gap: 0.4rem;
   }
 
   .dg-admin-topbar-title {

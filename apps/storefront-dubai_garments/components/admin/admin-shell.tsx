@@ -310,7 +310,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             <p className="dg-admin-topbar-title">{branding.brandName} Revenue Workspace</p>
           </div>
           <form onSubmit={submitQuickInput} className="dg-col-fill max-w-xl">
-            <div className="dg-form-row">
+            <div className="dg-form-row dg-admin-topbar-search-row">
               <input
                 type="text"
                 className="dg-input dg-col-fill"
