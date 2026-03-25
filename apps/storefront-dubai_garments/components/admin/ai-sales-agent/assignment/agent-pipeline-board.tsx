@@ -54,6 +54,10 @@ function toInt(input: string) {
   return Math.max(0, Math.floor(parsed));
 }
 
+function isUuidLike(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -128,6 +132,11 @@ export default function AgentPipelineBoard() {
     }
     return data.filterOptions;
   }, [data]);
+
+  const assignableOwners = useMemo(
+    () => options.owners.filter((owner) => isUuidLike(owner.userId)),
+    [options.owners]
+  );
 
   const selectedSummary = useMemo(() => {
     if (!data) {
@@ -479,7 +488,7 @@ export default function AgentPipelineBoard() {
                   data-testid="agent-pipeline-op-target-owner"
                 >
                   <option value="">Select owner</option>
-                  {options.owners.map((owner) => (
+                  {assignableOwners.map((owner) => (
                     <option key={`op-owner-${owner.userId}`} value={owner.userId}>
                       {owner.fullName}
                     </option>
@@ -585,7 +594,7 @@ export default function AgentPipelineBoard() {
                   data-testid="agent-pipeline-op-lock-owner"
                 >
                   <option value="">Select lock owner</option>
-                  {options.owners.map((owner) => (
+                  {assignableOwners.map((owner) => (
                     <option key={`lock-owner-${owner.userId}`} value={owner.userId}>
                       {owner.fullName}
                     </option>

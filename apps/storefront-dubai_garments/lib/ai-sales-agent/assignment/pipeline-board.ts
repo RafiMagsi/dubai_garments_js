@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getSalesAgentWorkloadModel } from '@/lib/ai-sales-agent/assignment/workload-model';
+import { loadSafeDealRows, loadSafeLeadsRows } from '@/lib/ai-sales-agent/assignment/safe-data';
 
 export type AgentPipelineFilters = {
   team?: string | null;
@@ -158,47 +159,62 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
   const ownerFilter = filters.ownerUserId ? String(filters.ownerUserId) : 'all';
   const teamFilter = String(filters.team ?? 'all').toLowerCase();
 
-  const [leads, deals] = await Promise.all([
+  const [allLeadsRows, allDealsRows, leadExtras, dealExtras] = await Promise.all([
+    loadSafeLeadsRows(),
+    loadSafeDealRows(),
     prisma.leads.findMany({
-      where: {
-        OR: includeUnassigned
-          ? [{ assigned_to_user_id: { in: dbUserIds } }, { assigned_to_user_id: null }]
-          : [{ assigned_to_user_id: { in: dbUserIds } }],
-      },
       select: {
         id: true,
         customer_id: true,
-        assigned_to_user_id: true,
         contact_name: true,
         company_name: true,
-        status: true,
         ai_urgency: true,
         ai_processed_at: true,
         last_contacted_at: true,
-        created_at: true,
-        updated_at: true,
       },
-      orderBy: { updated_at: 'desc' },
     }),
     prisma.deals.findMany({
-      where: {
-        OR: includeUnassigned
-          ? [{ owner_user_id: { in: dbUserIds } }, { owner_user_id: null }]
-          : [{ owner_user_id: { in: dbUserIds } }],
-      },
       select: {
         id: true,
         customer_id: true,
-        owner_user_id: true,
         title: true,
-        stage: true,
         probability_pct: true,
-        created_at: true,
-        updated_at: true,
       },
-      orderBy: { updated_at: 'desc' },
     }),
   ]);
+  const leadExtraMap = new Map(leadExtras.map((lead) => [lead.id, lead]));
+  const dealExtraMap = new Map(dealExtras.map((deal) => [deal.id, deal]));
+
+  const leads = allLeadsRows
+    .filter((lead) =>
+      includeUnassigned
+        ? !lead.assigned_to_user_id || dbUserIds.includes(lead.assigned_to_user_id)
+        : Boolean(lead.assigned_to_user_id && dbUserIds.includes(lead.assigned_to_user_id))
+    )
+    .map((lead) => ({
+      ...lead,
+      customer_id: leadExtraMap.get(lead.id)?.customer_id ?? null,
+      contact_name: leadExtraMap.get(lead.id)?.contact_name ?? null,
+      company_name: leadExtraMap.get(lead.id)?.company_name ?? null,
+      ai_urgency: leadExtraMap.get(lead.id)?.ai_urgency ?? null,
+      ai_processed_at: leadExtraMap.get(lead.id)?.ai_processed_at ?? null,
+      last_contacted_at: leadExtraMap.get(lead.id)?.last_contacted_at ?? null,
+    }))
+    .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime());
+
+  const deals = allDealsRows
+    .filter((deal) =>
+      includeUnassigned
+        ? !deal.owner_user_id || dbUserIds.includes(deal.owner_user_id)
+        : Boolean(deal.owner_user_id && dbUserIds.includes(deal.owner_user_id))
+    )
+    .map((deal) => ({
+      ...deal,
+      customer_id: dealExtraMap.get(deal.id)?.customer_id ?? null,
+      title: dealExtraMap.get(deal.id)?.title ?? null,
+      probability_pct: dealExtraMap.get(deal.id)?.probability_pct ?? null,
+    }))
+    .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime());
 
   const leadItems: BoardItem[] = leads
     .filter((lead) => ACTIVE_LEAD_STATUSES.includes(String(lead.status || '').toLowerCase()))

@@ -3,6 +3,7 @@ import type { AssignmentOperationsRequest } from '@/lib/ai-sales-agent/contracts
 import { executeAssignmentPolicyEngine, getAssignmentPolicyEngineState } from '@/lib/ai-sales-agent/assignment/policy-engine';
 import { getAgentPipelineBoard } from '@/lib/ai-sales-agent/assignment/pipeline-board';
 import { getLockedOwnerForCustomer, setStrategicOwnerLock } from '@/lib/ai-sales-agent/assignment/strategic-owner-locks';
+import { sanitizeUuid } from '@/lib/ai-sales-agent/assignment/safe-data';
 
 type OperationsContext = {
   userId: string;
@@ -94,6 +95,11 @@ async function applyReassign(input: {
   reason?: string;
   dryRun?: boolean;
 }): Promise<AssignmentChange> {
+  const sanitizedTargetUserId = sanitizeUuid(input.targetUserId);
+  if (!sanitizedTargetUserId) {
+    throw new Error('Invalid target owner selected. Please choose a valid sales user.');
+  }
+
   const lead = input.leadId
     ? await prisma.leads.findUnique({ where: { id: input.leadId }, select: { id: true, assigned_to_user_id: true, customer_id: true } })
     : null;
@@ -107,14 +113,14 @@ async function applyReassign(input: {
 
   const customerId = lead?.customer_id ?? deal?.customer_id ?? null;
   const lock = await getLockedOwnerForCustomer(customerId);
-  if (lock && lock.ownerUserId !== input.targetUserId) {
+  if (lock && lock.ownerUserId !== sanitizedTargetUserId) {
     return {
       leadId: lead?.id ?? null,
       dealId: deal?.id ?? null,
       customerId,
       fromUserId: lead?.assigned_to_user_id ?? deal?.owner_user_id ?? null,
-      toUserId: input.targetUserId,
-      toUserName: await resolveOwnerName(input.targetUserId),
+      toUserId: sanitizedTargetUserId,
+      toUserName: await resolveOwnerName(sanitizedTargetUserId),
       applied: false,
       reason: `Strategic owner lock active for customer ${customerId}. Locked owner must remain ${lock.ownerUserId}.`,
       timelineActivityId: null,
@@ -123,12 +129,12 @@ async function applyReassign(input: {
   }
 
   const result = await executeAssignmentPolicyEngine(
-    {
-      leadId: lead?.id ?? undefined,
-      dealId: deal?.id ?? undefined,
-      manualAssigneeUserId: input.targetUserId,
-      reason: input.reason,
-      dryRun: input.dryRun,
+      {
+        leadId: lead?.id ?? undefined,
+        dealId: deal?.id ?? undefined,
+        manualAssigneeUserId: sanitizedTargetUserId,
+        reason: input.reason,
+        dryRun: input.dryRun,
     },
     input.context
   );
@@ -345,13 +351,17 @@ async function applyLockOwner(input: {
   reason?: string;
   dryRun?: boolean;
 }): Promise<AssignmentChange> {
-  const ownerName = await resolveOwnerName(input.targetUserId);
+  const sanitizedTargetUserId = sanitizeUuid(input.targetUserId);
+  if (!sanitizedTargetUserId) {
+    throw new Error('Invalid lock owner selected. Please choose a valid sales user.');
+  }
+  const ownerName = await resolveOwnerName(sanitizedTargetUserId);
   let activityIds = { timelineActivityId: null as string | null, auditActivityId: null as string | null };
 
   if (!input.dryRun) {
     await setStrategicOwnerLock({
       customerId: input.customerId,
-      ownerUserId: input.targetUserId,
+      ownerUserId: sanitizedTargetUserId,
       reason: input.reason,
       updatedByUserId: input.context.userId,
     });
@@ -360,7 +370,7 @@ async function applyLockOwner(input: {
       context: input.context,
       customerId: input.customerId,
       fromUserId: null,
-      toUserId: input.targetUserId,
+      toUserId: sanitizedTargetUserId,
       action: 'lock_owner',
       reason: input.reason?.trim() || 'Strategic account owner lock applied.',
       metadata: {
@@ -374,7 +384,7 @@ async function applyLockOwner(input: {
     dealId: null,
     customerId: input.customerId,
     fromUserId: null,
-    toUserId: input.targetUserId,
+    toUserId: sanitizedTargetUserId,
     toUserName: ownerName,
     applied: true,
     reason: 'Strategic owner lock saved.',

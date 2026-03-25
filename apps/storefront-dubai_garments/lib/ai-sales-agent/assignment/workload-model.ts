@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { loadSafeDealRows, loadSafeLeadsRows } from '@/lib/ai-sales-agent/assignment/safe-data';
 
 type WorkloadContext = {
   userId: string;
@@ -83,37 +84,9 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
   const userIds = users.map((user) => user.id);
   const now = new Date();
 
-  const [leads, deals, followupGroups, responseActivities] = await Promise.all([
-    prisma.leads.findMany({
-      where: {
-        OR:
-          context.role === 'sales_rep'
-            ? [{ assigned_to_user_id: { in: userIds } }]
-            : [{ assigned_to_user_id: { in: userIds } }, { assigned_to_user_id: null }],
-      },
-      select: {
-        id: true,
-        assigned_to_user_id: true,
-        created_at: true,
-        updated_at: true,
-        status: true,
-      },
-    }),
-    prisma.deals.findMany({
-      where: {
-        OR:
-          context.role === 'sales_rep'
-            ? [{ owner_user_id: { in: userIds } }]
-            : [{ owner_user_id: { in: userIds } }, { owner_user_id: null }],
-      },
-      select: {
-        id: true,
-        owner_user_id: true,
-        created_at: true,
-        updated_at: true,
-        stage: true,
-      },
-    }),
+  const [allLeads, allDeals, followupGroups, responseActivities] = await Promise.all([
+    loadSafeLeadsRows(),
+    loadSafeDealRows(),
     prisma.followups.groupBy({
       by: ['assigned_to_user_id'],
       where: {
@@ -135,6 +108,17 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
       orderBy: { created_at: 'asc' },
     }),
   ]);
+
+  const leads = allLeads.filter((lead) =>
+    context.role === 'sales_rep'
+      ? Boolean(lead.assigned_to_user_id && userIds.includes(lead.assigned_to_user_id))
+      : !lead.assigned_to_user_id || userIds.includes(lead.assigned_to_user_id)
+  );
+  const deals = allDeals.filter((deal) =>
+    context.role === 'sales_rep'
+      ? Boolean(deal.owner_user_id && userIds.includes(deal.owner_user_id))
+      : !deal.owner_user_id || userIds.includes(deal.owner_user_id)
+  );
 
   const includeUnassigned =
     context.role !== 'sales_rep' &&

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getSalesAgentWorkloadModel } from '@/lib/ai-sales-agent/assignment/workload-model';
+import { loadSafeDealRows } from '@/lib/ai-sales-agent/assignment/safe-data';
 
 type KpiContext = {
   userId: string;
@@ -53,20 +54,8 @@ export async function getAssignmentKpiTargets(context: KpiContext) {
     };
   }
 
-  const [deals, assignmentAuditEvents] = await Promise.all([
-    prisma.deals.findMany({
-      where:
-        context.role === 'sales_rep'
-          ? { owner_user_id: context.userId }
-          : { owner_user_id: { in: userIds } },
-      select: {
-        id: true,
-        owner_user_id: true,
-        stage: true,
-        updated_at: true,
-      },
-      orderBy: { updated_at: 'desc' },
-    }),
+  const [allDeals, assignmentAuditEvents] = await Promise.all([
+    loadSafeDealRows(),
     prisma.activities.findMany({
       where: {
         activity_type: 'ai_assignment_audit',
@@ -80,6 +69,13 @@ export async function getAssignmentKpiTargets(context: KpiContext) {
       take: 3000,
     }),
   ]);
+  const deals = allDeals
+    .filter((deal) =>
+      context.role === 'sales_rep'
+        ? deal.owner_user_id === context.userId
+        : Boolean(deal.owner_user_id && userIds.includes(deal.owner_user_id))
+    )
+    .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime());
 
   const now = new Date();
   const activeDeals = deals.filter((deal) => !['won', 'lost'].includes(String(deal.stage || '').toLowerCase()));
