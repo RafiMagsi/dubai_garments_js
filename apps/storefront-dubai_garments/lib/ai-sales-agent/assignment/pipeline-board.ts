@@ -56,6 +56,7 @@ const PIPELINE_STAGE_META: Array<{ key: PipelineStageKey; label: string }> = [
 
 const ACTIVE_LEAD_STATUSES = ['new', 'qualified', 'quoted'];
 const CLOSED_DEAL_STAGES = ['won', 'lost'];
+const UNASSIGNED_USER_ID = '__unassigned__';
 
 function toUrgency(value: string | null | undefined): BoardItem['urgency'] {
   const normalized = String(value ?? '').toLowerCase().trim();
@@ -148,6 +149,8 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
 
   const ownerMap = new Map(users.map((agent) => [agent.userId, agent]));
   const userIds = users.map((agent) => agent.userId);
+  const dbUserIds = userIds.filter((id) => id !== UNASSIGNED_USER_ID);
+  const includeUnassigned = context.role !== 'sales_rep' && userIds.includes(UNASSIGNED_USER_ID);
   const now = new Date();
   const inactiveDaysFilter = Math.max(0, Number(filters.inactiveDays ?? 0));
   const stageFilter = String(filters.stage ?? 'all').toLowerCase();
@@ -158,7 +161,9 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
   const [leads, deals] = await Promise.all([
     prisma.leads.findMany({
       where: {
-        assigned_to_user_id: { in: userIds },
+        OR: includeUnassigned
+          ? [{ assigned_to_user_id: { in: dbUserIds } }, { assigned_to_user_id: null }]
+          : [{ assigned_to_user_id: { in: dbUserIds } }],
       },
       select: {
         id: true,
@@ -177,7 +182,9 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
     }),
     prisma.deals.findMany({
       where: {
-        owner_user_id: { in: userIds },
+        OR: includeUnassigned
+          ? [{ owner_user_id: { in: dbUserIds } }, { owner_user_id: null }]
+          : [{ owner_user_id: { in: dbUserIds } }],
       },
       select: {
         id: true,
@@ -194,15 +201,17 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
   ]);
 
   const leadItems: BoardItem[] = leads
-    .filter((lead) => lead.assigned_to_user_id && ACTIVE_LEAD_STATUSES.includes(String(lead.status || '').toLowerCase()))
-    .map((lead) => {
-      const owner = ownerMap.get(lead.assigned_to_user_id!);
+    .filter((lead) => ACTIVE_LEAD_STATUSES.includes(String(lead.status || '').toLowerCase()))
+    .flatMap<BoardItem>((lead) => {
+      const ownerUserId = lead.assigned_to_user_id || (includeUnassigned ? UNASSIGNED_USER_ID : null);
+      if (!ownerUserId) return [];
+      const owner = ownerMap.get(ownerUserId);
       const lastActivity = lead.last_contacted_at ?? lead.updated_at;
-      return {
+      return [{
         itemId: lead.id,
-        itemType: 'lead',
+        itemType: 'lead' as const,
         customerId: lead.customer_id,
-        ownerUserId: lead.assigned_to_user_id!,
+        ownerUserId,
         ownerName: owner?.fullName ?? 'Unknown',
         title: lead.contact_name || lead.company_name || `Lead ${lead.id.slice(0, 8)}`,
         stage: mapLeadToPipelineStage(String(lead.status || ''), Boolean(lead.ai_processed_at)),
@@ -210,18 +219,20 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
         inactiveDays: toDaysDiff(lastActivity, now),
         lastActivityAt: lastActivity.toISOString(),
         createdAt: lead.created_at.toISOString(),
-      };
+      }];
     });
 
   const dealItems: BoardItem[] = deals
-    .filter((deal) => deal.owner_user_id && !CLOSED_DEAL_STAGES.includes(String(deal.stage || '').toLowerCase()))
-    .map((deal) => {
-      const owner = ownerMap.get(deal.owner_user_id!);
-      return {
+    .filter((deal) => !CLOSED_DEAL_STAGES.includes(String(deal.stage || '').toLowerCase()))
+    .flatMap<BoardItem>((deal) => {
+      const ownerUserId = deal.owner_user_id || (includeUnassigned ? UNASSIGNED_USER_ID : null);
+      if (!ownerUserId) return [];
+      const owner = ownerMap.get(ownerUserId);
+      return [{
         itemId: deal.id,
-        itemType: 'deal',
+        itemType: 'deal' as const,
         customerId: deal.customer_id,
-        ownerUserId: deal.owner_user_id!,
+        ownerUserId,
         ownerName: owner?.fullName ?? 'Unknown',
         title: deal.title || `Deal ${deal.id.slice(0, 8)}`,
         stage: mapDealToPipelineStage(String(deal.stage || '')),
@@ -229,7 +240,7 @@ export async function getAgentPipelineBoard(context: PipelineContext, filters: A
         inactiveDays: toDaysDiff(deal.updated_at, now),
         lastActivityAt: deal.updated_at.toISOString(),
         createdAt: deal.created_at.toISOString(),
-      };
+      }];
     });
 
   const items = [...leadItems, ...dealItems].filter((item) => {
