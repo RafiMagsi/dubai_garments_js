@@ -58,6 +58,7 @@ async def create_quote_request(
         INSERT INTO leads (
             source,
             status,
+            assigned_to_user_id,
             contact_name,
             email,
             company_name,
@@ -65,19 +66,40 @@ async def create_quote_request(
             timeline_date,
             notes
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id::text
+    """
+
+    assignee_sql = """
+        SELECT id::text AS id
+        FROM users
+        WHERE is_active = TRUE
+          AND role IN ('sales_rep', 'sales_manager', 'admin')
+        ORDER BY
+          CASE role
+            WHEN 'sales_rep' THEN 1
+            WHEN 'sales_manager' THEN 2
+            WHEN 'admin' THEN 3
+            ELSE 99
+          END,
+          created_at ASC
+        LIMIT 1
     """
 
     try:
         lead_code = ""
         with get_db_connection() as connection:
             with connection.cursor() as cursor:
+                cursor.execute(assignee_sql)
+                assignee_row = cursor.fetchone()
+                assigned_to_user_id = assignee_row["id"] if assignee_row else None
+
                 cursor.execute(
                     insert_sql,
                     (
                         "website",
                         "new",
+                        assigned_to_user_id,
                         name.strip(),
                         email.strip(),
                         company.strip(),
@@ -98,7 +120,12 @@ async def create_quote_request(
                     "lead_created",
                     "Lead created from quote request",
                     details="Lead was created from public quote request form.",
-                    metadata={"source": "website", "status": "new"},
+                    metadata={
+                        "source": "website",
+                        "status": "new",
+                        "assignedToUserId": assigned_to_user_id,
+                        "autoAssigned": bool(assigned_to_user_id),
+                    },
                 )
 
                 if ADMIN_NOTIFICATION_EMAIL.strip():

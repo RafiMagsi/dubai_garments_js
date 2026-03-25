@@ -44,8 +44,8 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-8">
-      <Card className="w-full max-w-md">
+    <div className="dg-auth-login-shell">
+      <Card className="dg-auth-login-card">
         <h1 className="text-2xl font-bold text-[var(--color-text)]">Backoffice Login</h1>
         <p className="mt-2 text-sm text-[var(--color-text-muted)]">
           Access the private admin and sales console.

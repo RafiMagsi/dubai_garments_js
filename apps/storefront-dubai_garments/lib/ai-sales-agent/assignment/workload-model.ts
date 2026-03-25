@@ -24,6 +24,7 @@ type DealRow = {
 
 const ACTIVE_LEAD_STATUSES = ['new', 'qualified', 'quoted'];
 const CLOSED_DEAL_STAGES = ['won', 'lost'];
+const UNASSIGNED_USER_ID = '__unassigned__';
 const RESPONSE_ACTIVITY_TYPES = [
   'email_sent',
   'ai_reply_studio_approved_send',
@@ -39,7 +40,7 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
   const leadResponseHours = Number(process.env.AI_AGENT_SLA_LEAD_RESPONSE_HOURS ?? 24);
   const dealAgingHours = Number(process.env.AI_AGENT_SLA_DEAL_AGING_HOURS ?? 72);
 
-  const users = await prisma.users.findMany({
+  let users = await prisma.users.findMany({
     where:
       context.role === 'sales_rep'
         ? { id: context.userId, is_active: true }
@@ -53,6 +54,20 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
     },
     orderBy: { created_at: 'asc' },
   });
+
+  if (users.length === 0 && context.role !== 'sales_rep') {
+    users = await prisma.users.findMany({
+      where: { is_active: true, role: { in: ['admin', 'ops'] } },
+      select: {
+        id: true,
+        full_name: true,
+        email: true,
+        role: true,
+        is_active: true,
+      },
+      orderBy: { created_at: 'asc' },
+    });
+  }
 
   if (users.length === 0) {
     return {
@@ -71,7 +86,10 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
   const [leads, deals, followupGroups, responseActivities] = await Promise.all([
     prisma.leads.findMany({
       where: {
-        assigned_to_user_id: { in: userIds },
+        OR:
+          context.role === 'sales_rep'
+            ? [{ assigned_to_user_id: { in: userIds } }]
+            : [{ assigned_to_user_id: { in: userIds } }, { assigned_to_user_id: null }],
       },
       select: {
         id: true,
@@ -83,7 +101,10 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
     }),
     prisma.deals.findMany({
       where: {
-        owner_user_id: { in: userIds },
+        OR:
+          context.role === 'sales_rep'
+            ? [{ owner_user_id: { in: userIds } }]
+            : [{ owner_user_id: { in: userIds } }, { owner_user_id: null }],
       },
       select: {
         id: true,
@@ -115,6 +136,24 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
     }),
   ]);
 
+  const includeUnassigned =
+    context.role !== 'sales_rep' &&
+    ((leads as LeadRow[]).some((lead) => !lead.assigned_to_user_id) ||
+      (deals as DealRow[]).some((deal) => !deal.owner_user_id));
+
+  const usersWithUnassigned = includeUnassigned
+    ? [
+        ...users,
+        {
+          id: UNASSIGNED_USER_ID,
+          full_name: 'Unassigned Queue',
+          email: '',
+          role: 'unassigned',
+          is_active: true,
+        },
+      ]
+    : users;
+
   const openLeads = (leads as LeadRow[]).filter((lead) =>
     ACTIVE_LEAD_STATUSES.includes(String(lead.status).toLowerCase())
   );
@@ -142,7 +181,7 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
 
   const stageDistributionMap = new Map<string, Map<string, number>>();
   for (const deal of deals as DealRow[]) {
-    const ownerId = deal.owner_user_id;
+    const ownerId = deal.owner_user_id || (includeUnassigned ? UNASSIGNED_USER_ID : null);
     if (!ownerId) continue;
     const stage = String(deal.stage || 'unknown').toLowerCase();
     if (!stageDistributionMap.has(ownerId)) {
@@ -152,10 +191,17 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
     inner.set(stage, (inner.get(stage) ?? 0) + 1);
   }
 
-  const agents = users.map((user) => {
-    const userOpenLeads = openLeads.filter((lead) => lead.assigned_to_user_id === user.id);
-    const userOpenDeals = openDeals.filter((deal) => deal.owner_user_id === user.id);
-    const userAllDeals = (deals as DealRow[]).filter((deal) => deal.owner_user_id === user.id);
+  const agents = usersWithUnassigned.map((user) => {
+    const isUnassignedUser = user.id === UNASSIGNED_USER_ID;
+    const userOpenLeads = openLeads.filter((lead) =>
+      isUnassignedUser ? !lead.assigned_to_user_id : lead.assigned_to_user_id === user.id
+    );
+    const userOpenDeals = openDeals.filter((deal) =>
+      isUnassignedUser ? !deal.owner_user_id : deal.owner_user_id === user.id
+    );
+    const userAllDeals = (deals as DealRow[]).filter((deal) =>
+      isUnassignedUser ? !deal.owner_user_id : deal.owner_user_id === user.id
+    );
 
     const wonDeals = userAllDeals.filter(
       (deal) => String(deal.stage || '').toLowerCase() === 'won'
@@ -224,4 +270,3 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
     agents,
   };
 }
-

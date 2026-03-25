@@ -2828,6 +2828,21 @@ html[data-dg-theme='twenty'] {
   gap: 0.5rem;
 }
 
+.dg-auth-login-shell {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.ui-card.dg-auth-login-card {
+  width: 100%;
+  max-width: 28rem;
+  margin-inline: auto;
+  flex: 0 1 28rem;
+}
+
 .ui-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
