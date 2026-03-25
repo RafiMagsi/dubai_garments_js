@@ -6,6 +6,7 @@ import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import { PageShell, Panel, Toolbar } from '@/components/ui';
 import AiSalesAgentTabShell from '@/components/admin/ai-sales-agent/tab-shell';
+import AiSalesLiveStatusOverview from '@/components/admin/ai-sales-agent/live-status-overview';
 
 export default function AdminAiSalesAgentPage() {
 
@@ -34,28 +35,7 @@ export default function AdminAiSalesAgentPage() {
           <AiSalesAgentTabShell />
         </Suspense>
 
-        <div className="dg-grid dg-grid-cols-3 dg-gap-6">
-          <Panel>
-            <h3 className="dg-panel-title">Today’s Objective</h3>
-            <p className="dg-muted">
-              Expose the AI layer as a first-class sales experience instead of keeping it hidden behind admin flows.
-            </p>
-          </Panel>
-
-          <Panel>
-            <h3 className="dg-panel-title">Primary Day 1 Outcome</h3>
-            <p className="dg-muted">
-              Route, sidebar entry, tab navigation, and guard rules are all wired and ready for feature implementation.
-            </p>
-          </Panel>
-
-          <Panel>
-            <h3 className="dg-panel-title">Next Build Focus</h3>
-            <p className="dg-muted">
-              Lead Intelligence, Reply Studio, Quote Copilot, Pipeline Insights, Agent Flow, and Automation Runs.
-            </p>
-          </Panel>
-        </div>
+        <AiSalesLiveStatusOverview />
       </PageShell>
     </AdminShell>
   );
