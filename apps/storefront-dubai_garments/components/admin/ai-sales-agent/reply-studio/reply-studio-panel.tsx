@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button, Card, CardText, CardTitle, SelectField, TextField } from '@/components/ui';
 import { approveAndSendReplyStudio, runReplyStudio } from '@/features/admin/ai-sales-agent/api';
 import type { ReplyStudioEnvelope } from '@/features/admin/ai-sales-agent/types';
@@ -11,6 +12,7 @@ type ReplyStudioPanelProps = {
 };
 
 export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPanelProps) {
+  const searchParams = useSearchParams();
   const [leadId, setLeadId] = useState('');
   const [mode, setMode] = useState<'first_reply' | 'followup_reply' | 'clarification_questions'>('first_reply');
   const [tone, setTone] = useState<'concise' | 'formal' | 'persuasive'>('formal');
@@ -24,8 +26,18 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
   const [quoteId, setQuoteId] = useState('');
   const [editableSubject, setEditableSubject] = useState('');
   const [editableMessage, setEditableMessage] = useState('');
-  const [sendLoading, setSendLoading] = useState(false);
+  const [sendActionLoading, setSendActionLoading] = useState<'approve' | 'send' | null>(null);
   const [sendStatus, setSendStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const nextLeadId = searchParams.get('replyLeadId') ?? '';
+    const nextDealId = searchParams.get('replyDealId') ?? '';
+    const nextQuoteId = searchParams.get('replyQuoteId') ?? '';
+
+    setLeadId((current) => (nextLeadId && nextLeadId !== current ? nextLeadId : current));
+    setDealId((current) => (nextDealId !== current ? nextDealId : current));
+    setQuoteId((current) => (nextQuoteId !== current ? nextQuoteId : current));
+  }, [searchParams]);
 
   async function handleRun() {
     if (!leadId.trim()) {
@@ -65,7 +77,7 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
     await handleRun();
   }
 
-  async function handleApproveAndSend() {
+  async function handleApprovalAction(action: 'approve' | 'send') {
     if (!response?.ok) {
         setError('Generate a draft before approving and sending.');
         return;
@@ -79,7 +91,7 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
     try {
         setError(null);
         setSendStatus(null);
-        setSendLoading(true);
+        setSendActionLoading(action);
 
         await approveAndSendReplyStudio({
         leadId: leadId.trim(),
@@ -88,11 +100,11 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
         channel,
         });
 
-        setSendStatus('Draft approved and sent successfully.');
+        setSendStatus(action === 'approve' ? 'Draft approved successfully.' : 'Draft sent successfully.');
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to approve and send.');
     } finally {
-        setSendLoading(false);
+        setSendActionLoading(null);
     }
   }
 
@@ -324,12 +336,22 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
 
                 <Button
                   type="button"
-                  onClick={handleApproveAndSend}
-                  disabled={sendLoading}
+                  onClick={() => void handleApprovalAction('approve')}
+                  disabled={sendActionLoading !== null}
+                  data-testid="reply-studio-approve-btn"
+                  className="ars-send-btn ars-send-btn-primary"
+                >
+                    {sendActionLoading === 'approve' ? 'Approving...' : 'Approve'}
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={() => void handleApprovalAction('send')}
+                  disabled={sendActionLoading !== null}
                   data-testid="reply-studio-approve-send-btn"
                   className="ars-send-btn ars-send-btn-primary"
                 >
-                    {sendLoading ? 'Sending...' : 'Approve and Send'}
+                    {sendActionLoading === 'send' ? 'Sending...' : 'Send'}
                 </Button>
             </div>
 

@@ -61,6 +61,74 @@ function parseReasoning(raw: unknown): LeadAiReasoning | null {
   return null;
 }
 
+function deriveNextBestAction(input: {
+  intent?: string;
+  urgency?: string;
+  classification?: string;
+}): string {
+  const intent = String(input.intent || '').toLowerCase();
+  const urgency = String(input.urgency || '').toLowerCase();
+  const classification = String(input.classification || '').toLowerCase();
+
+  if (classification === 'hot' && intent === 'quotation_request') {
+    return 'Prepare and send a quote quickly, then follow up for blockers.';
+  }
+  if (intent === 'bulk_order') {
+    return 'Confirm quantity, branding requirements, and delivery timeline before quote.';
+  }
+  if (intent === 'product_inquiry') {
+    return 'Ask for missing product preferences such as size, color, branding, and quantity.';
+  }
+  if (urgency === 'high') {
+    return 'Send a fast first response and prioritize manual review immediately.';
+  }
+  return 'Send a professional first reply and collect missing commercial details.';
+}
+
+function normalizeReasoning(
+  raw: LeadAiReasoning | null,
+  lead: LeadIntelligenceCardsProps['lead']
+): LeadAiReasoning {
+  const signals = Array.isArray((raw as any)?.signals) ? ((raw as any).signals as unknown[]) : [];
+  const summaryFromSignals = signals
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .join(', ');
+
+  const score = raw?.score ?? lead?.ai_score ?? null;
+  const classificationRaw = raw?.classification ?? lead?.ai_classification ?? null;
+  const classification =
+    typeof classificationRaw === 'string' && classificationRaw
+      ? classificationRaw.toLowerCase()
+      : undefined;
+
+  const intent = raw?.intent || 'unknown';
+  const urgency = raw?.urgency || lead?.ai_urgency || 'low';
+  const complexity = raw?.complexity || lead?.ai_complexity || 'low';
+
+  return {
+    summary: raw?.summary || summaryFromSignals || undefined,
+    intent,
+    urgency,
+    complexity,
+    quantity: raw?.quantity ?? lead?.ai_quantity ?? null,
+    confidence: raw?.confidence ?? null,
+    score,
+    classification,
+    nextBestAction: raw?.nextBestAction || deriveNextBestAction({ intent, urgency, classification }),
+    provider: raw?.provider || lead?.ai_provider || undefined,
+    source: raw?.source || undefined,
+    fallbackUsed:
+      typeof raw?.fallbackUsed === 'boolean'
+        ? raw.fallbackUsed
+        : typeof lead?.ai_fallback_used === 'boolean'
+        ? lead.ai_fallback_used
+        : undefined,
+    failureReason: raw?.failureReason ?? null,
+    processedAt: raw?.processedAt || lead?.ai_processed_at || undefined,
+  };
+}
+
 function toTitle(value?: string | null) {
   if (!value) return 'Unknown';
   return value
@@ -206,7 +274,7 @@ export default function LeadIntelligenceCards({
   if (!lead) return null;
   const leadId = lead.id;
 
-  const reasoning = parseReasoning(lead.ai_reasoning);
+  const reasoning = normalizeReasoning(parseReasoning(lead.ai_reasoning), lead);
   const lastAnalyzed = reasoning?.processedAt || lead.ai_processed_at || null;
   const provider = reasoning?.provider || lead.ai_provider || 'unknown';
   const source = reasoning?.source || 'fallback';

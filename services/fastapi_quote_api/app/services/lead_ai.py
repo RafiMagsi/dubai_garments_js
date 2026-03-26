@@ -61,6 +61,11 @@ def _normalize_level(value: Any) -> Optional[str]:
     return lowered if lowered in ALLOWED_LEVELS else None
 
 
+def _normalize_provider_for_db(provider: Any) -> str:
+    normalized = (_normalize_text(provider) or "system").lower()
+    return "openai" if normalized == "openai" else "system"
+
+
 class LeadAIService:
     def __init__(self) -> None:
         self.model = OPENAI_MODEL
@@ -131,7 +136,9 @@ class LeadAIService:
                 "reasoning": self._normalize_reasoning(response_payload.get("reasoning"))
                 or heuristic["reasoning"],
                 "provider": runtime_provider,
+                "source": runtime_response.get("source"),
                 "fallback_used": runtime_fallback_used,
+                "failure_reason": runtime_failure_reason,
             }
 
             self._persist_lead_result(lead_id, result)
@@ -180,7 +187,13 @@ class LeadAIService:
             )
             return {"processed": True, "data": result}
         except Exception as error:
-            result = {**heuristic, "provider": "system", "fallback_used": True}
+            result = {
+                **heuristic,
+                "provider": "system",
+                "source": "fallback",
+                "fallback_used": True,
+                "failure_reason": str(error),
+            }
             _log_event(
                 "lead_ai_failure",
                 lead_id=lead_id,
@@ -442,6 +455,31 @@ class LeadAIService:
         }
 
     def _persist_lead_result(self, lead_id: str, result: Dict[str, Any]) -> None:
+        reasoning_raw = result.get("reasoning") if isinstance(result.get("reasoning"), dict) else {}
+        canonical_reasoning = {
+            "summary": _normalize_text(reasoning_raw.get("summary"))
+            or ", ".join(reasoning_raw.get("signals") or [])
+            or "AI lead analysis completed.",
+            "intent": "unknown",
+            "urgency": _normalize_level(result.get("urgency")) or "low",
+            "complexity": _normalize_level(result.get("complexity")) or "low",
+            "quantity": _normalize_quantity(result.get("quantity")),
+            "confidence": None,
+            "score": self._normalize_score(result.get("ai_score")),
+            "classification": ((_normalize_text(result.get("classification")) or "cold").lower()),
+            "nextBestAction": (
+                "Prepare and send a quote quickly, then follow up for blockers."
+                if ((_normalize_text(result.get("classification")) or "").upper() == "HOT")
+                else "Send a professional first reply and collect missing commercial details."
+            ),
+            "provider": _normalize_text(result.get("provider")) or "system",
+            "source": _normalize_text(result.get("source")) or "fallback",
+            "fallbackUsed": bool(result.get("fallback_used", False)),
+            "failureReason": _normalize_text(result.get("failure_reason")),
+            "processedAt": datetime.now(timezone.utc).isoformat(),
+            "signals": reasoning_raw.get("signals") if isinstance(reasoning_raw.get("signals"), list) else [],
+        }
+
         with get_db_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
@@ -466,12 +504,12 @@ class LeadAIService:
                         result.get("ai_score"),
                         result.get("ai_score"),
                         result.get("classification"),
-                        json.dumps(result.get("reasoning") or {}),
+                        json.dumps(canonical_reasoning),
                         result.get("product"),
                         result.get("quantity"),
                         result.get("urgency"),
                         result.get("complexity"),
-                        result.get("provider"),
+                        _normalize_provider_for_db(result.get("provider")),
                         result.get("fallback_used", False),
                         lead_id,
                     ),

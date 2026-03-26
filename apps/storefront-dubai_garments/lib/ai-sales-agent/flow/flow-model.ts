@@ -159,6 +159,21 @@ function hasActivity(activities: any[], activityType: string) {
   return activities.some((item) => item.activity_type === activityType);
 }
 
+function hasStructuredTriagePayload(lead: any | null | undefined): boolean {
+  if (!lead) return false;
+  const reasoning = lead.ai_reasoning && typeof lead.ai_reasoning === 'object' ? lead.ai_reasoning : null;
+  const hasSummary = typeof reasoning?.summary === 'string' && reasoning.summary.trim().length > 0;
+  const hasIntent = typeof reasoning?.intent === 'string' && reasoning.intent.trim().length > 0;
+  const hasNextAction =
+    typeof reasoning?.nextBestAction === 'string' && reasoning.nextBestAction.trim().length > 0;
+  const hasScore = typeof lead.ai_score === 'number' || typeof reasoning?.score === 'number';
+  const hasClassification =
+    (typeof lead.ai_classification === 'string' && lead.ai_classification.trim().length > 0) ||
+    (typeof reasoning?.classification === 'string' && reasoning.classification.trim().length > 0);
+
+  return hasSummary && hasIntent && hasNextAction && hasScore && hasClassification;
+}
+
 function stageBlockingReason(
   key: AgentFlowStageKey,
   source: FlowSourceData
@@ -229,11 +244,9 @@ function stageCompleted(
     }
 
     case 'triaged': {
-      if (lead?.ai_processed_at) {
+      if (lead?.ai_processed_at && hasStructuredTriagePayload(lead)) {
         evidence.push('Lead has ai_processed_at.');
-      }
-      if (lead?.ai_reasoning) {
-        evidence.push('Lead has ai_reasoning.');
+        evidence.push('Lead has structured triage payload.');
       }
       return { completed: evidence.length > 0, evidence };
     }
@@ -242,8 +255,8 @@ function stageCompleted(
       if (lead?.status === 'qualified') {
         evidence.push('Lead status is qualified.');
       }
-      if (lead?.ai_classification) {
-        evidence.push(`Lead has ai_classification=${lead.ai_classification}.`);
+      if (hasActivity(activities, 'lead_status_changed') && String(lead?.status ?? '').toLowerCase() === 'qualified') {
+        evidence.push('Lead status changed activity confirms qualification.');
       }
       return { completed: evidence.length > 0, evidence };
     }
@@ -352,20 +365,19 @@ function buildStages(source: FlowSourceData): AgentFlowStage[] {
     };
   });
 
-  const firstActionableIndex = preliminary.findIndex(
-    (stage) => !stage.completed && !stage.blockerReason
-  );
+  const firstIncompleteIndex = preliminary.findIndex((stage) => !stage.completed);
 
   return preliminary.map((stage, index) => {
     if (stage.completed) {
       return { ...stage, status: 'completed' };
     }
 
-    if (stage.blockerReason) {
-      return { ...stage, status: 'blocked' };
-    }
-
-    if (firstActionableIndex === index) {
+    // Only the first incomplete stage is actionable/blocked.
+    // Downstream incomplete stages remain pending until lifecycle reaches them.
+    if (index === firstIncompleteIndex) {
+      if (stage.blockerReason) {
+        return { ...stage, status: 'blocked' };
+      }
       return { ...stage, status: 'active' };
     }
 

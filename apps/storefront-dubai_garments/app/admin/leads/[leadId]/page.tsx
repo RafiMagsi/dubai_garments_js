@@ -48,15 +48,18 @@ export default function AdminLeadDetailsPage() {
   const deal = data?.deal;
   const communications = useMemo(() => data?.communications ?? [], [data?.communications]);
   const timelineEvents = useMemo<RecordTimelineEvent[]>(() => {
+    const hiddenTimelineActivityTypes = new Set(['ai_flow_orchestration_audit']);
     const activityEvents =
-      data?.activities?.map((activity) => ({
-        id: `activity:${activity.id}`,
-        occurredAt: activity.occurred_at || activity.created_at,
-        title: activity.title || titleCase(activity.activity_type),
-        details: activity.details || null,
-        type: activity.activity_type,
-        meta: null,
-      })) ?? [];
+      data?.activities
+        ?.filter((activity) => !hiddenTimelineActivityTypes.has(String(activity.activity_type || '').toLowerCase()))
+        .map((activity) => ({
+          id: `activity:${activity.id}`,
+          occurredAt: activity.occurred_at || activity.created_at,
+          title: activity.title || titleCase(activity.activity_type),
+          details: activity.details || null,
+          type: activity.activity_type,
+          meta: null,
+        })) ?? [];
 
     const activityTypes = new Set(
       (data?.activities ?? []).map((activity) => String(activity.activity_type || '').toLowerCase())
@@ -346,19 +349,6 @@ export default function AdminLeadDetailsPage() {
                   </div>
                 </div>
               </div>
-
-              <div className="dg-card">
-                <h2 className="dg-title-sm">Customer Request</h2>
-                <p className="dg-section-copy">{lead.notes || 'No message submitted.'}</p>
-              </div>
-
-              <RecordTimeline
-                title="Lead Timeline"
-                events={timelineEvents}
-                emptyText="No activities or communications yet for this lead."
-                isLoading={isLoading}
-                errorText={isError ? (error instanceof Error ? error.message : 'Failed to load lead timeline.') : null}
-              />
             </div>
 
             <div className="dg-side-stack dg-record-rail">
@@ -393,7 +383,44 @@ export default function AdminLeadDetailsPage() {
                   </button>
                 </form>
               </div>
+            </div>
+          </div>
 
+          <section data-testid="lead-detail-agent-flow-section">
+            <AgentFlowView
+              showHeader={false}
+              initialLeadId={lead.id}
+              compact
+            />
+          </section>
+
+          <section data-testid="lead-detail-intelligence-section">
+            <div className="dg-lead-detail-section-head">
+              <p className="dg-eyebrow">AI Intelligence</p>
+              <p className="dg-muted-sm">
+                Persistent intelligence profile and recommendations for this lead.
+              </p>
+            </div>
+            <LeadIntelligenceCards lead={lead} title="Lead Intelligence" />
+          </section>
+
+          <div className="dg-record-detail-grid">
+            <div className="dg-side-stack">
+              <div className="dg-card">
+                <h2 className="dg-title-sm">Customer Request</h2>
+                <p className="dg-section-copy">{lead.notes || 'No message submitted.'}</p>
+              </div>
+
+              <RecordTimeline
+                title="Lead Timeline"
+                events={timelineEvents}
+                emptyText="No activities or communications yet for this lead."
+                isLoading={isLoading}
+                errorText={isError ? (error instanceof Error ? error.message : 'Failed to load lead timeline.') : null}
+              />
+            </div>
+
+            <div className="dg-side-stack dg-record-rail">
               <div className="dg-card">
                 <h2 className="dg-title-sm">Deal Link</h2>
                 {deal ? (
@@ -544,29 +571,6 @@ export default function AdminLeadDetailsPage() {
             </div>
           </div>
 
-          <section data-testid="lead-detail-intelligence-section">
-            <div className="dg-lead-detail-section-head">
-              <p className="dg-eyebrow">AI Intelligence</p>
-              <p className="dg-muted-sm">
-                Persistent intelligence profile and recommendations for this lead.
-              </p>
-            </div>
-            <LeadIntelligenceCards lead={lead} title="Lead Intelligence" />
-          </section>
-
-          <section data-testid="lead-detail-agent-flow-section">
-            <div className="dg-lead-detail-section-head">
-              <p className="dg-eyebrow">Agent Flow</p>
-              <p className="dg-muted-sm">
-                End-to-end lead-to-close execution map with blockers, next moves, and evidence.
-              </p>
-            </div>
-            <AgentFlowView
-              showHeader={false}
-              initialLeadId={lead.id}
-              compact
-            />
-          </section>
           </div>
         )}
       </Panel>

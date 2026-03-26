@@ -4443,11 +4443,37 @@ html[data-dg-theme='twenty'] {
   .aflow-board-card {
     display: grid;
     gap: 0.62rem;
+    order: 3;
   }
 
   .aflow-quality-card {
     display: grid;
     gap: 0.55rem;
+    order: 7;
+  }
+
+  .aflow-shell {
+    order: 1;
+  }
+
+  .aflow-error-card {
+    order: 2;
+  }
+
+  .aflow-hero-card {
+    order: 4;
+  }
+
+  .aflow-decision-card {
+    order: 5;
+  }
+
+  .aflow-signals-card {
+    order: 6;
+  }
+
+  .aflow-track-card {
+    order: 8;
   }
 
   .aflow-quality-head {
