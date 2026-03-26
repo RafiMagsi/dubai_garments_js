@@ -8,7 +8,11 @@ import RecordTimeline, { RecordTimelineEvent } from '@/components/admin/common/r
 import AdminShell from '@/components/admin/admin-shell';
 import { PageShell, Panel, StatusBadge, Toolbar } from '@/components/ui';
 import { useConvertLeadToDeal } from '@/features/admin/deals/hooks/use-deals';
+import CreateQuoteCard, { DealQuoteCreateInput } from '@/components/admin/deals/create-quote-card';
 import { LeadStatus, useLeadById, useSendLeadEmail, useUpdateLeadStatus } from '@/features/admin/leads';
+import { useCreateQuote } from '@/features/admin/quotes';
+import { useProducts } from '@/features/products';
+import { formatAed, getStartingUnitPriceAED } from '@/features/products/utils/product-pricing';
 import {
   formatDateTime,
   shortCode,
@@ -16,11 +20,31 @@ import {
 } from '@/features/admin/shared/view-format';
 import LeadIntelligenceCards from '@/components/admin/ai-sales-agent/lead-intelligence-cards';
 import AgentFlowView from '@/components/admin/ai-sales-agent/agent-flow-view';
+import DealLinkCard from '@/components/admin/leads/deal-link-card';
+import type { ConvertLeadToDealInput } from '@/features/admin/deals/types/deal.types';
 
 const statusOptions: LeadStatus[] = ['new', 'qualified', 'quoted', 'won', 'lost'];
 
 function statusPillClass(status: string) {
   return `dg-status-pill dg-status-pill-${status.toUpperCase()}`;
+}
+
+function productPriceLabel(name: string, startingPrice: number | null) {
+  return `${name} - ${startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}`;
+}
+
+function extractProductHintFromLead(lead: { ai_product?: string | null; notes?: string | null }) {
+  const aiProduct = String(lead.ai_product || '').trim();
+  if (aiProduct) return aiProduct;
+
+  const notes = String(lead.notes || '');
+  const productLineMatch = notes.match(/product\s*:\s*([^\n\r]+)/i);
+  if (productLineMatch?.[1]?.trim()) return productLineMatch[1].trim();
+
+  const uuidMatch = notes.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/);
+  if (uuidMatch?.[0]) return uuidMatch[0];
+
+  return '';
 }
 
 export default function AdminLeadDetailsPage() {
@@ -29,6 +53,8 @@ export default function AdminLeadDetailsPage() {
   const { data, isLoading, isError, error } = useLeadById(leadId);
   const updateStatusMutation = useUpdateLeadStatus();
   const convertToDealMutation = useConvertLeadToDeal();
+  const createQuoteMutation = useCreateQuote();
+  const { data: products = [] } = useProducts();
   const sendLeadEmailMutation = useSendLeadEmail();
 
   const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
@@ -43,6 +69,10 @@ export default function AdminLeadDetailsPage() {
   const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [sessionUserId, setSessionUserId] = useState<string>('');
+  const [quoteSuccess, setQuoteSuccess] = useState<string | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteModalOpen, setQuoteModalOpen] = useState(false);
+  const [flowRefreshSignal, setFlowRefreshSignal] = useState(0);
 
   const lead = data?.item;
   const deal = data?.deal;
@@ -165,36 +195,15 @@ export default function AdminLeadDetailsPage() {
     }
   }
 
-  async function handleCreateDeal(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleCreateDeal(payload: ConvertLeadToDealInput) {
     if (!lead) return;
     setDealSuccess(null);
     setDealError(null);
 
-    const formData = new FormData(event.currentTarget);
-    const priority = String(formData.get('priority') || 'medium');
-    const ownerMode = String(formData.get('owner_mode') || 'self');
-    const valueEstimateRaw = String(formData.get('value_estimate') || '');
-    const notes = String(formData.get('notes') || '').trim();
-    const probability =
-      priority === 'high' ? 75 : priority === 'low' ? 30 : 50;
-    const ownerUserId =
-      ownerMode === 'self'
-        ? sessionUserId || undefined
-        : ownerMode === 'unassigned'
-          ? undefined
-          : undefined;
-
     try {
       const result = await convertToDealMutation.mutateAsync({
         leadId: lead.id,
-        payload: {
-          title: `${lead.company_name || lead.contact_name || 'Company'} Opportunity`,
-          owner_user_id: ownerUserId,
-          expected_value: valueEstimateRaw ? Number(valueEstimateRaw) : 0,
-          probability_pct: probability,
-          notes: notes || undefined,
-        },
+        payload,
       });
 
       setDealSuccess(`Deal created successfully: #${shortCode(result.id)}`);
@@ -221,6 +230,56 @@ export default function AdminLeadDetailsPage() {
       setEmailSuccess(response.message);
     } catch (error) {
       setEmailError(error instanceof Error ? error.message : 'Failed to send email.');
+    }
+  }
+
+  async function handleCreateQuote(input: DealQuoteCreateInput) {
+    if (!lead || !deal?.id || !lead.customer_id) {
+      setQuoteError('Deal link is required before creating a quote.');
+      return false;
+    }
+    setQuoteSuccess(null);
+    setQuoteError(null);
+
+    const normalizedProductId = String(input.product_id || '').trim();
+    const normalizedQuantity = Number(input.quantity || 0);
+    if (!normalizedProductId) {
+      setQuoteError('Please select a product.');
+      return false;
+    }
+    if (!Number.isFinite(normalizedQuantity) || normalizedQuantity <= 0) {
+      setQuoteError('Quantity must be greater than 0.');
+      return false;
+    }
+
+    try {
+      const created = await createQuoteMutation.mutateAsync({
+        customer_id: lead.customer_id,
+        lead_id: lead.id,
+        deal_id: deal.id,
+        currency: String(input.currency || 'AED'),
+        valid_until: input.expires_at || undefined,
+        notes: input.quote_notes || undefined,
+        discount_amount: Number.isFinite(input.discount) ? input.discount : 0,
+        tax_pct: Number.isFinite(input.tax_pct) ? input.tax_pct : 0,
+        items: [
+          {
+            product_id: normalizedProductId,
+            quantity: normalizedQuantity,
+            note: input.items_text || undefined,
+            customization_cost_per_unit: 0,
+            customization_flat_cost: 0,
+            rush_fee_pct: 0,
+            margin_pct: 0,
+          },
+        ],
+      });
+      setQuoteSuccess(`Quote created: ${created.quote_number}`);
+      setFlowRefreshSignal((prev) => prev + 1);
+      return true;
+    } catch (error) {
+      setQuoteError(error instanceof Error ? error.message : 'Failed to create quote.');
+      return false;
     }
   }
 
@@ -391,6 +450,8 @@ export default function AdminLeadDetailsPage() {
               showHeader={false}
               initialLeadId={lead.id}
               compact
+              onOpenCreateQuoteModal={() => setQuoteModalOpen(true)}
+              refreshSignal={flowRefreshSignal}
             />
           </section>
 
@@ -421,86 +482,6 @@ export default function AdminLeadDetailsPage() {
             </div>
 
             <div className="dg-side-stack dg-record-rail">
-              <div className="dg-card">
-                <h2 className="dg-title-sm">Deal Link</h2>
-                {deal ? (
-                  <>
-                    <div className="dg-detail-list">
-                      <div className="dg-detail-item">
-                        <span>Deal ID</span>
-                        <strong>#{shortCode(deal.id)}</strong>
-                      </div>
-                      <div className="dg-detail-item">
-                        <span>Stage</span>
-                        <strong>{titleCase(deal.stage)}</strong>
-                      </div>
-                    </div>
-                    <div className="dg-hero-actions">
-                      <Link href={`/admin/deals/${deal.id}`} className="ui-btn ui-btn-primary ui-btn-md">
-                        Open Deal
-                      </Link>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p className="dg-muted-sm">No deal exists for this lead yet.</p>
-                    {dealSuccess ? <div className="dg-alert-success">{dealSuccess}</div> : null}
-                    {dealError ? <div className="dg-alert-error">{dealError}</div> : null}
-                    <form className="dg-config-form" onSubmit={handleCreateDeal}>
-                      <div className="dg-config-grid">
-                        <div className="dg-field">
-                          <label htmlFor="priority" className="dg-label">
-                            Priority
-                          </label>
-                          <select id="priority" name="priority" className="dg-select">
-                            <option value="medium">medium</option>
-                            <option value="high">high</option>
-                            <option value="low">low</option>
-                          </select>
-                        </div>
-                        <div className="dg-field">
-                          <label htmlFor="owner_mode" className="dg-label">
-                            Owner Assignment
-                          </label>
-                          <select id="owner_mode" name="owner_mode" className="dg-select" defaultValue="self">
-                            <option value="self">Assign to me (recommended)</option>
-                            <option value="unassigned">Leave unassigned</option>
-                          </select>
-                          <p className="dg-help">
-                            Defaults for sales workflow: assign the new deal to current signed-in user.
-                          </p>
-                        </div>
-                        <div className="dg-field">
-                          <label htmlFor="value_estimate" className="dg-label">
-                            Value Estimate
-                          </label>
-                          <input
-                            id="value_estimate"
-                            name="value_estimate"
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            className="dg-input"
-                          />
-                        </div>
-                      </div>
-                      <div className="dg-field">
-                        <label htmlFor="notes" className="dg-label">
-                          Notes
-                        </label>
-                        <textarea id="notes" name="notes" className="dg-textarea" rows={3} />
-                      </div>
-                      <button
-                        type="submit"
-                        className="ui-btn ui-btn-primary ui-btn-md"
-                        disabled={convertToDealMutation.isPending}
-                      >
-                        {convertToDealMutation.isPending ? 'Creating...' : 'Create Deal'}
-                      </button>
-                    </form>
-                  </>
-                )}
-              </div>
 
               <div className="dg-card">
                 <h2 className="dg-title-sm">Email Communication</h2>
@@ -571,6 +552,22 @@ export default function AdminLeadDetailsPage() {
             </div>
           </div>
 
+          <CreateQuoteCard
+            dealLeadQuantity={lead.requested_qty}
+            dealLeadProductName={lead.ai_product}
+            productHint={extractProductHintFromLead(lead)}
+            productOptions={products.map((product) => ({
+              id: product.id,
+              label: productPriceLabel(product.name, getStartingUnitPriceAED(product)),
+            }))}
+            isPending={createQuoteMutation.isPending}
+            success={quoteSuccess}
+            error={quoteError}
+            hideInlineCard
+            open={quoteModalOpen}
+            onOpenChange={setQuoteModalOpen}
+            onSubmit={handleCreateQuote}
+          />
           </div>
         )}
       </Panel>

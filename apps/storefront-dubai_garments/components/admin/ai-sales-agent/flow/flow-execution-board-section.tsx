@@ -1,9 +1,12 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { Button, CardText, CardTitle, SelectField, TextField } from '@/components/ui';
 import { AisFieldLabel } from '@/components/admin/ai-sales-agent/reusable';
 import { FlowBoardCard, FlowTrackCard } from '@/components/admin/ai-sales-agent/flow/flow-cards';
 import type { AgentFlowResponse } from '@/features/admin/ai-sales-agent/types';
+import type { ConvertLeadToDealInput } from '@/features/admin/deals/types/deal.types';
+import Modal from '@/components/ui/modal';
 
 type FlowExecutionBoardSectionProps = {
   flow: AgentFlowResponse;
@@ -21,8 +24,14 @@ type FlowExecutionBoardSectionProps = {
   triageBusy: boolean;
   triageStatus: string | null;
   triageError: string | null;
+  dealActionBusy: boolean;
+  dealActionStatus: string | null;
+  dealActionError: string | null;
+  sessionUserId?: string;
   onCompleteQualified: () => void;
   onRunLeadTriage: () => void;
+  onCreateDeal: (payload: ConvertLeadToDealInput) => void;
+  onOpenCreateQuoteModal?: () => void;
   overrideEnabled: boolean;
   overrideReason: string;
   overrideStageKey: AgentFlowResponse['activeStageKey'];
@@ -49,8 +58,14 @@ export function FlowExecutionBoardSection({
   triageBusy,
   triageStatus,
   triageError,
+  dealActionBusy,
+  dealActionStatus,
+  dealActionError,
+  sessionUserId,
   onCompleteQualified,
   onRunLeadTriage,
+  onCreateDeal,
+  onOpenCreateQuoteModal,
   overrideEnabled,
   overrideReason,
   overrideStageKey,
@@ -60,6 +75,17 @@ export function FlowExecutionBoardSection({
   onOverrideStageKeyChange,
   onOverrideForceChange,
 }: FlowExecutionBoardSectionProps) {
+  const [createDealModalOpen, setCreateDealModalOpen] = useState(false);
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [ownerMode, setOwnerMode] = useState<'self' | 'unassigned'>('self');
+  const [valueEstimate, setValueEstimate] = useState('');
+  const [notes, setNotes] = useState('');
+  const probability = useMemo(() => {
+    if (priority === 'high') return 75;
+    if (priority === 'low') return 30;
+    return 50;
+  }, [priority]);
+
   if (flow.stages.length === 0) {
     return (
       <FlowTrackCard>
@@ -127,7 +153,27 @@ export function FlowExecutionBoardSection({
                 </div>
               ))}
             </div>
-            {getStageActionLink(selectedStage.key) ? (
+            {(selectedStage.key === 'quote_ready' || selectedStage.key === 'quote_sent') &&
+            onOpenCreateQuoteModal &&
+            !flow.quoteId ? (
+              <div className="aflow-stage-action-row">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="aflow-glow-btn aflow-next-move-btn"
+                  onClick={onOpenCreateQuoteModal}
+                >
+                  Create Quote
+                </Button>
+              </div>
+            ) : null}
+            {getStageActionLink(selectedStage.key) &&
+            selectedStage.key !== 'deal_open' &&
+            !(
+              onOpenCreateQuoteModal &&
+              (selectedStage.key === 'quote_ready' || selectedStage.key === 'quote_sent') &&
+              !flow.quoteId
+            ) ? (
               <div className="aflow-stage-action-row">
                 <a
                   href={getStageActionLink(selectedStage.key)!.href}
@@ -164,10 +210,31 @@ export function FlowExecutionBoardSection({
                 </Button>
               </div>
             ) : null}
+            {selectedStage.key === 'deal_open' ? (
+              <div className="aflow-stage-action-row">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="aflow-glow-btn aflow-next-move-btn"
+                  onClick={() => {
+                    if (flow.dealId) {
+                      window.location.href = `/admin/deals/${flow.dealId}`;
+                      return;
+                    }
+                    setCreateDealModalOpen(true);
+                  }}
+                  disabled={dealActionBusy}
+                >
+                  {dealActionBusy ? 'Processing...' : flow.dealId ? 'Open Deal' : 'Create Deal'}
+                </Button>
+              </div>
+            ) : null}
             {qualifyStatus ? <p className="aflow-next-move-status">{qualifyStatus}</p> : null}
             {qualifyError ? <p className="aflow-next-move-error">{qualifyError}</p> : null}
             {triageStatus ? <p className="aflow-next-move-status">{triageStatus}</p> : null}
             {triageError ? <p className="aflow-next-move-error">{triageError}</p> : null}
+            {dealActionStatus ? <p className="aflow-next-move-status">{dealActionStatus}</p> : null}
+            {dealActionError ? <p className="aflow-next-move-error">{dealActionError}</p> : null}
           </section>
 
           <section className="aflow-stage-panel">
@@ -228,6 +295,114 @@ export function FlowExecutionBoardSection({
       ) : (
         <p className="aflow-empty">No stage selected yet.</p>
       )}
+
+      <Modal open={createDealModalOpen} onClose={() => setCreateDealModalOpen(false)}>
+        <div className="ui-modal-card ui-modal-size-lg">
+          <div className="ui-modal-head">
+            <div className="ui-modal-title-block">
+              <p className="ui-modal-kicker">Execution Evidence</p>
+              <h3 className="ui-modal-title">Create Deal</h3>
+            </div>
+            <div className="ui-modal-actions">
+              <span className="dg-badge">From Execution Evidence</span>
+            </div>
+          </div>
+          <p className="ui-modal-meta">Configure deal ownership and value before creation.</p>
+
+          <div className="dg-config-form" style={{ marginTop: '0.75rem' }}>
+            <div className="dg-config-grid aflow-deal-grid">
+              <div className="dg-field">
+                <label htmlFor="flow-deal-priority" className="dg-label">
+                  Priority
+                </label>
+                <SelectField
+                  id="flow-deal-priority"
+                  className="aflow-deal-control"
+                  value={priority}
+                  onChange={(event) => setPriority(event.target.value as 'low' | 'medium' | 'high')}
+                >
+                  <option value="medium">medium</option>
+                  <option value="high">high</option>
+                  <option value="low">low</option>
+                </SelectField>
+              </div>
+              <div className="dg-field">
+                <label htmlFor="flow-deal-owner-mode" className="dg-label">
+                  Owner Assignment
+                </label>
+                <SelectField
+                  id="flow-deal-owner-mode"
+                  className="aflow-deal-control"
+                  value={ownerMode}
+                  onChange={(event) => setOwnerMode(event.target.value as 'self' | 'unassigned')}
+                >
+                  <option value="self">Assign to me (recommended)</option>
+                  <option value="unassigned">Leave unassigned</option>
+                </SelectField>
+                <p className="dg-help">Current probability: {probability}%</p>
+              </div>
+            </div>
+
+            <div className="dg-field">
+              <label htmlFor="flow-deal-value-estimate" className="dg-label">
+                Value Estimate
+              </label>
+              <TextField
+                id="flow-deal-value-estimate"
+                className="aflow-deal-control"
+                type="number"
+                min={0}
+                step={0.01}
+                value={valueEstimate}
+                onChange={(event) => setValueEstimate(event.target.value)}
+              />
+            </div>
+
+            <div className="dg-field">
+              <label htmlFor="flow-deal-notes" className="dg-label">
+                Notes
+              </label>
+              <textarea
+                id="flow-deal-notes"
+                className="dg-textarea"
+                rows={3}
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+              />
+            </div>
+
+            <div className="dg-form-row mt-4 pt-2 border-t border-[var(--color-border)]">
+              <button
+                type="button"
+                className="ui-btn ui-btn-primary ui-btn-md"
+                disabled={dealActionBusy}
+                onClick={() => {
+                  const ownerUserId = ownerMode === 'self' ? sessionUserId || undefined : undefined;
+                  onCreateDeal({
+                    owner_user_id: ownerUserId,
+                    expected_value: valueEstimate ? Number(valueEstimate) : 0,
+                    probability_pct: probability,
+                    notes: notes.trim() || undefined,
+                  });
+                  if (!dealActionBusy) {
+                    setCreateDealModalOpen(false);
+                  }
+                }}
+              >
+                {dealActionBusy ? 'Creating...' : 'Create Deal'}
+              </button>
+              <button
+                type="button"
+                className="ui-btn ui-btn-secondary ui-btn-md"
+                onClick={() => setCreateDealModalOpen(false)}
+                disabled={dealActionBusy}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </FlowBoardCard>
   );
 }

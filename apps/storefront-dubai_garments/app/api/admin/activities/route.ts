@@ -10,10 +10,19 @@ const FASTAPI_BASE_URL =
 async function getActivitiesFromStorefrontDb(request: NextRequest) {
   const activityType = String(request.nextUrl.searchParams.get('activity_type') || '').trim().toLowerCase();
   const hasType = Boolean(activityType) && activityType !== 'all';
+  const leadId = String(request.nextUrl.searchParams.get('lead_id') || '').trim();
+  const dealId = String(request.nextUrl.searchParams.get('deal_id') || '').trim();
+  const quoteId = String(request.nextUrl.searchParams.get('quote_id') || '').trim();
   const limit = Math.min(200, Math.max(1, Number(request.nextUrl.searchParams.get('limit') || '100')));
+  const where = {
+    ...(hasType ? { activity_type: activityType } : {}),
+    ...(leadId ? { lead_id: leadId } : {}),
+    ...(dealId ? { deal_id: dealId } : {}),
+    ...(quoteId ? { quote_id: quoteId } : {}),
+  };
 
   const items = await prisma.activities.findMany({
-    where: hasType ? { activity_type: activityType } : undefined,
+    where: Object.keys(where).length > 0 ? where : undefined,
     orderBy: { created_at: 'desc' },
     take: limit,
   });

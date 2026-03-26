@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import RecordTimeline, { RecordTimelineEvent } from '@/components/admin/common/record-timeline';
+import QuoteItemsSummarySection from '@/components/admin/quotes/quote-items-summary-section';
 import { Card, FieldLabel, PageShell, Panel, TextAreaField, Toolbar } from '@/components/ui';
 import { useActivities } from '@/features/admin/activities';
 import {
@@ -23,6 +24,28 @@ const statusOptions: Array<'draft' | 'sent' | 'approved' | 'rejected' | 'expired
   'rejected',
   'expired',
 ];
+type QuoteStatus = (typeof statusOptions)[number];
+
+function isQuoteStatus(value: string): value is QuoteStatus {
+  return statusOptions.includes(value as QuoteStatus);
+}
+
+function getQuickStatusActions(status: QuoteStatus): QuoteStatus[] {
+  switch (status) {
+    case 'draft':
+      return ['sent', 'rejected'];
+    case 'sent':
+      return ['approved', 'rejected'];
+    case 'approved':
+      return ['expired'];
+    case 'rejected':
+      return ['draft'];
+    case 'expired':
+      return ['draft'];
+    default:
+      return [];
+  }
+}
 
 export default function AdminQuoteDetailPage() {
   const params = useParams<{ quoteId: string }>();
@@ -43,6 +66,16 @@ export default function AdminQuoteDetailPage() {
   const [quoteEmailDraftMeta, setQuoteEmailDraftMeta] = useState<string | null>(null);
   const [statusActionSuccess, setStatusActionSuccess] = useState<string | null>(null);
   const [statusActionError, setStatusActionError] = useState<string | null>(null);
+  const [targetStatus, setTargetStatus] = useState<QuoteStatus>('draft');
+
+  function getErrorMessage(error: unknown, fallback: string) {
+    if (error instanceof Error) {
+      const maybeResponse = (error as Error & { response?: { data?: { detail?: string; message?: string } } }).response;
+      const responseMessage = maybeResponse?.data?.detail || maybeResponse?.data?.message;
+      return responseMessage || error.message || fallback;
+    }
+    return fallback;
+  }
 
   const quote = data?.item;
   const items = data?.items ?? [];
@@ -130,6 +163,7 @@ export default function AdminQuoteDetailPage() {
     setQuoteEmailSuccess(null);
     setQuoteEmailError(null);
     setQuoteEmailDraftMeta(null);
+    setTargetStatus(isQuoteStatus(quote.status) ? quote.status : 'draft');
   }, [quote]);
 
   async function handleStatusChange(status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired') {
@@ -143,7 +177,7 @@ export default function AdminQuoteDetailPage() {
       });
       setStatusActionSuccess(`Quote status updated to ${status}.`);
     } catch (error) {
-      setStatusActionError(error instanceof Error ? error.message : 'Failed to update quote status.');
+      setStatusActionError(getErrorMessage(error, 'Failed to update quote status.'));
     }
   }
 
@@ -226,7 +260,7 @@ export default function AdminQuoteDetailPage() {
       <Panel>
         <AdminPageHeader
           title={quote ? `Quote ${quote.quote_number}` : 'Quote Details'}
-          subtitle="Update quote status, review pricing breakdown, and close outcome."
+          subtitle="Update quote status, review quote line items, and close outcome."
           actions={
             <Toolbar>
               <Link href="/admin/quotes" className="ui-btn ui-btn-secondary ui-btn-md">
@@ -235,6 +269,11 @@ export default function AdminQuoteDetailPage() {
               <Link href="/admin/deals" className="ui-btn ui-btn-secondary ui-btn-md">
                 Deals
               </Link>
+              {quote?.lead_id ? (
+                <Link href={`/admin/leads/${quote.lead_id}`} className="ui-btn ui-btn-secondary ui-btn-md">
+                  Open Lead
+                </Link>
+              ) : null}
             </Toolbar>
           }
         />
@@ -270,66 +309,137 @@ export default function AdminQuoteDetailPage() {
 
       {quote && !isLoading && !isError && (
         <Panel>
-          <div className="dg-two-col-grid">
-            <Card>
-              <h2 className="dg-title-sm">Quote Summary</h2>
-              <div className="dg-detail-list">
-                <div className="dg-detail-item">
-                  <span>Status</span>
-                  <span className={`dg-status-pill dg-status-pill-${quote.status.toUpperCase()}`}>
-                    {quote.status}
-                  </span>
+          <div className="dg-two-col-grid dg-two-col-grid-compact">
+            <div className="dg-side-stack">
+              <Card>
+                <h2 className="dg-title-sm">Quote Summary</h2>
+                <div className="dg-detail-list">
+                  <div className="dg-detail-item">
+                    <span>Status</span>
+                    <span className={`dg-status-pill dg-status-pill-${quote.status.toUpperCase()}`}>
+                      {quote.status}
+                    </span>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Customer</span>
+                    <strong>{quote.customer_company_name || quote.customer_id}</strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Lead</span>
+                    <strong>
+                      {quote.lead_id ? (
+                        <Link href={`/admin/leads/${quote.lead_id}`} className="dg-link-primary">
+                          {shortCode(quote.lead_id)}
+                        </Link>
+                      ) : (
+                        '-'
+                      )}
+                    </strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Currency</span>
+                    <strong>{quote.currency}</strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Subtotal</span>
+                    <strong>
+                      {quote.currency} {quote.subtotal.toFixed(2)}
+                    </strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Tax</span>
+                    <strong>
+                      {quote.currency} {quote.tax_amount.toFixed(2)}
+                    </strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Discount</span>
+                    <strong>
+                      {quote.currency} {quote.discount_amount.toFixed(2)}
+                    </strong>
+                  </div>
+                  <div className="dg-detail-item">
+                    <span>Total</span>
+                    <strong>
+                      {quote.currency} {quote.total_amount.toFixed(2)}
+                    </strong>
+                  </div>
                 </div>
-                <div className="dg-detail-item">
-                  <span>Customer</span>
-                  <strong>{quote.customer_company_name || quote.customer_id}</strong>
+              </Card>
+
+              <RecordTimeline
+                title="Quote Timeline"
+                events={timelineEvents}
+                emptyText="No activity timeline available for this quote yet."
+                isLoading={activitiesQuery.isLoading}
+                errorText={
+                  activitiesQuery.isError
+                    ? activitiesQuery.error instanceof Error
+                      ? activitiesQuery.error.message
+                      : 'Failed to load quote timeline.'
+                    : null
+                }
+              />
+            </div>
+
+            <div className="dg-side-stack">
+              <Card className="min-w-0">
+                <h2 className="dg-title-sm">Quote Items</h2>
+                <p className="dg-muted-sm">Summary in key-value format for quote line items.</p>
+                <div className="dg-mt-2">
+                  <QuoteItemsSummarySection currency={quote.currency} items={items} />
                 </div>
-                <div className="dg-detail-item">
-                  <span>Currency</span>
-                  <strong>{quote.currency}</strong>
-                </div>
-                <div className="dg-detail-item">
-                  <span>Subtotal</span>
-                  <strong>
-                    {quote.currency} {quote.subtotal.toFixed(2)}
-                  </strong>
-                </div>
-                <div className="dg-detail-item">
-                  <span>Tax</span>
-                  <strong>
-                    {quote.currency} {quote.tax_amount.toFixed(2)}
-                  </strong>
-                </div>
-                <div className="dg-detail-item">
-                  <span>Discount</span>
-                  <strong>
-                    {quote.currency} {quote.discount_amount.toFixed(2)}
-                  </strong>
-                </div>
-                <div className="dg-detail-item">
-                  <span>Total</span>
-                  <strong>
-                    {quote.currency} {quote.total_amount.toFixed(2)}
-                  </strong>
-                </div>
-              </div>
+              </Card>
 
               <Card className="dg-summary-card">
                 <h3 className="dg-title-sm">Status Actions</h3>
                 {statusActionSuccess ? <div className="dg-alert-success">{statusActionSuccess}</div> : null}
                 {statusActionError ? <div className="dg-alert-error">{statusActionError}</div> : null}
-                <div className="dg-form-row">
-                  {statusOptions.map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      className="ui-btn ui-btn-secondary ui-btn-md"
-                      disabled={updateStatusMutation.isPending || status === quote.status}
-                      onClick={() => handleStatusChange(status)}
+                <div className="dg-field">
+                  <FieldLabel htmlFor="quoteTargetStatus">Set Next Status</FieldLabel>
+                  <div className="dg-form-row">
+                    <select
+                      id="quoteTargetStatus"
+                      className="dg-input"
+                      value={targetStatus}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        if (isQuoteStatus(value)) setTargetStatus(value);
+                      }}
                     >
-                      Set {status}
+                      {statusOptions.map((status) => (
+                        <option key={status} value={status}>
+                          {titleCase(status)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="ui-btn ui-btn-primary ui-btn-md"
+                      disabled={updateStatusMutation.isPending || targetStatus === quote.status}
+                      onClick={() => handleStatusChange(targetStatus)}
+                    >
+                      {updateStatusMutation.isPending ? 'Applying...' : `Apply ${titleCase(targetStatus)}`}
                     </button>
-                  ))}
+                  </div>
+                  <p className="dg-help">Current status: {titleCase(quote.status)}</p>
+                </div>
+
+                <div className="dg-field">
+                  <FieldLabel>Quick Actions</FieldLabel>
+                  <div className="dg-form-row">
+                    {getQuickStatusActions(isQuoteStatus(quote.status) ? quote.status : 'draft').map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        className="ui-btn ui-btn-secondary ui-btn-md"
+                        disabled={updateStatusMutation.isPending || status === quote.status}
+                        onClick={() => handleStatusChange(status)}
+                      >
+                        Set {titleCase(status)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="mt-3">
                   <FieldLabel htmlFor="statusNotes">Status Notes</FieldLabel>
@@ -431,64 +541,8 @@ export default function AdminQuoteDetailPage() {
                   </button>
                 </div>
               </Card>
-            </Card>
+            </div>
 
-            <Card>
-              <h2 className="dg-title-sm">Quote Items</h2>
-              <div className="ui-table-wrap">
-                <table className="ui-table ui-table-density-compact">
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Qty</th>
-                      <th>Unit Price</th>
-                      <th>Line Total</th>
-                      <th>Pricing Breakdown</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item) => (
-                      <tr key={item.id}>
-                        <td>{item.item_name}</td>
-                        <td>{item.quantity}</td>
-                        <td>
-                          {quote.currency} {item.unit_price.toFixed(2)}
-                        </td>
-                        <td>
-                          {quote.currency} {item.line_total.toFixed(2)}
-                        </td>
-                        <td>
-                          <pre className="whitespace-pre-wrap dg-help">
-                            {JSON.stringify(item.pricing_breakdown, null, 2)}
-                          </pre>
-                        </td>
-                      </tr>
-                    ))}
-                    {items.length === 0 && (
-                      <tr>
-                        <td colSpan={5}>
-                          No quote items found. Create/rebuild quote items from deal detail to continue.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-
-            <RecordTimeline
-              title="Quote Timeline"
-              events={timelineEvents}
-              emptyText="No activity timeline available for this quote yet."
-              isLoading={activitiesQuery.isLoading}
-              errorText={
-                activitiesQuery.isError
-                  ? activitiesQuery.error instanceof Error
-                    ? activitiesQuery.error.message
-                    : 'Failed to load quote timeline.'
-                  : null
-              }
-            />
           </div>
         </Panel>
       )}

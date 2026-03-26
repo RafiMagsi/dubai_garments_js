@@ -98,7 +98,9 @@ export function useConvertLeadToDeal() {
       leadId: string;
       payload: ConvertLeadToDealInput;
     }) => convertLeadToDeal(leadId, payload),
-    onSuccess: () => {
+    onSuccess: (_, { leadId }) => {
+      queryClient.invalidateQueries({ queryKey: ['lead', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['pipeline'] });
       queryClient.invalidateQueries({ queryKey: ['activities'] });

@@ -1,4 +1,4 @@
-export { useActivities, useActivityById } from '@/features/admin/activities/hooks/use-activities';
+export { useActivities, useRelatedActivities, useActivityById } from '@/features/admin/activities/hooks/use-activities';
 export type {
   Activity,
   ActivitiesResponse,

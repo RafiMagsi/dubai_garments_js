@@ -41,7 +41,11 @@ export function useCreateQuote() {
 
   return useMutation({
     mutationFn: (payload: AdminQuoteCreateInput) => createQuote(payload),
-    onSuccess: () => {
+    onSuccess: (_, payload) => {
+      if (payload.lead_id) {
+        queryClient.invalidateQueries({ queryKey: ['lead', payload.lead_id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       queryClient.invalidateQueries({ queryKey: ['deals'] });
       queryClient.invalidateQueries({ queryKey: ['pipeline'] });

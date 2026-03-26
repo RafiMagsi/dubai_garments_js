@@ -33,6 +33,7 @@ import type {
   AgentWorkloadEnvelope,
   AgentPipelineBoardEnvelope,
 } from './types';
+import type { ConvertLeadToDealInput } from '@/features/admin/deals/types/deal.types';
 
 export async function queryCopilot(input: CopilotRequest): Promise<AiSalesAgentEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/copilot', {
@@ -104,11 +105,14 @@ export async function draftReplyFromLeadIntelligence(input: {
   });
 }
 
-export async function convertLeadFromIntelligence(leadId: string) {
+export async function convertLeadFromIntelligence(
+  leadId: string,
+  payload?: ConvertLeadToDealInput
+) {
   const response = await fetch(`/api/admin/leads/${leadId}/convert-to-deal`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
+    body: JSON.stringify(payload ?? {}),
     credentials: 'include',
   });
 

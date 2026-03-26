@@ -125,6 +125,7 @@ def list_activities(
     activity_type: Optional[str] = None,
     lead_id: Optional[str] = None,
     deal_id: Optional[str] = None,
+    quote_id: Optional[str] = None,
     limit: int = 100,
 ) -> List[Dict]:
     sql = """
@@ -156,6 +157,9 @@ def list_activities(
     if deal_id:
         where_clauses.append("deal_id = %s::uuid")
         params.append(deal_id)
+    if quote_id:
+        where_clauses.append("quote_id = %s::uuid")
+        params.append(quote_id)
 
     if where_clauses:
         sql += " WHERE " + " AND ".join(where_clauses)

@@ -131,12 +131,12 @@ const CANONICAL_STAGE_DEFS: Array<{
   {
     key: 'quote_ready',
     label: 'Quote Ready',
-    description: 'Quote preparation completed and offer is ready to send.',
+    description: 'Quote draft is prepared with pricing/line items and is ready to be sent.',
   },
   {
     key: 'quote_sent',
     label: 'Quote Sent',
-    description: 'Quote sent with traceable communication evidence.',
+    description: 'Quote has been sent to customer with delivery evidence.',
   },
   {
     key: 'negotiation',
@@ -258,6 +258,12 @@ function stageCompleted(
       if (hasActivity(activities, 'lead_status_changed') && String(lead?.status ?? '').toLowerCase() === 'qualified') {
         evidence.push('Lead status changed activity confirms qualification.');
       }
+      if (deal) {
+        evidence.push('Deal exists, implying qualification gate was passed.');
+      }
+      if (quote) {
+        evidence.push('Quote exists, implying qualification and deal progression.');
+      }
       return { completed: evidence.length > 0, evidence };
     }
 
@@ -288,11 +294,11 @@ function stageCompleted(
       if (quote) {
         evidence.push('Quote record exists.');
       }
-      if (hasActivity(activities, 'ai_quote_recommendation')) {
-        evidence.push('AI quote recommendation activity exists.');
+      if (source.quoteItemCount > 0) {
+        evidence.push('Quote has at least one line item.');
       }
-      if (hasActivity(activities, 'ai_quote_copilot')) {
-        evidence.push('AI quote copilot activity exists.');
+      if (hasActivity(activities, 'quote_created')) {
+        evidence.push('Quote created activity exists.');
       }
       return { completed: evidence.length > 0, evidence };
     }
@@ -311,8 +317,8 @@ function stageCompleted(
       if (deal?.stage === 'negotiation') {
         evidence.push('Deal stage is negotiation.');
       }
-      if (lead?.status === 'quoted') {
-        evidence.push('Lead status is quoted.');
+      if (deal?.stage === 'won' || deal?.stage === 'lost') {
+        evidence.push(`Deal already reached outcome stage (${deal.stage}) after negotiation.`);
       }
       return { completed: evidence.length > 0, evidence };
     }
@@ -814,6 +820,16 @@ export async function resolveAgentFlow(input: {
         context.role === 'sales_rep'
           ? { id: dealId, owner_user_id: context.userId }
           : { id: dealId },
+    });
+  }
+
+  if (!deal && lead) {
+    deal = await prisma.deals.findFirst({
+      where:
+        context.role === 'sales_rep'
+          ? { lead_id: lead.id, owner_user_id: context.userId }
+          : { lead_id: lead.id },
+      orderBy: { created_at: 'desc' },
     });
   }
 

@@ -3,8 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { CardText, CardTitle } from '@/components/ui';
-import { getAgentFlow, orchestrateAgentFlow, runLeadTriage } from '@/features/admin/ai-sales-agent/api';
+import {
+  convertLeadFromIntelligence,
+  getAgentFlow,
+  orchestrateAgentFlow,
+  prioritizeLeadFromIntelligence,
+  runLeadTriage,
+} from '@/features/admin/ai-sales-agent/api';
 import type { AgentFlowResponse } from '@/features/admin/ai-sales-agent/types';
+import type { ConvertLeadToDealInput } from '@/features/admin/deals/types/deal.types';
 import {
   FlowErrorCard,
   FlowLoadingCard,
@@ -21,6 +28,8 @@ type AgentFlowViewProps = {
   initialLeadId?: string;
   initialDealId?: string;
   compact?: boolean;
+  onOpenCreateQuoteModal?: () => void;
+  refreshSignal?: number;
 };
 
 function toTitle(value: string) {
@@ -99,6 +108,8 @@ export default function AgentFlowView({
   initialLeadId = '',
   initialDealId = '',
   compact = false,
+  onOpenCreateQuoteModal,
+  refreshSignal = 0,
 }: AgentFlowViewProps) {
   const queryClient = useQueryClient();
   const [leadId, setLeadId] = useState(initialLeadId);
@@ -115,6 +126,9 @@ export default function AgentFlowView({
   const [qualifyBusy, setQualifyBusy] = useState(false);
   const [qualifyStatus, setQualifyStatus] = useState<string | null>(null);
   const [qualifyError, setQualifyError] = useState<string | null>(null);
+  const [dealActionBusy, setDealActionBusy] = useState(false);
+  const [dealActionStatus, setDealActionStatus] = useState<string | null>(null);
+  const [dealActionError, setDealActionError] = useState<string | null>(null);
   const [blockerBusy, setBlockerBusy] = useState<string | null>(null);
   const [blockerStatus, setBlockerStatus] = useState<string | null>(null);
   const [blockerError, setBlockerError] = useState<string | null>(null);
@@ -123,6 +137,7 @@ export default function AgentFlowView({
   const [overrideStageKey, setOverrideStageKey] = useState<AgentFlowResponse['activeStageKey']>('lead_new');
   const [overrideForce, setOverrideForce] = useState(false);
   const [selectedStageKey, setSelectedStageKey] = useState<AgentFlowResponse['activeStageKey']>('lead_new');
+  const [sessionUserId, setSessionUserId] = useState('');
 
   async function handleLoadFlow() {
     try {
@@ -149,6 +164,13 @@ export default function AgentFlowView({
     // intentionally keyed to initial ids only for first-load hydration
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLeadId, initialDealId]);
+
+  useEffect(() => {
+    if (!flow || loading) return;
+    void handleLoadFlow();
+    // external refresh trigger from host page actions (e.g., quote creation)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshSignal]);
 
   function stageKeyFromBlocker(blocker: string): AgentFlowResponse['activeStageKey'] | null {
     if (!flow) return null;
@@ -286,6 +308,63 @@ export default function AgentFlowView({
   }
 
   useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const response = await fetch('/api/auth/session', { cache: 'no-store' });
+        const payload = (await response.json()) as { authenticated?: boolean; user?: { id?: string } };
+        if (!isMounted || !payload?.authenticated || !payload?.user?.id) return;
+        setSessionUserId(payload.user.id);
+      } catch {
+        // no-op
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function handleCreateDealFromPanel(payload: ConvertLeadToDealInput) {
+    if (!flow?.leadId) return;
+    try {
+      setDealActionError(null);
+      setDealActionStatus(null);
+      setDealActionBusy(true);
+
+      const result = await convertLeadFromIntelligence(flow.leadId, payload);
+      // Keep lead stage/status consistent immediately after deal conversion.
+      await prioritizeLeadFromIntelligence(flow.leadId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['lead', flow.leadId] }),
+        queryClient.invalidateQueries({ queryKey: ['leads'] }),
+        queryClient.invalidateQueries({ queryKey: ['deals'] }),
+        queryClient.invalidateQueries({ queryKey: ['pipeline'] }),
+        queryClient.invalidateQueries({ queryKey: ['activities'] }),
+      ]);
+
+      const createdDealId =
+        (result as { item?: { id?: string } })?.item?.id ??
+        (result as { id?: string })?.id ??
+        flow.dealId;
+
+      const refreshed = await getAgentFlow({
+        leadId: flow.leadId ?? undefined,
+        dealId: createdDealId ?? undefined,
+      });
+      setFlow(refreshed);
+      setDealActionStatus('Deal created successfully.');
+
+      if (createdDealId) {
+        window.location.href = `/admin/deals/${createdDealId}`;
+      }
+    } catch (err) {
+      setDealActionError(err instanceof Error ? err.message : 'Failed to create/open deal.');
+    } finally {
+      setDealActionBusy(false);
+    }
+  }
+
+  useEffect(() => {
     if (!flow) return;
     setOverrideStageKey(flow.activeStageKey);
     setSelectedStageKey(flow.activeStageKey);
@@ -315,21 +394,40 @@ export default function AgentFlowView({
 
       case 'deal_open':
         if (flow.dealId) return { href: `/admin/deals/${flow.dealId}`, label: 'Open Deal' };
-        return flow.leadId ? { href: `/admin/leads/${flow.leadId}`, label: 'Create/Open Deal' } : null;
+        return null;
 
       case 'quote_ready':
+        if (flow.quoteId) return { href: `/admin/quotes/${flow.quoteId}`, label: 'Open Quote' };
+        if (onOpenCreateQuoteModal) return null;
+        if (flow.dealId) return { href: `/admin/deals/${flow.dealId}?openCreateQuote=1`, label: 'Create Quote' };
+        return { href: '/admin/ai-sales-agent?tab=quote-copilot&expanded=true', label: 'Open Quote Copilot' };
+
       case 'quote_sent':
         if (flow.quoteId) return { href: `/admin/quotes/${flow.quoteId}`, label: 'Open Quote' };
-        if (flow.dealId) return { href: `/admin/deals/${flow.dealId}`, label: 'Open Deal' };
+        if (onOpenCreateQuoteModal) return null;
+        if (flow.dealId) return { href: `/admin/deals/${flow.dealId}?openCreateQuote=1`, label: 'Create Quote' };
         return { href: '/admin/ai-sales-agent?tab=quote-copilot&expanded=true', label: 'Open Quote Copilot' };
 
       case 'negotiation':
-      case 'won_lost':
         if (flow.dealId) return { href: `/admin/deals/${flow.dealId}`, label: 'Open Negotiation' };
+        if (flow.quoteId) return { href: `/admin/quotes/${flow.quoteId}`, label: 'Open Quote' };
+        return flow.leadId ? { href: `/admin/leads/${flow.leadId}`, label: 'Open Lead' } : null;
+
+      case 'won_lost':
+        if (flow.dealId) return { href: `/admin/deals/${flow.dealId}`, label: 'Open Outcome' };
+        if (flow.quoteId) return { href: `/admin/quotes/${flow.quoteId}`, label: 'Open Quote Outcome' };
         return flow.leadId ? { href: `/admin/leads/${flow.leadId}`, label: 'Open Lead' } : null;
 
       case 'post_outcome':
-        return { href: '/admin/activities', label: 'Open Activities' };
+        {
+          const params = new URLSearchParams();
+          if (flow.leadId) params.set('lead_id', flow.leadId);
+          if (flow.dealId) params.set('deal_id', flow.dealId);
+          if (flow.quoteId) params.set('quote_id', flow.quoteId);
+          params.set('source', 'lead_execution_board');
+          const suffix = params.toString();
+          return { href: suffix ? `/admin/activities?${suffix}` : '/admin/activities', label: 'Open Activities' };
+        }
 
       default:
         return flow.leadId ? { href: `/admin/leads/${flow.leadId}`, label: 'Open Lead' } : null;
@@ -410,8 +508,14 @@ export default function AgentFlowView({
             triageBusy={triageBusy}
             triageStatus={triageStatus}
             triageError={triageError}
+            dealActionBusy={dealActionBusy}
+            dealActionStatus={dealActionStatus}
+            dealActionError={dealActionError}
+            sessionUserId={sessionUserId}
             onCompleteQualified={handleCompleteQualifiedFromPanel}
             onRunLeadTriage={handleRunLeadTriageFromPanel}
+            onCreateDeal={(input) => void handleCreateDealFromPanel(input)}
+            onOpenCreateQuoteModal={onOpenCreateQuoteModal}
             overrideEnabled={overrideEnabled}
             overrideReason={overrideReason}
             overrideStageKey={overrideStageKey}

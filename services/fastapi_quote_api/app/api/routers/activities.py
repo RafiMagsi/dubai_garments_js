@@ -15,6 +15,7 @@ def get_activities(
     activity_type: Optional[str] = Query(default=None),
     lead_id: Optional[str] = Query(default=None),
     deal_id: Optional[str] = Query(default=None),
+    quote_id: Optional[str] = Query(default=None),
     limit: int = Query(default=100, ge=1, le=500),
 ) -> Dict[str, List[Dict]]:
     try:
@@ -24,6 +25,7 @@ def get_activities(
                 activity_type=activity_type,
                 lead_id=lead_id,
                 deal_id=deal_id,
+                quote_id=quote_id,
                 limit=limit,
             )
     except HTTPException:

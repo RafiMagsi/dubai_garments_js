@@ -56,6 +56,8 @@ export interface DealDetailResponse {
     status: string;
     currency: string;
     total_amount: number;
+    created_at?: string | null;
+    updated_at?: string | null;
   }>;
   communications: DealCommunication[];
 }
