@@ -340,11 +340,28 @@ function stageCompleted(
     }
 
     case 'post_outcome': {
-      if (lead?.ai_reasoning?.postOutcomeSummary) {
-        evidence.push('Lead AI reasoning contains postOutcomeSummary.');
+      const reasoning =
+        lead?.ai_reasoning && typeof lead.ai_reasoning === 'object'
+          ? (lead.ai_reasoning as Record<string, unknown>)
+          : null;
+      const postOutcomeSummary =
+        reasoning && typeof reasoning.postOutcomeSummary === 'string'
+          ? reasoning.postOutcomeSummary.trim()
+          : '';
+      const postOutcomeAtRaw =
+        reasoning && typeof reasoning.postOutcomeAt === 'string'
+          ? reasoning.postOutcomeAt.trim()
+          : '';
+
+      if (postOutcomeSummary) {
+        evidence.push(`Summary: ${postOutcomeSummary}`);
+      }
+      if (postOutcomeAtRaw) {
+        const parsed = parseDate(postOutcomeAtRaw);
+        evidence.push(`Recorded at: ${parsed ? parsed.toISOString() : postOutcomeAtRaw}`);
       }
       if (hasActivity(activities, 'ai_post_outcome_analysis')) {
-        evidence.push('Post-outcome AI analysis activity exists.');
+        evidence.push('Audit trail: Post-outcome AI analysis activity exists.');
       }
       return { completed: evidence.length > 0, evidence };
     }
@@ -431,6 +448,11 @@ function deriveBlockers(stages: AgentFlowStage[]): string[] {
 }
 
 function deriveRecommendedNextMove(stages: AgentFlowStage[]): string {
+  const allCompleted = stages.length > 0 && stages.every((stage) => stage.completed);
+  if (allCompleted) {
+    return 'Lifecycle is fully completed. Review activities and close-loop summary for audit.';
+  }
+
   const activeStage = stages.find((stage) => stage.status === 'active');
 
   if (!activeStage) {
@@ -457,7 +479,7 @@ function deriveRecommendedNextMove(stages: AgentFlowStage[]): string {
     case 'won_lost':
       return 'Record the final outcome as won or lost.';
     case 'post_outcome':
-      return 'Capture post-outcome reasoning and lessons for future AI guidance.';
+      return 'Mark close and record post-outcome checkpoint for audit and optimization.';
     default:
       return 'Review the active stage and move the lead forward manually.';
   }

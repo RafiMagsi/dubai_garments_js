@@ -307,7 +307,16 @@ export default function AdminPipelinePage() {
                           <p className="dg-list-meta">
                             AED {deal.expected_value} | Probability {deal.probability_pct}%
                           </p>
-                          {deal.lead_id && <p className="dg-help">Lead: {shortCode(deal.lead_id)}</p>}
+                          {deal.lead_id ? (
+                            <div>
+                              <Link
+                                href={`/admin/leads/${deal.lead_id}`}
+                                className="ui-btn ui-btn-secondary ui-btn-sm"
+                              >
+                                Open Lead {shortCode(deal.lead_id)}
+                              </Link>
+                            </div>
+                          ) : null}
 
                           <div className="grid gap-2">
                             <select

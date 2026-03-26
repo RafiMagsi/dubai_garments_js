@@ -14,10 +14,17 @@ type FlowExecutionBoardSectionProps = {
   selectedStageEvidence: string[];
   toTitle: (value: string) => string;
   stageStatusLabel: (status: AgentFlowResponse['stages'][number]['status']) => string;
-  stageStatusMessage: (status: AgentFlowResponse['stages'][number]['status'], hasEvidence: boolean) => string;
+  stageStatusMessage: (
+    status: AgentFlowResponse['stages'][number]['status'],
+    hasEvidence: boolean,
+    stageKey: AgentFlowResponse['activeStageKey']
+  ) => string;
   stageMeterPercent: (status: string) => number;
   onSelectStage: (stageKey: AgentFlowResponse['activeStageKey']) => void;
   getStageActionLink: (stageKey: AgentFlowResponse['activeStageKey']) => { href: string; label: string } | null;
+  markCloseBusy: boolean;
+  postOutcomeStatus: string | null;
+  postOutcomeError: string | null;
   qualifyBusy: boolean;
   qualifyStatus: string | null;
   qualifyError: string | null;
@@ -30,6 +37,7 @@ type FlowExecutionBoardSectionProps = {
   sessionUserId?: string;
   onCompleteQualified: () => void;
   onRunLeadTriage: () => void;
+  onMarkClosed: () => void;
   onCreateDeal: (payload: ConvertLeadToDealInput) => void;
   onOpenCreateQuoteModal?: () => void;
   overrideEnabled: boolean;
@@ -52,6 +60,9 @@ export function FlowExecutionBoardSection({
   stageMeterPercent,
   onSelectStage,
   getStageActionLink,
+  markCloseBusy,
+  postOutcomeStatus,
+  postOutcomeError,
   qualifyBusy,
   qualifyStatus,
   qualifyError,
@@ -64,6 +75,7 @@ export function FlowExecutionBoardSection({
   sessionUserId,
   onCompleteQualified,
   onRunLeadTriage,
+  onMarkClosed,
   onCreateDeal,
   onOpenCreateQuoteModal,
   overrideEnabled,
@@ -75,6 +87,7 @@ export function FlowExecutionBoardSection({
   onOverrideStageKeyChange,
   onOverrideForceChange,
 }: FlowExecutionBoardSectionProps) {
+  const selectedStageActionLink = selectedStage ? getStageActionLink(selectedStage.key) : null;
   const [createDealModalOpen, setCreateDealModalOpen] = useState(false);
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [ownerMode, setOwnerMode] = useState<'self' | 'unassigned'>('self');
@@ -136,7 +149,7 @@ export function FlowExecutionBoardSection({
                 {stageStatusLabel(selectedStage.status)}
               </span>
             </div>
-            <CardText>{stageStatusMessage(selectedStage.status, selectedStageEvidence.length > 0)}</CardText>
+            <CardText>{stageStatusMessage(selectedStage.status, selectedStageEvidence.length > 0, selectedStage.key)}</CardText>
             <CardText>{selectedStage.description}</CardText>
             <div className="aflow-stage-meter">
               <span
@@ -167,8 +180,9 @@ export function FlowExecutionBoardSection({
                 </Button>
               </div>
             ) : null}
-            {getStageActionLink(selectedStage.key) &&
+            {selectedStageActionLink &&
             selectedStage.key !== 'deal_open' &&
+            selectedStage.key !== 'post_outcome' &&
             !(
               onOpenCreateQuoteModal &&
               (selectedStage.key === 'quote_ready' || selectedStage.key === 'quote_sent') &&
@@ -176,12 +190,48 @@ export function FlowExecutionBoardSection({
             ) ? (
               <div className="aflow-stage-action-row">
                 <a
-                  href={getStageActionLink(selectedStage.key)!.href}
+                  href={selectedStageActionLink.href}
                   className="ui-btn ui-btn-secondary ui-btn-sm aflow-link-btn"
                 >
-                  {getStageActionLink(selectedStage.key)!.label}
+                  {selectedStageActionLink.label}
                 </a>
               </div>
+            ) : null}
+            {selectedStage.key === 'post_outcome' ? (
+              <>
+                {selectedStage.status === 'completed' ? (
+                  selectedStageActionLink ? (
+                    <div className="aflow-stage-action-row">
+                      <a
+                        href={selectedStageActionLink.href}
+                        className="ui-btn ui-btn-secondary ui-btn-sm aflow-link-btn"
+                      >
+                        Open Activities
+                      </a>
+                    </div>
+                  ) : null
+                ) : (
+                  <div className="aflow-stage-action-row">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="aflow-glow-btn aflow-next-move-btn"
+                      onClick={onMarkClosed}
+                      disabled={markCloseBusy}
+                    >
+                      {markCloseBusy ? 'Marking...' : 'Mark Closed'}
+                    </Button>
+                  </div>
+                )}
+                {selectedStage.status !== 'completed' && selectedStageActionLink ? (
+                  <p className="dg-help">
+                    Audit trail:{' '}
+                    <a href={selectedStageActionLink.href} className="dg-link-primary">
+                      {selectedStageActionLink.label}
+                    </a>
+                  </p>
+                ) : null}
+              </>
             ) : null}
             {selectedStage.key === 'qualified' &&
             (selectedStage.status === 'active' || selectedStage.status === 'pending') ? (
@@ -235,6 +285,8 @@ export function FlowExecutionBoardSection({
             {triageError ? <p className="aflow-next-move-error">{triageError}</p> : null}
             {dealActionStatus ? <p className="aflow-next-move-status">{dealActionStatus}</p> : null}
             {dealActionError ? <p className="aflow-next-move-error">{dealActionError}</p> : null}
+            {postOutcomeStatus ? <p className="aflow-next-move-status">{postOutcomeStatus}</p> : null}
+            {postOutcomeError ? <p className="aflow-next-move-error">{postOutcomeError}</p> : null}
           </section>
 
           <section className="aflow-stage-panel">

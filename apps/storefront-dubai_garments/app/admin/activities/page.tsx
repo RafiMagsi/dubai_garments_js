@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
@@ -29,7 +29,7 @@ const activityOptions: Array<{ label: string; value: ActivityType | 'all' }> = [
   { label: 'Deal Stage Changed', value: 'deal_stage_changed' },
 ];
 
-export default function AdminActivitiesPage() {
+function AdminActivitiesPageContent() {
   const [activityType, setActivityType] = useState<ActivityType | 'all'>('all');
   const searchParams = useSearchParams();
   const leadIdFilter = searchParams.get('lead_id') || '';
@@ -248,5 +248,23 @@ export default function AdminActivitiesPage() {
         </Panel>
       </PageShell>
     </AdminShell>
+  );
+}
+
+export default function AdminActivitiesPage() {
+  return (
+    <Suspense
+      fallback={
+        <AdminShell>
+          <PageShell density="compact">
+            <Panel>
+              <p className="dg-muted-sm">Loading activities...</p>
+            </Panel>
+          </PageShell>
+        </AdminShell>
+      }
+    >
+      <AdminActivitiesPageContent />
+    </Suspense>
   );
 }

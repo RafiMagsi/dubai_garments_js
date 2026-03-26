@@ -56,9 +56,13 @@ function stageStatusLabel(status: AgentFlowResponse['stages'][number]['status'])
 function stageStatusMessage(
   status: AgentFlowResponse['stages'][number]['status'],
   hasEvidence: boolean,
+  stageKey: AgentFlowResponse['activeStageKey'],
 ) {
   if (status === 'completed') return 'This step has been completed with sufficient execution evidence.';
   if (status === 'active') {
+    if (stageKey === 'post_outcome' && !hasEvidence) {
+      return 'Mark close to finalize this workflow and record the post-outcome checkpoint.';
+    }
     return hasEvidence
       ? 'This step is in progress with partial evidence logged. Continue to complete it.'
       : 'This step is in progress, but no execution evidence is logged yet. Run the action to create evidence.';
@@ -183,10 +187,23 @@ export default function AgentFlowView({
 
   async function handleRunNextMove() {
     if (!flow) return;
+    const allStagesCompleted = flow.stages.length > 0 && flow.stages.every((stage) => stage.completed);
+    if (allStagesCompleted) {
+      const params = new URLSearchParams();
+      if (flow.leadId) params.set('lead_id', flow.leadId);
+      if (flow.dealId) params.set('deal_id', flow.dealId);
+      if (flow.quoteId) params.set('quote_id', flow.quoteId);
+      params.set('source', 'lead_execution_board');
+      const suffix = params.toString();
+      window.location.href = suffix ? `/admin/activities?${suffix}` : '/admin/activities';
+      return;
+    }
+
     try {
       setNextMoveError(null);
       setNextMoveStatus(null);
       setNextMoveBusy(true);
+      const startStageKey = flow.activeStageKey;
       const orchestration = await orchestrateAgentFlow({
         leadId: flow.leadId ?? undefined,
         dealId: flow.dealId ?? undefined,
@@ -201,8 +218,20 @@ export default function AgentFlowView({
           : undefined,
       });
       const latestAction = orchestration.actions[orchestration.actions.length - 1];
-      setNextMoveStatus(latestAction?.message ?? 'Next move orchestration completed.');
+      const baseMessage = latestAction?.message ?? 'Next move orchestration completed.';
+      const needsQuoteCreation =
+        startStageKey === 'quote_ready' &&
+        !orchestration.flow.quoteId &&
+        typeof onOpenCreateQuoteModal === 'function';
+      setNextMoveStatus(
+        needsQuoteCreation
+          ? `${baseMessage} Opening Create Quote now.`
+          : baseMessage
+      );
       setFlow(orchestration.flow);
+      if (needsQuoteCreation) {
+        onOpenCreateQuoteModal?.();
+      }
     } catch (err) {
       setNextMoveError(err instanceof Error ? err.message : 'Failed to execute next move.');
     } finally {
@@ -304,6 +333,33 @@ export default function AgentFlowView({
       setTriageError(err instanceof Error ? err.message : 'Failed to run lead triage.');
     } finally {
       setTriageBusy(false);
+    }
+  }
+
+  async function handleMarkClosedFromPanel() {
+    if (!flow?.leadId) return;
+    try {
+      setNextMoveError(null);
+      setNextMoveStatus(null);
+      setNextMoveBusy(true);
+      const orchestration = await orchestrateAgentFlow({
+        leadId: flow.leadId,
+        dealId: flow.dealId ?? undefined,
+        mode: 'single',
+        manualOverride: {
+          enabled: true,
+          stageKey: 'post_outcome',
+          reason: 'Post-outcome marked closed from execution evidence panel.',
+          force: true,
+        },
+      });
+      const latestAction = orchestration.actions[orchestration.actions.length - 1];
+      setNextMoveStatus(latestAction?.message ?? 'Post-outcome marked closed.');
+      setFlow(orchestration.flow);
+    } catch (err) {
+      setNextMoveError(err instanceof Error ? err.message : 'Failed to mark post-outcome as closed.');
+    } finally {
+      setNextMoveBusy(false);
     }
   }
 
@@ -454,6 +510,12 @@ export default function AgentFlowView({
   const selectedStageEvidence = selectedStage
     ? normalizeEvidence(selectedStage.evidence, selectedStage.label)
     : [];
+  const allStagesCompleted = flow?.stages.length ? flow.stages.every((stage) => stage.completed) : false;
+  const nextMoveLabel = allStagesCompleted
+    ? 'Open Activities'
+    : activeStage?.key === 'post_outcome'
+    ? 'Mark Close'
+    : 'Run Next Move';
   const showPanelLoading = loading && !flow;
 
   return (
@@ -502,6 +564,9 @@ export default function AgentFlowView({
             stageMeterPercent={stageMeterPercent}
             onSelectStage={setSelectedStageKey}
             getStageActionLink={getStageActionLink}
+            markCloseBusy={nextMoveBusy}
+            postOutcomeStatus={nextMoveStatus}
+            postOutcomeError={nextMoveError}
             qualifyBusy={qualifyBusy}
             qualifyStatus={qualifyStatus}
             qualifyError={qualifyError}
@@ -514,6 +579,7 @@ export default function AgentFlowView({
             sessionUserId={sessionUserId}
             onCompleteQualified={handleCompleteQualifiedFromPanel}
             onRunLeadTriage={handleRunLeadTriageFromPanel}
+            onMarkClosed={handleMarkClosedFromPanel}
             onCreateDeal={(input) => void handleCreateDealFromPanel(input)}
             onOpenCreateQuoteModal={onOpenCreateQuoteModal}
             overrideEnabled={overrideEnabled}
@@ -542,6 +608,7 @@ export default function AgentFlowView({
             activeStage={activeStage}
             toTitle={toTitle}
             nextMoveBusy={nextMoveBusy}
+            nextMoveLabel={nextMoveLabel}
             overrideEnabled={overrideEnabled}
             overrideReason={overrideReason}
             nextMoveStatus={nextMoveStatus}

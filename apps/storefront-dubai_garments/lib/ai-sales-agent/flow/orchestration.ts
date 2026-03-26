@@ -365,7 +365,7 @@ async function executeStageAction(input: {
         },
       });
       return {
-        message: `Quote recommendation generated (${recommendation.data.recommendations.length} items).`,
+        message: `Quote recommendation generated (${recommendation.data.recommendations.length} items). Create quote to complete Quote Ready stage.`,
         metadata: {
           action: 'run_quote_recommendation',
           source: recommendation.source,

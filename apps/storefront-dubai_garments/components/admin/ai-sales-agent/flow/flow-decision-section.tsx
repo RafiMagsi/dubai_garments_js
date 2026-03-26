@@ -9,6 +9,7 @@ type FlowDecisionSectionProps = {
   activeStage: AgentFlowResponse['stages'][number] | null;
   toTitle: (value: string) => string;
   nextMoveBusy: boolean;
+  nextMoveLabel: string;
   overrideEnabled: boolean;
   overrideReason: string;
   nextMoveStatus: string | null;
@@ -26,6 +27,7 @@ export function FlowDecisionSection({
   activeStage,
   toTitle,
   nextMoveBusy,
+  nextMoveLabel,
   overrideEnabled,
   overrideReason,
   nextMoveStatus,
@@ -75,7 +77,7 @@ export function FlowDecisionSection({
           <div className="aflow-decision-panel-head">
             <p className="aflow-kicker">Recommended Next Move</p>
             <span className="dg-ai-badge dg-ai-badge-blue">
-              {activeStage ? toTitle(activeStage.key) : 'Manual'}
+              {activeStage ? toTitle(activeStage.key) : flow.completionPercent >= 100 ? 'Completed' : 'Manual'}
             </span>
           </div>
           <div className="aflow-next-move">{flow.recommendedNextMove}</div>
@@ -88,9 +90,11 @@ export function FlowDecisionSection({
                 onClick={onRunNextMove}
                 disabled={nextMoveBusy || (overrideEnabled && !overrideReason.trim())}
               >
-                {nextMoveBusy ? 'Running...' : 'Run Next Move'}
+                {nextMoveBusy ? 'Running...' : nextMoveLabel}
               </Button>
-              {flow.activeStageKey && getStageActionLink(flow.activeStageKey) ? (
+              {flow.activeStageKey &&
+              flow.activeStageKey !== 'post_outcome' &&
+              getStageActionLink(flow.activeStageKey) ? (
                 <a
                   href={getStageActionLink(flow.activeStageKey)!.href}
                   className="ui-btn ui-btn-primary ui-btn-sm aflow-link-btn"
