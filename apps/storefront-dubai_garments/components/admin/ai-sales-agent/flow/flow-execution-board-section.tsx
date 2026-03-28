@@ -6,6 +6,7 @@ import { AisFieldLabel } from '@/components/admin/ai-sales-agent/reusable';
 import { FlowBoardCard, FlowTrackCard } from '@/components/admin/ai-sales-agent/flow/flow-cards';
 import type { AgentFlowResponse } from '@/features/admin/ai-sales-agent/types';
 import type { ConvertLeadToDealInput } from '@/features/admin/deals/types/deal.types';
+import type { FlowStageGuidance } from '@/lib/ai-sales-agent/flow/stage-guidance';
 import Modal from '@/components/ui/modal';
 
 type FlowExecutionBoardSectionProps = {
@@ -22,6 +23,7 @@ type FlowExecutionBoardSectionProps = {
   stageMeterPercent: (status: string) => number;
   onSelectStage: (stageKey: AgentFlowResponse['activeStageKey']) => void;
   getStageActionLink: (stageKey: AgentFlowResponse['activeStageKey']) => { href: string; label: string } | null;
+  selectedStageGuidance: FlowStageGuidance | null;
   markCloseBusy: boolean;
   postOutcomeStatus: string | null;
   postOutcomeError: string | null;
@@ -31,6 +33,9 @@ type FlowExecutionBoardSectionProps = {
   triageBusy: boolean;
   triageStatus: string | null;
   triageError: string | null;
+  outcomeActionBusy: 'won' | 'lost' | null;
+  outcomeActionStatus: string | null;
+  outcomeActionError: string | null;
   dealActionBusy: boolean;
   dealActionStatus: string | null;
   dealActionError: string | null;
@@ -38,6 +43,7 @@ type FlowExecutionBoardSectionProps = {
   onCompleteQualified: () => void;
   onRunLeadTriage: () => void;
   onMarkClosed: () => void;
+  onMarkOutcome: (stage: 'won' | 'lost') => void;
   onCreateDeal: (payload: ConvertLeadToDealInput) => void;
   onOpenCreateQuoteModal?: () => void;
   overrideEnabled: boolean;
@@ -60,6 +66,7 @@ export function FlowExecutionBoardSection({
   stageMeterPercent,
   onSelectStage,
   getStageActionLink,
+  selectedStageGuidance,
   markCloseBusy,
   postOutcomeStatus,
   postOutcomeError,
@@ -69,6 +76,9 @@ export function FlowExecutionBoardSection({
   triageBusy,
   triageStatus,
   triageError,
+  outcomeActionBusy,
+  outcomeActionStatus,
+  outcomeActionError,
   dealActionBusy,
   dealActionStatus,
   dealActionError,
@@ -76,6 +86,7 @@ export function FlowExecutionBoardSection({
   onCompleteQualified,
   onRunLeadTriage,
   onMarkClosed,
+  onMarkOutcome,
   onCreateDeal,
   onOpenCreateQuoteModal,
   overrideEnabled,
@@ -88,6 +99,8 @@ export function FlowExecutionBoardSection({
   onOverrideForceChange,
 }: FlowExecutionBoardSectionProps) {
   const selectedStageActionLink = selectedStage ? getStageActionLink(selectedStage.key) : null;
+  const isQuoteGuidance = selectedStageGuidance?.theme === 'quote';
+  const outcome = flow.outcomeSummary;
   const [createDealModalOpen, setCreateDealModalOpen] = useState(false);
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [ownerMode, setOwnerMode] = useState<'self' | 'unassigned'>('self');
@@ -151,6 +164,79 @@ export function FlowExecutionBoardSection({
             </div>
             <CardText>{stageStatusMessage(selectedStage.status, selectedStageEvidence.length > 0, selectedStage.key)}</CardText>
             <CardText>{selectedStage.description}</CardText>
+            {selectedStageGuidance ? (
+              <div className={`aflow-stage-guidance ${isQuoteGuidance ? 'is-quote' : ''}`.trim()}>
+                <div className="aflow-stage-guidance-top">
+                  <p className="aflow-kicker">Stage Guidance</p>
+                  {isQuoteGuidance ? <span className="dg-ai-badge dg-ai-badge-blue">Quote Playbook</span> : null}
+                </div>
+                <p className="aflow-stage-guidance-headline">{selectedStageGuidance.headline}</p>
+                <ul className="aflow-guidance-list">
+                  <li>
+                    <strong>What to do:</strong> {selectedStageGuidance.actionHint}
+                  </li>
+                  <li>
+                    <strong>What happens:</strong> {selectedStageGuidance.expectedResult}
+                  </li>
+                  <li>
+                    <strong>Done when:</strong> {selectedStageGuidance.completionSignal}
+                  </li>
+                </ul>
+                {isQuoteGuidance && selectedStageGuidance.playbook.length > 0 ? (
+                  <div className="aflow-quote-playbook">
+                    {selectedStageGuidance.playbook.map((step, index) => (
+                      <div className="aflow-quote-playbook-step" key={`${selectedStage.key}-playbook-${index}`}>
+                        <span className="aflow-quote-playbook-dot">{index + 1}</span>
+                        <span>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {selectedStageGuidance.scenarios.length > 0 ? (
+                  <ul className="aflow-guidance-scenarios">
+                    {selectedStageGuidance.scenarios.slice(0, 2).map((item, index) => (
+                      <li key={`${selectedStage.key}-scenario-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+            {selectedStage.key === 'won_lost' ? (
+              <div className="aflow-outcome-summary">
+                <div className="aflow-outcome-summary-head">
+                  <p className="aflow-kicker">Outcome Summary</p>
+                  <span
+                    className={`dg-ai-badge ${
+                      outcome.outcome === 'won'
+                        ? 'dg-ai-badge-green'
+                        : outcome.outcome === 'lost'
+                        ? 'dg-ai-badge-red'
+                        : 'dg-ai-badge-slate'
+                    }`}
+                  >
+                    {outcome.outcome === 'pending' ? 'Pending' : toTitle(outcome.outcome)}
+                  </span>
+                </div>
+                <div className="aflow-outcome-grid">
+                  <div className="aflow-outcome-row">
+                    <span>Source</span>
+                    <strong>{toTitle(outcome.source)}</strong>
+                  </div>
+                  <div className="aflow-outcome-row">
+                    <span>Current Stage</span>
+                    <strong>{outcome.stage ? toTitle(String(outcome.stage)) : '-'}</strong>
+                  </div>
+                  <div className="aflow-outcome-row">
+                    <span>Updated At</span>
+                    <strong>{outcome.updatedAt ? new Date(outcome.updatedAt).toLocaleString() : '-'}</strong>
+                  </div>
+                  <div className="aflow-outcome-row">
+                    <span>Reason</span>
+                    <strong>{outcome.reason || '-'}</strong>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <div className="aflow-stage-meter">
               <span
                 className={`aflow-stage-meter-fill is-${selectedStage.status}`}
@@ -182,6 +268,7 @@ export function FlowExecutionBoardSection({
             ) : null}
             {selectedStageActionLink &&
             selectedStage.key !== 'deal_open' &&
+            selectedStage.key !== 'won_lost' &&
             selectedStage.key !== 'post_outcome' &&
             !(
               onOpenCreateQuoteModal &&
@@ -279,10 +366,35 @@ export function FlowExecutionBoardSection({
                 </Button>
               </div>
             ) : null}
+            {selectedStage.key === 'won_lost' ? (
+              <div className="aflow-stage-action-row">
+                <Button
+                  type="button"
+                  size="sm"
+                  className="aflow-glow-btn aflow-next-move-btn"
+                  onClick={() => onMarkOutcome('won')}
+                  disabled={outcomeActionBusy !== null}
+                >
+                  {outcomeActionBusy === 'won' ? 'Marking Won...' : 'Mark Won'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="aflow-glow-btn aflow-link-btn"
+                  onClick={() => onMarkOutcome('lost')}
+                  disabled={outcomeActionBusy !== null}
+                >
+                  {outcomeActionBusy === 'lost' ? 'Marking Lost...' : 'Mark Lost'}
+                </Button>
+              </div>
+            ) : null}
             {qualifyStatus ? <p className="aflow-next-move-status">{qualifyStatus}</p> : null}
             {qualifyError ? <p className="aflow-next-move-error">{qualifyError}</p> : null}
             {triageStatus ? <p className="aflow-next-move-status">{triageStatus}</p> : null}
             {triageError ? <p className="aflow-next-move-error">{triageError}</p> : null}
+            {outcomeActionStatus ? <p className="aflow-next-move-status">{outcomeActionStatus}</p> : null}
+            {outcomeActionError ? <p className="aflow-next-move-error">{outcomeActionError}</p> : null}
             {dealActionStatus ? <p className="aflow-next-move-status">{dealActionStatus}</p> : null}
             {dealActionError ? <p className="aflow-next-move-error">{dealActionError}</p> : null}
             {postOutcomeStatus ? <p className="aflow-next-move-status">{postOutcomeStatus}</p> : null}

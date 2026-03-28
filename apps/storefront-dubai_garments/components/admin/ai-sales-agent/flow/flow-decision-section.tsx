@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui';
 import { FlowDecisionCard } from '@/components/admin/ai-sales-agent/flow/flow-cards';
 import type { AgentFlowResponse } from '@/features/admin/ai-sales-agent/types';
+import type { NextMoveGuidance } from '@/lib/ai-sales-agent/flow/stage-guidance';
 
 type FlowDecisionSectionProps = {
   flow: AgentFlowResponse;
@@ -20,6 +21,7 @@ type FlowDecisionSectionProps = {
   onRunNextMove: () => void;
   onResolveBlocker: (blocker: string) => void;
   getStageActionLink: (stageKey: AgentFlowResponse['activeStageKey']) => { href: string; label: string } | null;
+  nextMoveGuidance: NextMoveGuidance;
 };
 
 export function FlowDecisionSection({
@@ -38,7 +40,10 @@ export function FlowDecisionSection({
   onRunNextMove,
   onResolveBlocker,
   getStageActionLink,
+  nextMoveGuidance,
 }: FlowDecisionSectionProps) {
+  const isQuoteGuidance = nextMoveGuidance.theme === 'quote';
+
   return (
     <FlowDecisionCard>
       <div className="aflow-decision-grid">
@@ -81,6 +86,27 @@ export function FlowDecisionSection({
             </span>
           </div>
           <div className="aflow-next-move">{flow.recommendedNextMove}</div>
+          <div className={`aflow-next-move-guide ${isQuoteGuidance ? 'is-quote' : ''}`.trim()}>
+            <div className="aflow-stage-guidance-top">
+              <p className="aflow-next-move-guide-title">{nextMoveGuidance.title}</p>
+              {isQuoteGuidance ? <span className="dg-ai-badge dg-ai-badge-blue">Quote Stage</span> : null}
+            </div>
+            <ul className="aflow-guidance-list">
+              {nextMoveGuidance.points.map((point, index) => (
+                <li key={`next-move-guidance-${index}`}>{point}</li>
+              ))}
+            </ul>
+            {isQuoteGuidance && nextMoveGuidance.playbook.length > 0 ? (
+              <div className="aflow-quote-playbook">
+                {nextMoveGuidance.playbook.map((step, index) => (
+                  <div className="aflow-quote-playbook-step" key={`next-move-playbook-${index}`}>
+                    <span className="aflow-quote-playbook-dot">{index + 1}</span>
+                    <span>{step}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <div className="aflow-next-move-actions">
             <div className="aflow-next-move-cta-row">
               <Button

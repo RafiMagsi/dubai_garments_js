@@ -9,6 +9,7 @@ import {
   orchestrateAgentFlow,
   prioritizeLeadFromIntelligence,
   runLeadTriage,
+  updateDealStageFromFlow,
 } from '@/features/admin/ai-sales-agent/api';
 import type { AgentFlowResponse } from '@/features/admin/ai-sales-agent/types';
 import type { ConvertLeadToDealInput } from '@/features/admin/deals/types/deal.types';
@@ -22,6 +23,10 @@ import { FlowDecisionSection } from '@/components/admin/ai-sales-agent/flow/flow
 import { FlowSignalsSection } from '@/components/admin/ai-sales-agent/flow/flow-signals-section';
 import { FlowQualitySection } from '@/components/admin/ai-sales-agent/flow/flow-quality-section';
 import { FlowExecutionBoardSection } from '@/components/admin/ai-sales-agent/flow/flow-execution-board-section';
+import {
+  getFlowStageGuidance,
+  getNextMoveGuidance,
+} from '@/lib/ai-sales-agent/flow/stage-guidance';
 
 type AgentFlowViewProps = {
   showHeader?: boolean;
@@ -127,6 +132,9 @@ export default function AgentFlowView({
   const [triageBusy, setTriageBusy] = useState(false);
   const [triageStatus, setTriageStatus] = useState<string | null>(null);
   const [triageError, setTriageError] = useState<string | null>(null);
+  const [outcomeActionBusy, setOutcomeActionBusy] = useState<'won' | 'lost' | null>(null);
+  const [outcomeActionStatus, setOutcomeActionStatus] = useState<string | null>(null);
+  const [outcomeActionError, setOutcomeActionError] = useState<string | null>(null);
   const [qualifyBusy, setQualifyBusy] = useState(false);
   const [qualifyStatus, setQualifyStatus] = useState<string | null>(null);
   const [qualifyError, setQualifyError] = useState<string | null>(null);
@@ -363,6 +371,42 @@ export default function AgentFlowView({
     }
   }
 
+  async function handleMarkOutcomeFromPanel(stage: 'won' | 'lost') {
+    if (!flow?.dealId) {
+      setOutcomeActionError('No active deal found for outcome update.');
+      return;
+    }
+    try {
+      setOutcomeActionError(null);
+      setOutcomeActionStatus(null);
+      setOutcomeActionBusy(stage);
+      await updateDealStageFromFlow(flow.dealId, {
+        stage,
+        notes: `Outcome marked ${stage} from lead-to-close execution board.`,
+        lost_reason: stage === 'lost' ? 'Marked as lost from execution board.' : undefined,
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['deal', flow.dealId] }),
+        queryClient.invalidateQueries({ queryKey: ['deals'] }),
+        queryClient.invalidateQueries({ queryKey: ['pipeline'] }),
+        queryClient.invalidateQueries({ queryKey: ['lead', flow.leadId] }),
+        queryClient.invalidateQueries({ queryKey: ['leads'] }),
+        queryClient.invalidateQueries({ queryKey: ['activities'] }),
+      ]);
+
+      const refreshed = await getAgentFlow({
+        leadId: flow.leadId ?? undefined,
+        dealId: flow.dealId ?? undefined,
+      });
+      setFlow(refreshed);
+      setOutcomeActionStatus(`Deal marked as ${stage}.`);
+    } catch (err) {
+      setOutcomeActionError(err instanceof Error ? err.message : `Failed to mark outcome as ${stage}.`);
+    } finally {
+      setOutcomeActionBusy(null);
+    }
+  }
+
   useEffect(() => {
     let isMounted = true;
     (async () => {
@@ -516,6 +560,20 @@ export default function AgentFlowView({
     : activeStage?.key === 'post_outcome'
     ? 'Mark Close'
     : 'Run Next Move';
+  const selectedStageGuidance = selectedStage
+    ? getFlowStageGuidance(selectedStage.key, selectedStage.status, {
+        hasDeal: Boolean(flow?.dealId),
+        hasQuote: Boolean(flow?.quoteId),
+      })
+    : null;
+  const nextMoveGuidance = getNextMoveGuidance({
+    activeStageKey: activeStage?.key ?? null,
+    activeStageStatus: activeStage?.status ?? null,
+    allStagesCompleted,
+    hasDeal: Boolean(flow?.dealId),
+    hasQuote: Boolean(flow?.quoteId),
+    nextMoveLabel,
+  });
   const showPanelLoading = loading && !flow;
 
   return (
@@ -564,6 +622,7 @@ export default function AgentFlowView({
             stageMeterPercent={stageMeterPercent}
             onSelectStage={setSelectedStageKey}
             getStageActionLink={getStageActionLink}
+            selectedStageGuidance={selectedStageGuidance}
             markCloseBusy={nextMoveBusy}
             postOutcomeStatus={nextMoveStatus}
             postOutcomeError={nextMoveError}
@@ -573,6 +632,9 @@ export default function AgentFlowView({
             triageBusy={triageBusy}
             triageStatus={triageStatus}
             triageError={triageError}
+            outcomeActionBusy={outcomeActionBusy}
+            outcomeActionStatus={outcomeActionStatus}
+            outcomeActionError={outcomeActionError}
             dealActionBusy={dealActionBusy}
             dealActionStatus={dealActionStatus}
             dealActionError={dealActionError}
@@ -580,6 +642,7 @@ export default function AgentFlowView({
             onCompleteQualified={handleCompleteQualifiedFromPanel}
             onRunLeadTriage={handleRunLeadTriageFromPanel}
             onMarkClosed={handleMarkClosedFromPanel}
+            onMarkOutcome={(stage) => void handleMarkOutcomeFromPanel(stage)}
             onCreateDeal={(input) => void handleCreateDealFromPanel(input)}
             onOpenCreateQuoteModal={onOpenCreateQuoteModal}
             overrideEnabled={overrideEnabled}
@@ -619,6 +682,7 @@ export default function AgentFlowView({
             onRunNextMove={handleRunNextMove}
             onResolveBlocker={(item) => void handleResolveBlocker(item)}
             getStageActionLink={getStageActionLink}
+            nextMoveGuidance={nextMoveGuidance}
           />
 
           <FlowSignalsSection flow={flow} toTitle={toTitle} markerTypeMeta={markerTypeMeta} />

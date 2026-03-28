@@ -153,6 +153,13 @@ export type AgentFlowResponse = {
     humanChanges: string[];
     result: string;
   };
+  outcomeSummary: {
+    outcome: 'won' | 'lost' | 'pending';
+    source: 'deal' | 'lead' | 'none';
+    stage: string | null;
+    updatedAt: string | null;
+    reason: string | null;
+  };
   requestId?: string | null;
 };
 

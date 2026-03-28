@@ -69,6 +69,13 @@ export type AgentFlowResult = {
     humanChanges: string[];
     result: string;
   };
+  outcomeSummary: {
+    outcome: 'won' | 'lost' | 'pending';
+    source: 'deal' | 'lead' | 'none';
+    stage: string | null;
+    updatedAt: string | null;
+    reason: string | null;
+  };
 };
 
 type FlowRequestContext = {
@@ -810,6 +817,45 @@ function deriveCloseLoopSummary(source: FlowSourceData): AgentFlowResult['closeL
   };
 }
 
+function deriveOutcomeSummary(source: FlowSourceData): AgentFlowResult['outcomeSummary'] {
+  const dealStage = String(source.deal?.stage ?? '').toLowerCase();
+  const leadStatus = String(source.lead?.status ?? '').toLowerCase();
+
+  if (dealStage === 'won' || dealStage === 'lost') {
+    return {
+      outcome: dealStage === 'won' ? 'won' : 'lost',
+      source: 'deal',
+      stage: source.deal?.stage ?? null,
+      updatedAt:
+        (source.deal?.won_at ? String(source.deal.won_at) : null) ??
+        (source.deal?.updated_at ? String(source.deal.updated_at) : null) ??
+        null,
+      reason: source.deal?.lost_reason ? String(source.deal.lost_reason) : null,
+    };
+  }
+
+  if (leadStatus === 'won' || leadStatus === 'lost') {
+    return {
+      outcome: leadStatus === 'won' ? 'won' : 'lost',
+      source: 'lead',
+      stage: source.lead?.status ?? null,
+      updatedAt: source.lead?.updated_at ? String(source.lead.updated_at) : null,
+      reason: null,
+    };
+  }
+
+  return {
+    outcome: 'pending',
+    source: 'none',
+    stage: source.deal?.stage ?? source.lead?.status ?? null,
+    updatedAt:
+      (source.deal?.updated_at ? String(source.deal.updated_at) : null) ??
+      (source.lead?.updated_at ? String(source.lead.updated_at) : null) ??
+      null,
+    reason: null,
+  };
+}
+
 function summarizeFlow(stages: AgentFlowStage[]) {
   const completedCount = stages.filter((stage) => stage.completed).length;
   const active = stages.find((stage) => stage.status === 'active') ?? stages[stages.length - 1];
@@ -928,6 +974,7 @@ export async function resolveAgentFlow(input: {
     const stageSlaAlerts = deriveStageSlaAlerts(sourceData, stages);
     const transitionGuardrails = deriveTransitionGuardrails(sourceData);
     const closeLoopSummary = deriveCloseLoopSummary(sourceData);
+    const outcomeSummary = deriveOutcomeSummary(sourceData);
 
     return {
     leadId: lead?.id ?? null,
@@ -947,5 +994,6 @@ export async function resolveAgentFlow(input: {
         stageSlaAlerts,
         transitionGuardrails,
         closeLoopSummary,
+        outcomeSummary,
     };
 }

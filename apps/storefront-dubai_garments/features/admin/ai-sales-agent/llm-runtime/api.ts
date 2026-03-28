@@ -144,6 +144,30 @@ export async function prioritizeLeadFromIntelligence(leadId: string) {
   return json;
 }
 
+export async function updateDealStageFromFlow(
+  dealId: string,
+  input: {
+    stage: 'won' | 'lost';
+    notes?: string;
+    lost_reason?: string;
+  }
+) {
+  const response = await fetch(`/api/admin/deals/${dealId}/stage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+    credentials: 'include',
+  });
+
+  const json = await response.json();
+
+  if (!response.ok) {
+    throw new Error(json.message || 'Failed to update deal stage.');
+  }
+
+  return json;
+}
+
 export async function writeLeadIntelligenceAudit(input: {
   leadId: string;
   action: 'draft_reply' | 'convert' | 'prioritize';

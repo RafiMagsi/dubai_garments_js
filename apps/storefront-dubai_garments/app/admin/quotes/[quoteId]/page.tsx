@@ -256,7 +256,7 @@ export default function AdminQuoteDetailPage() {
 
   return (
     <AdminShell>
-      <PageShell density="compact">
+      <PageShell density="compact" className="dg-quote-detail-page">
       <Panel>
         <AdminPageHeader
           title={quote ? `Quote ${quote.quote_number}` : 'Quote Details'}
