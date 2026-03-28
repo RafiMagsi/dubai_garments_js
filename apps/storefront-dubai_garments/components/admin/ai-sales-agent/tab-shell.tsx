@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
 import LeadIntelligenceCards from './lead-intelligence-cards';
@@ -161,6 +161,8 @@ export default function AiSalesAgentTabShell() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const pendingScrollRestoreRef = useRef<number | null>(null);
+  const settleTimerRef = useRef<number | null>(null);
   const validTabKeys = useMemo(() => new Set(tabs.map((tab) => tab.key)), []);
   const tabParam = searchParams.get('tab');
   const activeTab: AgentTabKey =
@@ -172,6 +174,36 @@ export default function AiSalesAgentTabShell() {
   const previewLead = leadPreviewData?.item;
 
   const currentTab = useMemo(() => tabs.find((tab) => tab.key === activeTab) ?? tabs[0], [activeTab]);
+
+  function captureScrollForTabSwitch() {
+    if (typeof window === 'undefined') return;
+    pendingScrollRestoreRef.current = window.scrollY;
+  }
+
+  useEffect(() => {
+    if (pendingScrollRestoreRef.current === null || typeof window === 'undefined') return;
+
+    if (settleTimerRef.current) {
+      window.clearTimeout(settleTimerRef.current);
+    }
+
+    const capturedY = pendingScrollRestoreRef.current;
+    settleTimerRef.current = window.setTimeout(() => {
+      const maxScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (capturedY > maxScrollTop) {
+        window.scrollTo({ top: maxScrollTop, behavior: 'auto' });
+      }
+      pendingScrollRestoreRef.current = null;
+      settleTimerRef.current = null;
+    }, 900);
+
+    return () => {
+      if (settleTimerRef.current) {
+        window.clearTimeout(settleTimerRef.current);
+        settleTimerRef.current = null;
+      }
+    };
+  }, [activeTab]);
 
   function setTabInUrl(nextTab: AgentTabKey) {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -219,6 +251,7 @@ export default function AiSalesAgentTabShell() {
                 size="sm"
                 variant={isActive ? 'primary' : 'secondary'}
                 onClick={() => {
+                  captureScrollForTabSwitch();
                   setTabInUrl(tab.key);
                   setUiStateInUrl({ expanded: true });
                 }}
@@ -241,7 +274,7 @@ export default function AiSalesAgentTabShell() {
           </div>
         </div>
 
-        <Card className="ais-overview" key={activeTab}>
+        <Card className="ais-overview">
           <div style={{ display: 'grid', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
               <div>

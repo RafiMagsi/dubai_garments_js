@@ -4875,7 +4875,7 @@ select.aflow-deal-control {
 
   .asgn-workload-kpis {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 0.5rem;
   }
 
@@ -4902,6 +4902,26 @@ select.aflow-deal-control {
     font-weight: 700;
   }
 
+  .asgn-kpi.is-info {
+    border-color: #bfdbfe;
+    background: #f8fbff;
+  }
+
+  .asgn-kpi.is-good {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+  }
+
+  .asgn-kpi.is-warn {
+    border-color: #fed7aa;
+    background: #fffbeb;
+  }
+
+  .asgn-kpi.is-bad {
+    border-color: #fecaca;
+    background: #fef2f2;
+  }
+
   .asgn-workload-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4915,6 +4935,41 @@ select.aflow-deal-control {
     background: color-mix(in srgb, var(--dg-card-bg) 98%, white);
     display: grid;
     gap: 0.16rem;
+  }
+
+  .asgn-agent-health-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.28rem;
+  }
+
+  .asgn-agent-health-chip {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #334155;
+    padding: 0.11rem 0.4rem;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .asgn-agent-health-chip.is-good {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  .asgn-agent-health-chip.is-warn {
+    border-color: #fdba74;
+    background: #fffbeb;
+    color: #9a3412;
+  }
+
+  .asgn-agent-health-chip.is-bad {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #991b1b;
   }
 
   .asgn-stage-tags {
@@ -5798,6 +5853,21 @@ select.aflow-deal-control {
     gap: 0.1rem;
   }
 
+  .asgn-pipe-alert-kind {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 999px;
+    padding: 0.08rem 0.36rem;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+
   .asgn-pipe-alert p {
     margin: 0;
     font-size: 0.67rem;
@@ -5815,14 +5885,32 @@ select.aflow-deal-control {
     background: #fff7f7;
   }
 
+  .asgn-pipe-alert-kind.is-critical {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
   .asgn-pipe-alert.is-warning {
     border-color: #fed7aa;
     background: #fffbeb;
   }
 
+  .asgn-pipe-alert-kind.is-warning {
+    border-color: #fdba74;
+    background: #fffbeb;
+    color: #9a3412;
+  }
+
   .asgn-pipe-alert.is-info {
     border-color: #bfdbfe;
     background: #f8fbff;
+  }
+
+  .asgn-pipe-alert-kind.is-info {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
   }
 
   .asgn-pipe-suggest {
@@ -5848,6 +5936,65 @@ select.aflow-deal-control {
     padding: 0.36rem 0.4rem;
     display: grid;
     gap: 0.22rem;
+  }
+
+  .asgn-pipe-suggest-card.is-good {
+    border-color: #86efac;
+    background: #f0fdf4;
+  }
+
+  .asgn-pipe-suggest-card.is-warning {
+    border-color: #fdba74;
+    background: #fffbeb;
+  }
+
+  .asgn-pipe-suggest-card.is-critical {
+    border-color: #fca5a5;
+    background: #fef2f2;
+  }
+
+  .asgn-pipe-suggest-card.is-info {
+    border-color: #93c5fd;
+    background: #eff6ff;
+  }
+
+  .asgn-pipe-suggest-kind {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 999px;
+    padding: 0.08rem 0.36rem;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+  }
+
+  .asgn-pipe-suggest-kind.is-good {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  .asgn-pipe-suggest-kind.is-warning {
+    border-color: #fdba74;
+    background: #fffbeb;
+    color: #9a3412;
+  }
+
+  .asgn-pipe-suggest-kind.is-critical {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #991b1b;
+  }
+
+  .asgn-pipe-suggest-kind.is-info {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
   }
 
   .asgn-pipe-suggest-title {
@@ -6143,6 +6290,7 @@ select.aflow-deal-control {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
+    align-items: start;
   }
 
   .asgn-kpi-targets-panel {
@@ -6152,6 +6300,8 @@ select.aflow-deal-control {
     padding: 0.45rem 0.5rem;
     display: grid;
     gap: 0.26rem;
+    align-content: start;
+    align-items: start;
   }
 
   .asgn-kpi-list-tight {
@@ -6161,6 +6311,48 @@ select.aflow-deal-control {
 
   .asgn-kpi-list-tight li {
     line-height: 1.42;
+  }
+
+  .asgn-kpi-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    align-items: center;
+  }
+
+  .asgn-kpi-pill {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #334155;
+    padding: 0.12rem 0.42rem;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .asgn-kpi-pill.is-info {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .asgn-kpi-pill.is-good {
+    border-color: #86efac;
+    background: #f0fdf4;
+    color: #166534;
+  }
+
+  .asgn-kpi-pill.is-warn {
+    border-color: #fdba74;
+    background: #fffbeb;
+    color: #9a3412;
+  }
+
+  .asgn-kpi-pill.is-bad {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #991b1b;
   }
 
   html[data-dg-theme='twenty'] .asgn-kpi-targets-card-twenty .asgn-kpi-target-chip {
@@ -6252,9 +6444,15 @@ select.aflow-deal-control {
     gap: 0.7rem;
   }
 
+  .sales-agents-stage.is-hidden {
+    display: none;
+  }
+
   .sales-agents-content {
     display: grid;
     gap: 0.7rem;
+    align-content: start;
+    align-items: start;
   }
 
   .sales-agents-playbook {
@@ -6297,6 +6495,9 @@ select.aflow-deal-control {
     border-radius: 0.72rem;
     background: #f8fafc;
     padding: 0.74rem;
+    width: 100%;
+    align-self: start;
+    align-content: start;
   }
 
   .sales-agents-stage-head {
@@ -6341,10 +6542,22 @@ select.aflow-deal-control {
     display: grid;
     align-content: start;
     gap: 0.34rem;
+    align-self: start;
   }
 
   .sales-agents-settings-panel--full {
     grid-column: 1 / -1;
+    min-height: 0;
+  }
+
+  .sales-agents-settings-pane {
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+  }
+
+  .sales-agents-settings-pane.is-hidden {
+    display: none;
   }
 
   .sales-agents-settings-head {
@@ -6373,6 +6586,8 @@ select.aflow-deal-control {
   .sales-agents-control-shell {
     display: grid;
     gap: 0.56rem;
+    align-content: start;
+    align-items: start;
   }
 
   .sales-agents-control-switcher {
@@ -6384,6 +6599,7 @@ select.aflow-deal-control {
     border-radius: 0.62rem;
     background: color-mix(in srgb, #ffffff 97%, var(--dg-card-bg));
     padding: 0.36rem;
+    align-self: start;
   }
 
   .sales-agents-control-btn {

@@ -53,6 +53,37 @@ function alertToneClass(severity: 'warning' | 'critical' | 'info') {
   return 'is-info';
 }
 
+type SuggestionTone = 'is-good' | 'is-warning' | 'is-critical' | 'is-info';
+
+function suggestionToneClass(suggestion: {
+  id: string;
+  title: string;
+  detail: string;
+  stage: string | null;
+  limit: number | null;
+}): SuggestionTone {
+  const id = suggestion.id.toLowerCase();
+  const title = suggestion.title.toLowerCase();
+  const detail = suggestion.detail.toLowerCase();
+
+  if (id === 'balanced' || title.includes('balanced')) return 'is-good';
+  if (id.includes('load-rebalance') || title.includes('redistribute') || title.includes('rebalance')) {
+    return 'is-warning';
+  }
+  if (title.includes('high sla') || detail.includes('urgent') || detail.includes('overloaded')) {
+    return 'is-critical';
+  }
+  if (id.includes('empty') || suggestion.stage) return 'is-info';
+  return 'is-info';
+}
+
+function toneLabel(tone: SuggestionTone | 'is-warning' | 'is-critical' | 'is-info') {
+  if (tone === 'is-critical') return 'Critical';
+  if (tone === 'is-warning') return 'Warning';
+  if (tone === 'is-good') return 'Good';
+  return 'Info';
+}
+
 function toInt(input: string) {
   const parsed = Number(input);
   if (!Number.isFinite(parsed)) return 0;
@@ -713,6 +744,9 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
                     <div className="asgn-pipe-alerts">
                       {visibleAlerts.map((alert, index) => (
                         <div className={`asgn-pipe-alert ${alertToneClass(alert.severity)}`} key={`alert-${index}`}>
+                          <span className={`asgn-pipe-alert-kind ${alertToneClass(alert.severity)}`}>
+                            {toneLabel(alertToneClass(alert.severity))}
+                          </span>
                           <p>{alert.title}</p>
                           <p>{alert.detail}</p>
                         </div>
@@ -724,66 +758,70 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
 
                   <div className="asgn-pipe-suggest">
                     <div className="asgn-pipe-suggest-list">
-                      {visibleSuggestions.map((suggestion) => (
-                        <div className="asgn-pipe-suggest-card" key={`suggest-${suggestion.id}`}>
-                          <p className="asgn-pipe-suggest-title">{suggestion.title}</p>
-                          <p className="asgn-pipe-suggest-detail">{suggestion.detail}</p>
-                          <div className="asgn-actions">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="secondary"
-                              disabled={opLoading || suggestion.id === 'balanced'}
-                              onClick={() =>
-                                void runOperation(
-                                  {
-                                    action: 'bulk_rebalance',
-                                    limit: Math.max(1, suggestion.limit ?? Math.max(1, toInt(bulkLimit))),
-                                    filters: {
-                                      team: filters.team,
-                                      stage: suggestion.stage ?? filters.stage,
-                                      urgency: filters.urgency,
-                                      inactiveDays: toInt(filters.inactiveDays),
-                                      ownerUserId: (suggestion.fromOwnerUserId ?? filters.ownerUserId) || undefined,
+                      {visibleSuggestions.map((suggestion) => {
+                        const tone = suggestionToneClass(suggestion);
+                        return (
+                          <div className={`asgn-pipe-suggest-card ${tone}`} key={`suggest-${suggestion.id}`}>
+                            <span className={`asgn-pipe-suggest-kind ${tone}`}>{toneLabel(tone)}</span>
+                            <p className="asgn-pipe-suggest-title">{suggestion.title}</p>
+                            <p className="asgn-pipe-suggest-detail">{suggestion.detail}</p>
+                            <div className="asgn-actions">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                disabled={opLoading || suggestion.id === 'balanced'}
+                                onClick={() =>
+                                  void runOperation(
+                                    {
+                                      action: 'bulk_rebalance',
+                                      limit: Math.max(1, suggestion.limit ?? Math.max(1, toInt(bulkLimit))),
+                                      filters: {
+                                        team: filters.team,
+                                        stage: suggestion.stage ?? filters.stage,
+                                        urgency: filters.urgency,
+                                        inactiveDays: toInt(filters.inactiveDays),
+                                        ownerUserId: (suggestion.fromOwnerUserId ?? filters.ownerUserId) || undefined,
+                                      },
+                                      reason: `Rebalance from suggestion: ${suggestion.title}`,
                                     },
-                                    reason: `Rebalance from suggestion: ${suggestion.title}`,
-                                  },
-                                  'Suggestion rebalance executed.'
-                                )
-                              }
-                            >
-                              Run
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                const owner = suggestion.fromOwnerUserId ?? suggestion.toOwnerUserId ?? '';
-                                const nextFilters = { ...filters, ownerUserId: owner };
-                                setFilters(nextFilters);
-                                void load(nextFilters);
-                              }}
-                              disabled={opLoading}
-                            >
-                              Owner
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                const nextFilters = { ...filters, stage: suggestion.stage ?? 'all' };
-                                setFilters(nextFilters);
-                                void load(nextFilters);
-                              }}
-                              disabled={opLoading}
-                            >
-                              Stage
-                            </Button>
+                                    'Suggestion rebalance executed.'
+                                  )
+                                }
+                              >
+                                Run
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  const owner = suggestion.fromOwnerUserId ?? suggestion.toOwnerUserId ?? '';
+                                  const nextFilters = { ...filters, ownerUserId: owner };
+                                  setFilters(nextFilters);
+                                  void load(nextFilters);
+                                }}
+                                disabled={opLoading}
+                              >
+                                Owner
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  const nextFilters = { ...filters, stage: suggestion.stage ?? 'all' };
+                                  setFilters(nextFilters);
+                                  void load(nextFilters);
+                                }}
+                                disabled={opLoading}
+                              >
+                                Stage
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {visibleSuggestions.length === 0 ? (
                         <p className="aflow-empty">No rebalance suggestions for current filters.</p>

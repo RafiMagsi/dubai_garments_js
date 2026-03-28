@@ -9,6 +9,24 @@ type AgentWorkloadPanelProps = {
   compact?: boolean;
 };
 
+function toneForRisk(value: number) {
+  if (value >= 12) return 'is-bad';
+  if (value >= 5) return 'is-warn';
+  return 'is-good';
+}
+
+function toneForResponseRate(value: number) {
+  if (value >= 80) return 'is-good';
+  if (value >= 60) return 'is-warn';
+  return 'is-bad';
+}
+
+function toneForConversion(value: number) {
+  if (value >= 35) return 'is-good';
+  if (value >= 15) return 'is-warn';
+  return 'is-bad';
+}
+
 export default function AgentWorkloadPanel({ compact = false }: AgentWorkloadPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,19 +56,26 @@ export default function AgentWorkloadPanel({ compact = false }: AgentWorkloadPan
         activeDeals: 0,
         overdueFollowups: 0,
         slaRisks: 0,
+        avgResponseRate: 0,
       };
     }
 
-    return data.agents.reduce(
+    const totals = data.agents.reduce(
       (acc, agent) => {
         acc.activeLeads += agent.activeLeads;
         acc.activeDeals += agent.activeDeals;
         acc.overdueFollowups += agent.overdueFollowups;
         acc.slaRisks += agent.slaRiskCount;
+        acc.avgResponseRate += agent.responseRatePct;
         return acc;
       },
-      { activeLeads: 0, activeDeals: 0, overdueFollowups: 0, slaRisks: 0 }
+      { activeLeads: 0, activeDeals: 0, overdueFollowups: 0, slaRisks: 0, avgResponseRate: 0 }
     );
+
+    return {
+      ...totals,
+      avgResponseRate: Math.round(totals.avgResponseRate / data.agents.length),
+    };
   }, [data]);
 
   return (
@@ -79,21 +104,25 @@ export default function AgentWorkloadPanel({ compact = false }: AgentWorkloadPan
       {error ? <p className="asgn-error">{error}</p> : null}
 
       <div className="asgn-workload-kpis">
-        <div className="asgn-kpi">
+        <div className="asgn-kpi is-info">
           <span>Active Leads</span>
           <strong>{summary.activeLeads}</strong>
         </div>
-        <div className="asgn-kpi">
+        <div className="asgn-kpi is-info">
           <span>Active Deals</span>
           <strong>{summary.activeDeals}</strong>
         </div>
-        <div className="asgn-kpi">
+        <div className={`asgn-kpi ${toneForRisk(summary.overdueFollowups)}`}>
           <span>Overdue Follow-ups</span>
           <strong>{summary.overdueFollowups}</strong>
         </div>
-        <div className="asgn-kpi">
+        <div className={`asgn-kpi ${toneForRisk(summary.slaRisks)}`}>
           <span>SLA Risk Count</span>
           <strong>{summary.slaRisks}</strong>
+        </div>
+        <div className={`asgn-kpi ${toneForResponseRate(summary.avgResponseRate)}`}>
+          <span>Avg Response Rate</span>
+          <strong>{summary.avgResponseRate}%</strong>
         </div>
       </div>
 
@@ -109,13 +138,21 @@ export default function AgentWorkloadPanel({ compact = false }: AgentWorkloadPan
                 <p className="asgn-agent-meta">
                   {agent.role} · Leads {agent.activeLeads} · Deals {agent.activeDeals}
                 </p>
-                <p className="asgn-agent-meta">
-                  Conversion {agent.conversionRatePct}% · Response {agent.responseRatePct}% · Avg First Response{' '}
-                  {agent.avgFirstResponseHours}h
-                </p>
-                <p className="asgn-agent-meta">
-                  Overdue Follow-ups {agent.overdueFollowups} · SLA Risks {agent.slaRiskCount}
-                </p>
+                <div className="asgn-agent-health-row">
+                  <span className={`asgn-agent-health-chip ${toneForRisk(agent.slaRiskCount)}`}>
+                    SLA Risk {agent.slaRiskCount}
+                  </span>
+                  <span className={`asgn-agent-health-chip ${toneForRisk(agent.overdueFollowups)}`}>
+                    Overdue {agent.overdueFollowups}
+                  </span>
+                  <span className={`asgn-agent-health-chip ${toneForResponseRate(agent.responseRatePct)}`}>
+                    Response {agent.responseRatePct}%
+                  </span>
+                  <span className={`asgn-agent-health-chip ${toneForConversion(agent.conversionRatePct)}`}>
+                    Conversion {agent.conversionRatePct}%
+                  </span>
+                </div>
+                <p className="asgn-agent-meta">Avg first response: {agent.avgFirstResponseHours}h</p>
                 <div className="asgn-stage-tags">
                   {agent.stageDistribution.length > 0 ? (
                     agent.stageDistribution.slice(0, 6).map((stage) => (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui';
 import AssignmentPolicyPanel from '@/components/admin/ai-sales-agent/assignment-policy-panel';
 import AgentWorkloadPanel from '@/components/admin/ai-sales-agent/agent-workload-panel';
@@ -35,7 +35,45 @@ const VIEW_DESCRIPTORS: Record<SalesAgentsView, ViewDescriptor> = {
 export default function SalesAgentsWorkspace() {
   const [activeView, setActiveView] = useState<SalesAgentsView>('agents');
   const [activeControlPanel, setActiveControlPanel] = useState<SalesAgentsControlPanel>('policy');
+  const [contentMinHeight, setContentMinHeight] = useState<number | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const capturedScrollRef = useRef<number | null>(null);
+  const releaseTimerRef = useRef<number | null>(null);
   const activeViewDescriptor = useMemo(() => VIEW_DESCRIPTORS[activeView], [activeView]);
+
+  function captureLayoutBeforeSwitch() {
+    if (typeof window !== 'undefined') {
+      capturedScrollRef.current = window.scrollY;
+    }
+    if (!contentRef.current) return;
+    const currentHeight = contentRef.current.getBoundingClientRect().height;
+    if (Number.isFinite(currentHeight) && currentHeight > 0) {
+      setContentMinHeight(Math.ceil(currentHeight));
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (releaseTimerRef.current) {
+      window.clearTimeout(releaseTimerRef.current);
+    }
+
+    releaseTimerRef.current = window.setTimeout(() => {
+      setContentMinHeight(null);
+      const maxScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (window.scrollY > maxScrollTop) {
+        window.scrollTo({ top: maxScrollTop, behavior: 'smooth' });
+      }
+      releaseTimerRef.current = null;
+    }, 700);
+
+    return () => {
+      if (releaseTimerRef.current) {
+        window.clearTimeout(releaseTimerRef.current);
+        releaseTimerRef.current = null;
+      }
+    };
+  }, [activeView, activeControlPanel]);
 
   return (
     <div className="sales-agents-workspace sales-agents-workspace--structured" data-testid="sales-agents-workspace">
@@ -54,7 +92,11 @@ export default function SalesAgentsWorkspace() {
                 size="sm"
                 variant={isActive ? 'primary' : 'secondary'}
                 className={`sales-agents-view-btn${isActive ? ' is-active' : ''}`}
-                onClick={() => setActiveView(option.key)}
+                onClick={() => {
+                  if (option.key === activeView) return;
+                  captureLayoutBeforeSwitch();
+                  setActiveView(option.key);
+                }}
               >
                 {option.label}
               </Button>
@@ -63,7 +105,7 @@ export default function SalesAgentsWorkspace() {
         </div>
       </section>
 
-      <section className="sales-agents-content">
+      <section className="sales-agents-content" ref={contentRef} style={contentMinHeight ? { minHeight: `${contentMinHeight}px` } : undefined}>
         {activeView === 'agents' && (
           <section className="sales-agents-stage sales-agents-stage--overview">
             <AgentPipelineBoard mode="agents" />
@@ -85,7 +127,11 @@ export default function SalesAgentsWorkspace() {
                   size="sm"
                   variant={activeControlPanel === 'policy' ? 'primary' : 'secondary'}
                   className={`sales-agents-control-btn${activeControlPanel === 'policy' ? ' is-active' : ''}`}
-                  onClick={() => setActiveControlPanel('policy')}
+                  onClick={() => {
+                    if (activeControlPanel === 'policy') return;
+                    captureLayoutBeforeSwitch();
+                    setActiveControlPanel('policy');
+                  }}
                 >
                   Policy
                 </Button>
@@ -94,7 +140,11 @@ export default function SalesAgentsWorkspace() {
                   size="sm"
                   variant={activeControlPanel === 'workload' ? 'primary' : 'secondary'}
                   className={`sales-agents-control-btn${activeControlPanel === 'workload' ? ' is-active' : ''}`}
-                  onClick={() => setActiveControlPanel('workload')}
+                  onClick={() => {
+                    if (activeControlPanel === 'workload') return;
+                    captureLayoutBeforeSwitch();
+                    setActiveControlPanel('workload');
+                  }}
                 >
                   Workload
                 </Button>
@@ -103,30 +153,26 @@ export default function SalesAgentsWorkspace() {
                   size="sm"
                   variant={activeControlPanel === 'kpi' ? 'primary' : 'secondary'}
                   className={`sales-agents-control-btn${activeControlPanel === 'kpi' ? ' is-active' : ''}`}
-                  onClick={() => setActiveControlPanel('kpi')}
+                  onClick={() => {
+                    if (activeControlPanel === 'kpi') return;
+                    captureLayoutBeforeSwitch();
+                    setActiveControlPanel('kpi');
+                  }}
                 >
                   KPIs
                 </Button>
               </div>
 
               <div className="sales-agents-settings-panel sales-agents-settings-panel--full">
-                {activeControlPanel === 'policy' && (
-                  <>
-                    <AssignmentPolicyPanel compact />
-                  </>
-                )}
-
-                {activeControlPanel === 'workload' && (
-                  <>
-                    <AgentWorkloadPanel compact />
-                  </>
-                )}
-
-                {activeControlPanel === 'kpi' && (
-                  <>
-                    <AssignmentKpiTargetsPanel compact />
-                  </>
-                )}
+                <div className={`sales-agents-settings-pane${activeControlPanel === 'policy' ? '' : ' is-hidden'}`}>
+                  <AssignmentPolicyPanel compact />
+                </div>
+                <div className={`sales-agents-settings-pane${activeControlPanel === 'workload' ? '' : ' is-hidden'}`}>
+                  <AgentWorkloadPanel compact />
+                </div>
+                <div className={`sales-agents-settings-pane${activeControlPanel === 'kpi' ? '' : ' is-hidden'}`}>
+                  <AssignmentKpiTargetsPanel compact />
+                </div>
               </div>
             </div>
           </section>

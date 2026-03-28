@@ -17,6 +17,24 @@ function signedPercent(value: number) {
   return '0%';
 }
 
+function inverseToneClass(value: number) {
+  if (value <= 25) return 'is-good';
+  if (value <= 45) return 'is-warn';
+  return 'is-bad';
+}
+
+function hourToneClass(hours: number) {
+  if (hours <= 2) return 'is-good';
+  if (hours <= 6) return 'is-warn';
+  return 'is-bad';
+}
+
+function dayToneClass(days: number) {
+  if (days <= 3) return 'is-good';
+  if (days <= 7) return 'is-warn';
+  return 'is-bad';
+}
+
 type AssignmentKpiTargetsPanelProps = {
   compact?: boolean;
 };
@@ -106,7 +124,7 @@ export default function AssignmentKpiTargetsPanel({ compact = false }: Assignmen
           <strong>{top.reassignmentRate}%</strong>
           <em>Lower means more stable ownership</em>
         </div>
-        <div className={`asgn-kpi-target-chip ${toneClass(top.winImpact + 50)}`}>
+        <div className={`asgn-kpi-target-chip ${top.winImpact >= 0 ? 'is-good' : 'is-bad'}`}>
           <span>Win-Rate Impact</span>
           <strong>{signedPercent(top.winImpact)}</strong>
           <em>Reassigned vs baseline close-win delta</em>
@@ -126,9 +144,15 @@ export default function AssignmentKpiTargetsPanel({ compact = false }: Assignmen
             <p className="aflow-mini-title">1. Time-to-first-response by agent</p>
             <ul className="aflow-mini-list asgn-kpi-list-tight">
               {data.timeToFirstResponseByAgent.slice(0, 6).map((item) => (
-                <li key={`tfr-${item.userId}`}>
-                  <strong>{item.fullName}</strong> · {item.avgFirstResponseHours}h avg · {item.responseRatePct}% response (
-                  {item.respondedLeadCount} leads)
+                <li key={`tfr-${item.userId}`} className="asgn-kpi-line">
+                  <strong>{item.fullName}</strong>
+                  <span className={`asgn-kpi-pill ${hourToneClass(item.avgFirstResponseHours)}`}>
+                    First response {item.avgFirstResponseHours}h
+                  </span>
+                  <span className={`asgn-kpi-pill ${toneClass(item.responseRatePct)}`}>
+                    Response {item.responseRatePct}%
+                  </span>
+                  <span className="asgn-kpi-pill is-info">{item.respondedLeadCount} leads</span>
                 </li>
               ))}
             </ul>
@@ -138,9 +162,13 @@ export default function AssignmentKpiTargetsPanel({ compact = false }: Assignmen
             <p className="aflow-mini-title">2. Stage aging by agent</p>
             <ul className="aflow-mini-list asgn-kpi-list-tight">
               {data.stageAgingByAgent.slice(0, 5).map((agent) => (
-                <li key={`aging-${agent.userId}`}>
-                  <strong>{agent.fullName}</strong> ·{' '}
-                  {agent.stages.slice(0, 2).map((stage) => `${stage.stage} ${stage.avgAgingDays}d`).join(' · ')}
+                <li key={`aging-${agent.userId}`} className="asgn-kpi-line">
+                  <strong>{agent.fullName}</strong>
+                  {agent.stages.slice(0, 2).map((stage) => (
+                    <span key={`${agent.userId}-${stage.stage}`} className={`asgn-kpi-pill ${dayToneClass(stage.avgAgingDays)}`}>
+                      {stage.stage} {stage.avgAgingDays}d
+                    </span>
+                  ))}
                 </li>
               ))}
             </ul>
@@ -149,11 +177,17 @@ export default function AssignmentKpiTargetsPanel({ compact = false }: Assignmen
           <div className="asgn-kpi-targets-panel">
             <p className="aflow-mini-title">3. Assignment fairness index</p>
             <ul className="aflow-mini-list asgn-kpi-list-tight">
-              <li>Score: {data.assignmentFairnessIndex.score}%</li>
-              <li>Mean load: {data.assignmentFairnessIndex.meanLoad}</li>
-              <li>StdDev load: {data.assignmentFairnessIndex.stdDevLoad}</li>
-              <li>
+              <li className="asgn-kpi-line">
+                <span className={`asgn-kpi-pill ${toneClass(data.assignmentFairnessIndex.score)}`}>
+                  Score {data.assignmentFairnessIndex.score}%
+                </span>
+                <span className="asgn-kpi-pill is-info">Mean {data.assignmentFairnessIndex.meanLoad}</span>
+                <span className="asgn-kpi-pill is-info">StdDev {data.assignmentFairnessIndex.stdDevLoad}</span>
+              </li>
+              <li className="asgn-kpi-line">
+                <span className="asgn-kpi-pill is-info">
                 Range: {data.assignmentFairnessIndex.minLoad} to {data.assignmentFairnessIndex.maxLoad}
+                </span>
               </li>
             </ul>
           </div>
@@ -162,8 +196,14 @@ export default function AssignmentKpiTargetsPanel({ compact = false }: Assignmen
             <p className="aflow-mini-title">4. Conversion by owner and stage</p>
             <ul className="aflow-mini-list asgn-kpi-list-tight">
               {data.conversionByOwner.slice(0, 5).map((owner) => (
-                <li key={`owner-conv-${owner.userId}`}>
-                  <strong>{owner.fullName}</strong>: {owner.conversionRatePct}% ({owner.wonDeals}/{owner.closedDeals})
+                <li key={`owner-conv-${owner.userId}`} className="asgn-kpi-line">
+                  <strong>{owner.fullName}</strong>
+                  <span className={`asgn-kpi-pill ${toneClass(owner.conversionRatePct)}`}>
+                    {owner.conversionRatePct}% win
+                  </span>
+                  <span className="asgn-kpi-pill is-info">
+                    {owner.wonDeals}/{owner.closedDeals}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -179,13 +219,25 @@ export default function AssignmentKpiTargetsPanel({ compact = false }: Assignmen
           <div className="asgn-kpi-targets-panel">
             <p className="aflow-mini-title">5. Reassignment rate and impact on win-rate</p>
             <ul className="aflow-mini-list asgn-kpi-list-tight">
-              <li>
-                Reassignment rate: {data.reassignmentImpact.reassignmentRatePct}% ({data.reassignmentImpact.reassignmentCount}/
-                {data.reassignmentImpact.assignmentOpsCount})
+              <li className="asgn-kpi-line">
+                <span className={`asgn-kpi-pill ${inverseToneClass(data.reassignmentImpact.reassignmentRatePct)}`}>
+                  Reassignment {data.reassignmentImpact.reassignmentRatePct}%
+                </span>
+                <span className="asgn-kpi-pill is-info">
+                  {data.reassignmentImpact.reassignmentCount}/{data.reassignmentImpact.assignmentOpsCount} ops
+                </span>
               </li>
-              <li>Reassigned closed win-rate: {data.reassignmentImpact.reassignedClosedWinRatePct}%</li>
-              <li>Baseline closed win-rate: {data.reassignmentImpact.baselineClosedWinRatePct}%</li>
-              <li>Delta: {signedPercent(data.reassignmentImpact.winRateDeltaPct)}</li>
+              <li className="asgn-kpi-line">
+                <span className={`asgn-kpi-pill ${toneClass(data.reassignmentImpact.reassignedClosedWinRatePct)}`}>
+                  Reassigned win {data.reassignmentImpact.reassignedClosedWinRatePct}%
+                </span>
+                <span className={`asgn-kpi-pill ${toneClass(data.reassignmentImpact.baselineClosedWinRatePct)}`}>
+                  Baseline win {data.reassignmentImpact.baselineClosedWinRatePct}%
+                </span>
+                <span className={`asgn-kpi-pill ${data.reassignmentImpact.winRateDeltaPct >= 0 ? 'is-good' : 'is-bad'}`}>
+                  Delta {signedPercent(data.reassignmentImpact.winRateDeltaPct)}
+                </span>
+              </li>
             </ul>
           </div>
         </div>
