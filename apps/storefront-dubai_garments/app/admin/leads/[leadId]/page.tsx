@@ -234,8 +234,12 @@ export default function AdminLeadDetailsPage() {
   }
 
   async function handleCreateQuote(input: DealQuoteCreateInput) {
-    if (!lead || !deal?.id || !lead.customer_id) {
-      setQuoteError('Deal link is required before creating a quote.');
+    if (!lead) {
+      setQuoteError('Lead context is missing. Reload and try again.');
+      return false;
+    }
+    if (!lead.customer_id) {
+      setQuoteError('This lead is missing a linked customer. Link/convert the customer before creating a quote.');
       return false;
     }
     setQuoteSuccess(null);
@@ -256,7 +260,7 @@ export default function AdminLeadDetailsPage() {
       const created = await createQuoteMutation.mutateAsync({
         customer_id: lead.customer_id,
         lead_id: lead.id,
-        deal_id: deal.id,
+        deal_id: deal?.id || undefined,
         currency: String(input.currency || 'AED'),
         valid_until: input.expires_at || undefined,
         notes: input.quote_notes || undefined,
@@ -280,6 +284,14 @@ export default function AdminLeadDetailsPage() {
     } catch (error) {
       setQuoteError(error instanceof Error ? error.message : 'Failed to create quote.');
       return false;
+    }
+  }
+
+  function handleQuoteModalOpenChange(nextOpen: boolean) {
+    setQuoteModalOpen(nextOpen);
+    if (nextOpen) {
+      setQuoteSuccess(null);
+      setQuoteError(null);
     }
   }
 
@@ -450,7 +462,7 @@ export default function AdminLeadDetailsPage() {
               showHeader={false}
               initialLeadId={lead.id}
               compact
-              onOpenCreateQuoteModal={() => setQuoteModalOpen(true)}
+              onOpenCreateQuoteModal={() => handleQuoteModalOpenChange(true)}
               refreshSignal={flowRefreshSignal}
             />
           </section>
@@ -565,7 +577,7 @@ export default function AdminLeadDetailsPage() {
             error={quoteError}
             hideInlineCard
             open={quoteModalOpen}
-            onOpenChange={setQuoteModalOpen}
+            onOpenChange={handleQuoteModalOpenChange}
             onSubmit={handleCreateQuote}
           />
           </div>

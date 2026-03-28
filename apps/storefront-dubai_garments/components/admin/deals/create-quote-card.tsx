@@ -54,6 +54,7 @@ export default function CreateQuoteCard({
     `${dealLeadProductName || 'Product'} - Qty ${dealLeadQuantity || 1}`
   );
   const [quoteNotes, setQuoteNotes] = useState('');
+  const [clientError, setClientError] = useState<string | null>(null);
 
   useEffect(() => {
     if (productId || productOptions.length === 0) return;
@@ -94,6 +95,12 @@ export default function CreateQuoteCard({
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!modalOpen) {
+      setClientError(null);
+    }
+  }, [modalOpen]);
+
   function setOpen(next: boolean) {
     setModalOpen(next);
     onOpenChange?.(next);
@@ -101,9 +108,23 @@ export default function CreateQuoteCard({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setClientError(null);
+
+    const normalizedProductId = productId.trim();
+    const normalizedQuantity = Number(quantity || 0);
+
+    if (!normalizedProductId) {
+      setClientError('Please select a product before creating the quote.');
+      return;
+    }
+    if (!Number.isFinite(normalizedQuantity) || normalizedQuantity <= 0) {
+      setClientError('Quantity must be greater than 0.');
+      return;
+    }
+
     const ok = await onSubmit({
-      product_id: productId.trim(),
-      quantity: Number(quantity || 0),
+      product_id: normalizedProductId,
+      quantity: normalizedQuantity,
       currency: currency.trim() || 'AED',
       discount: Number(discount || 0),
       tax_pct: Number(taxPct || 0),
@@ -113,6 +134,11 @@ export default function CreateQuoteCard({
     });
     if (ok) {
       setOpen(false);
+      return;
+    }
+
+    if (!error) {
+      setClientError('Quote creation failed. Check required fields and try again.');
     }
   }
 
@@ -146,6 +172,9 @@ export default function CreateQuoteCard({
             </div>
           </div>
           <p className="ui-modal-meta">Use product and quantity to generate an exact quote breakdown.</p>
+          {success ? <div className="dg-alert-success">{success}</div> : null}
+          {error ? <div className="dg-alert-error">{error}</div> : null}
+          {clientError ? <div className="dg-alert-error">{clientError}</div> : null}
 
           <form className="dg-config-form" onSubmit={(event) => void handleSubmit(event)}>
             <div className="dg-config-grid">
