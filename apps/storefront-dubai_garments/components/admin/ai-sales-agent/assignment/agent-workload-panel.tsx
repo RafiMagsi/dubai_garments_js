@@ -5,7 +5,11 @@ import { Button, Card, CardText, CardTitle } from '@/components/ui';
 import { getAgentWorkload } from '@/features/admin/ai-sales-agent/api';
 import type { AgentWorkloadEnvelope } from '@/features/admin/ai-sales-agent/types';
 
-export default function AgentWorkloadPanel() {
+type AgentWorkloadPanelProps = {
+  compact?: boolean;
+};
+
+export default function AgentWorkloadPanel({ compact = false }: AgentWorkloadPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AgentWorkloadEnvelope | null>(null);
@@ -51,18 +55,26 @@ export default function AgentWorkloadPanel() {
 
   return (
     <Card className="asgn-workload-card">
-      <div className="asgn-workload-head">
-        <div>
-          <p className="aflow-kicker">Sales Agent Workload Model</p>
-          <CardTitle>Agent Capacity, Stage Distribution, and SLA Risks</CardTitle>
-          <CardText>
-            Tracks active ownership, response metrics, follow-up debt, and conversion health per agent.
-          </CardText>
+      {!compact ? (
+        <div className="asgn-workload-head">
+          <div>
+            <p className="aflow-kicker">Sales Agent Workload Model</p>
+            <CardTitle>Agent Capacity, Stage Distribution, and SLA Risks</CardTitle>
+            <CardText>
+              Tracks active ownership, response metrics, follow-up debt, and conversion health per agent.
+            </CardText>
+          </div>
+          <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </div>
-        <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>
-          {loading ? 'Refreshing...' : 'Refresh'}
-        </Button>
-      </div>
+      ) : (
+        <div className="asgn-actions">
+          <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
+      )}
 
       {error ? <p className="asgn-error">{error}</p> : null}
 
@@ -125,4 +137,3 @@ export default function AgentWorkloadPanel() {
     </Card>
   );
 }
-

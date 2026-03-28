@@ -7,28 +7,42 @@ import AgentWorkloadPanel from '@/components/admin/ai-sales-agent/agent-workload
 import AgentPipelineBoard from '@/components/admin/ai-sales-agent/agent-pipeline-board';
 import AssignmentKpiTargetsPanel from '@/components/admin/ai-sales-agent/assignment-kpi-targets-panel';
 
-type SalesAgentsView = 'pipeline' | 'capacity' | 'performance';
+type SalesAgentsView = 'agents' | 'manager' | 'control';
+type SalesAgentsControlPanel = 'policy' | 'workload' | 'kpi';
 
 const VIEW_OPTIONS: Array<{ key: SalesAgentsView; label: string }> = [
-  { key: 'pipeline', label: 'Operations Board' },
-  { key: 'capacity', label: 'Policy & Capacity' },
-  { key: 'performance', label: 'Performance KPIs' },
+  { key: 'agents', label: 'Agents Board' },
+  { key: 'manager', label: 'Manager Board' },
+  { key: 'control', label: 'Settings' },
 ];
 
+type ViewDescriptor = {
+  subtitle: string;
+};
+
+const VIEW_DESCRIPTORS: Record<SalesAgentsView, ViewDescriptor> = {
+  agents: {
+    subtitle: 'Agent ownership board grouped by Leads, Deals, and Quotes.',
+  },
+  manager: {
+    subtitle: 'Stage operations with queue actions, alerts, and rebalance tools.',
+  },
+  control: {
+    subtitle: 'Assignment policies, workload controls, and KPI targets.',
+  },
+};
+
 export default function SalesAgentsWorkspace() {
-  const [activeView, setActiveView] = useState<SalesAgentsView>('pipeline');
-  const activeLabel = useMemo(
-    () => VIEW_OPTIONS.find((option) => option.key === activeView)?.label ?? 'Operations Board',
-    [activeView]
-  );
+  const [activeView, setActiveView] = useState<SalesAgentsView>('agents');
+  const [activeControlPanel, setActiveControlPanel] = useState<SalesAgentsControlPanel>('policy');
+  const activeViewDescriptor = useMemo(() => VIEW_DESCRIPTORS[activeView], [activeView]);
 
   return (
-    <div className="sales-agents-workspace" data-testid="sales-agents-workspace">
+    <div className="sales-agents-workspace sales-agents-workspace--structured" data-testid="sales-agents-workspace">
       <section className="sales-agents-toolbar">
         <div className="sales-agents-toolbar-copy">
-          <p className="sales-agents-kicker">Sales Agents Console</p>
-          <h3>{activeLabel}</h3>
-          <p>Clear manager workflow: operate in board view, configure policy in capacity view, track outcomes in KPI view.</p>
+          <h3>Sales Agents Console</h3>
+          <p>{activeViewDescriptor.subtitle}</p>
         </div>
         <div className="sales-agents-toolbar-actions">
           {VIEW_OPTIONS.map((option) => {
@@ -49,26 +63,75 @@ export default function SalesAgentsWorkspace() {
         </div>
       </section>
 
-      {activeView === 'pipeline' && (
-        <section className="sales-agents-stage">
-          <AgentPipelineBoard />
-        </section>
-      )}
+      <section className="sales-agents-content">
+        {activeView === 'agents' && (
+          <section className="sales-agents-stage sales-agents-stage--overview">
+            <AgentPipelineBoard mode="agents" />
+          </section>
+        )}
 
-      {activeView === 'capacity' && (
-        <section className="sales-agents-stage">
-          <div className="sales-agents-top-grid">
-            <AssignmentPolicyPanel />
-            <AgentWorkloadPanel />
-          </div>
-        </section>
-      )}
+        {activeView === 'manager' && (
+          <section className="sales-agents-stage sales-agents-stage--operations">
+            <AgentPipelineBoard mode="manager" />
+          </section>
+        )}
 
-      {activeView === 'performance' && (
-        <section className="sales-agents-stage">
-          <AssignmentKpiTargetsPanel />
-        </section>
-      )}
+        {activeView === 'control' && (
+          <section className="sales-agents-stage sales-agents-stage--settings">
+            <div className="sales-agents-control-shell">
+              <div className="sales-agents-control-switcher" role="tablist" aria-label="Sales agents settings panels">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={activeControlPanel === 'policy' ? 'primary' : 'secondary'}
+                  className={`sales-agents-control-btn${activeControlPanel === 'policy' ? ' is-active' : ''}`}
+                  onClick={() => setActiveControlPanel('policy')}
+                >
+                  Policy
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={activeControlPanel === 'workload' ? 'primary' : 'secondary'}
+                  className={`sales-agents-control-btn${activeControlPanel === 'workload' ? ' is-active' : ''}`}
+                  onClick={() => setActiveControlPanel('workload')}
+                >
+                  Workload
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={activeControlPanel === 'kpi' ? 'primary' : 'secondary'}
+                  className={`sales-agents-control-btn${activeControlPanel === 'kpi' ? ' is-active' : ''}`}
+                  onClick={() => setActiveControlPanel('kpi')}
+                >
+                  KPIs
+                </Button>
+              </div>
+
+              <div className="sales-agents-settings-panel sales-agents-settings-panel--full">
+                {activeControlPanel === 'policy' && (
+                  <>
+                    <AssignmentPolicyPanel compact />
+                  </>
+                )}
+
+                {activeControlPanel === 'workload' && (
+                  <>
+                    <AgentWorkloadPanel compact />
+                  </>
+                )}
+
+                {activeControlPanel === 'kpi' && (
+                  <>
+                    <AssignmentKpiTargetsPanel compact />
+                  </>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+      </section>
     </div>
   );
 }

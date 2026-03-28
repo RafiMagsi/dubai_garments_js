@@ -17,7 +17,11 @@ function signedPercent(value: number) {
   return '0%';
 }
 
-export default function AssignmentKpiTargetsPanel() {
+type AssignmentKpiTargetsPanelProps = {
+  compact?: boolean;
+};
+
+export default function AssignmentKpiTargetsPanel({ compact = false }: AssignmentKpiTargetsPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AssignmentKpiTargetsEnvelope | null>(null);
@@ -68,18 +72,26 @@ export default function AssignmentKpiTargetsPanel() {
 
   return (
     <Card className="asgn-kpi-targets-card asgn-kpi-targets-card-twenty">
-      <div className="asgn-kpi-targets-head">
-        <div>
-          <p className="aflow-kicker">Additional KPI Targets</p>
-          <CardTitle>Assignment Performance and Reliability Metrics</CardTitle>
-          <CardText>
-            Time-to-first-response, stage aging, fairness, conversion, and reassignment impact for manager-level control.
-          </CardText>
+      {!compact ? (
+        <div className="asgn-kpi-targets-head">
+          <div>
+            <p className="aflow-kicker">Additional KPI Targets</p>
+            <CardTitle>Assignment Performance and Reliability Metrics</CardTitle>
+            <CardText>
+              Time-to-first-response, stage aging, fairness, conversion, and reassignment impact for manager-level control.
+            </CardText>
+          </div>
+          <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </div>
-        <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>
-          {loading ? 'Refreshing...' : 'Refresh'}
-        </Button>
-      </div>
+      ) : (
+        <div className="asgn-actions">
+          <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </div>
+      )}
 
       {error ? <p className="asgn-error">{error}</p> : null}
 

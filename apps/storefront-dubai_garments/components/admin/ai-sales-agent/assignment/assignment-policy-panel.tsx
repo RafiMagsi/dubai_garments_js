@@ -61,7 +61,11 @@ function formatSkillsMap(map: Record<string, string[]>) {
     .join('; ');
 }
 
-export default function AssignmentPolicyPanel() {
+type AssignmentPolicyPanelProps = {
+  compact?: boolean;
+};
+
+export default function AssignmentPolicyPanel({ compact = false }: AssignmentPolicyPanelProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,15 +126,17 @@ export default function AssignmentPolicyPanel() {
 
   return (
     <Card className="asgn-card">
-      <div className="asgn-head">
-        <div>
-          <p className="aflow-kicker">Assignment Policy</p>
-          <CardTitle>Routing Defaults and Capacity Rules</CardTitle>
-          <CardText>
-            Configure how new ownership is assigned. Live reassignment actions are handled in Operations Board.
-          </CardText>
+      {!compact ? (
+        <div className="asgn-head">
+          <div>
+            <p className="aflow-kicker">Assignment Policy</p>
+            <CardTitle>Routing Defaults and Capacity Rules</CardTitle>
+            <CardText>
+              Configure how new ownership is assigned. Live reassignment actions are handled in Operations Board.
+            </CardText>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {loading || !config ? (
         <p className="aflow-empty">Loading assignment policy...</p>
