@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { CardText, CardTitle } from '@/components/ui';
+import { Button, CardText, CardTitle, Modal } from '@/components/ui';
 import {
   convertLeadFromIntelligence,
   getAgentFlow,
@@ -150,6 +150,7 @@ export default function AgentFlowView({
   const [overrideForce, setOverrideForce] = useState(false);
   const [selectedStageKey, setSelectedStageKey] = useState<AgentFlowResponse['activeStageKey']>('lead_new');
   const [sessionUserId, setSessionUserId] = useState('');
+  const [outcomeModalOpen, setOutcomeModalOpen] = useState(false);
 
   async function handleLoadFlow() {
     try {
@@ -204,6 +205,13 @@ export default function AgentFlowView({
       params.set('source', 'lead_execution_board');
       const suffix = params.toString();
       window.location.href = suffix ? `/admin/activities?${suffix}` : '/admin/activities';
+      return;
+    }
+
+    if (flow.activeStageKey === 'won_lost') {
+      setNextMoveError(null);
+      setNextMoveStatus('Select Won or Lost to complete the outcome stage.');
+      setOutcomeModalOpen(true);
       return;
     }
 
@@ -374,7 +382,7 @@ export default function AgentFlowView({
   async function handleMarkOutcomeFromPanel(stage: 'won' | 'lost') {
     if (!flow?.dealId) {
       setOutcomeActionError('No active deal found for outcome update.');
-      return;
+      return false;
     }
     try {
       setOutcomeActionError(null);
@@ -400,10 +408,20 @@ export default function AgentFlowView({
       });
       setFlow(refreshed);
       setOutcomeActionStatus(`Deal marked as ${stage}.`);
+      setNextMoveStatus(`Outcome set to ${stage}.`);
+      return true;
     } catch (err) {
       setOutcomeActionError(err instanceof Error ? err.message : `Failed to mark outcome as ${stage}.`);
+      return false;
     } finally {
       setOutcomeActionBusy(null);
+    }
+  }
+
+  async function handleMarkOutcomeFromModal(stage: 'won' | 'lost') {
+    const ok = await handleMarkOutcomeFromPanel(stage);
+    if (ok) {
+      setOutcomeModalOpen(false);
     }
   }
 
@@ -559,6 +577,8 @@ export default function AgentFlowView({
     ? 'Open Activities'
     : activeStage?.key === 'post_outcome'
     ? 'Mark Close'
+    : activeStage?.key === 'won_lost'
+    ? 'Set Outcome'
     : 'Run Next Move';
   const selectedStageGuidance = selectedStage
     ? getFlowStageGuidance(selectedStage.key, selectedStage.status, {
@@ -643,6 +663,7 @@ export default function AgentFlowView({
             onRunLeadTriage={handleRunLeadTriageFromPanel}
             onMarkClosed={handleMarkClosedFromPanel}
             onMarkOutcome={(stage) => void handleMarkOutcomeFromPanel(stage)}
+            onOpenOutcomeModal={() => setOutcomeModalOpen(true)}
             onCreateDeal={(input) => void handleCreateDealFromPanel(input)}
             onOpenCreateQuoteModal={onOpenCreateQuoteModal}
             overrideEnabled={overrideEnabled}
@@ -690,6 +711,51 @@ export default function AgentFlowView({
           <FlowQualitySection flow={flow} />
         </>
       ) : null}
+
+      <Modal open={outcomeModalOpen} onClose={() => setOutcomeModalOpen(false)}>
+        <div className="ui-modal-card ui-modal-size-md">
+          <div className="ui-modal-head">
+            <div className="ui-modal-title-block">
+              <p className="ui-modal-kicker">Outcome Decision</p>
+              <h3 className="ui-modal-title">Mark Won / Lost</h3>
+            </div>
+          </div>
+          <p className="ui-modal-meta">
+            This stage only completes after you explicitly mark the deal as won or lost.
+          </p>
+          {outcomeActionError ? <p className="aflow-next-move-error">{outcomeActionError}</p> : null}
+          <div className="dg-form-row mt-3">
+            <Button
+              type="button"
+              size="sm"
+              className="aflow-glow-btn aflow-next-move-btn"
+              onClick={() => void handleMarkOutcomeFromModal('won')}
+              disabled={outcomeActionBusy !== null}
+            >
+              {outcomeActionBusy === 'won' ? 'Marking Won...' : 'Mark Won'}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="aflow-glow-btn aflow-link-btn"
+              onClick={() => void handleMarkOutcomeFromModal('lost')}
+              disabled={outcomeActionBusy !== null}
+            >
+              {outcomeActionBusy === 'lost' ? 'Marking Lost...' : 'Mark Lost'}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setOutcomeModalOpen(false)}
+              disabled={outcomeActionBusy !== null}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

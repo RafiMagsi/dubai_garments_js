@@ -44,6 +44,7 @@ type FlowExecutionBoardSectionProps = {
   onRunLeadTriage: () => void;
   onMarkClosed: () => void;
   onMarkOutcome: (stage: 'won' | 'lost') => void;
+  onOpenOutcomeModal?: () => void;
   onCreateDeal: (payload: ConvertLeadToDealInput) => void;
   onOpenCreateQuoteModal?: () => void;
   overrideEnabled: boolean;
@@ -87,6 +88,7 @@ export function FlowExecutionBoardSection({
   onRunLeadTriage,
   onMarkClosed,
   onMarkOutcome,
+  onOpenOutcomeModal,
   onCreateDeal,
   onOpenCreateQuoteModal,
   overrideEnabled,
@@ -372,20 +374,16 @@ export function FlowExecutionBoardSection({
                   type="button"
                   size="sm"
                   className="aflow-glow-btn aflow-next-move-btn"
-                  onClick={() => onMarkOutcome('won')}
+                  onClick={() => {
+                    if (onOpenOutcomeModal) {
+                      onOpenOutcomeModal();
+                      return;
+                    }
+                    onMarkOutcome('won');
+                  }}
                   disabled={outcomeActionBusy !== null}
                 >
-                  {outcomeActionBusy === 'won' ? 'Marking Won...' : 'Mark Won'}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="aflow-glow-btn aflow-link-btn"
-                  onClick={() => onMarkOutcome('lost')}
-                  disabled={outcomeActionBusy !== null}
-                >
-                  {outcomeActionBusy === 'lost' ? 'Marking Lost...' : 'Mark Lost'}
+                  {outcomeActionBusy ? 'Processing...' : 'Set Outcome'}
                 </Button>
               </div>
             ) : null}

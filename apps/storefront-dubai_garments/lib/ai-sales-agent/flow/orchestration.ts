@@ -567,6 +567,42 @@ export async function orchestrateLeadToClose(
       step === 0 && input.manualOverride?.enabled
         ? input.manualOverride.stageKey
         : currentFlow.activeStageKey;
+
+    if (targetStageKey === 'won_lost') {
+      const message =
+        'Outcome stage is manual-only. Use Mark Won or Mark Lost to complete this stage.';
+      const auditActivityId = await writeFlowEvent({
+        userId: context.userId,
+        leadId: currentFlow.leadId ?? null,
+        dealId: currentFlow.dealId ?? null,
+        quoteId: currentFlow.quoteId ?? null,
+        requestId: context.requestId,
+        stageKey: targetStageKey,
+        eventType: 'audit',
+        title: 'Flow blocked at Won / Lost',
+        details: message,
+        metadata: {
+          mode,
+          manualOverride: step === 0 ? input.manualOverride ?? null : null,
+          status: 'blocked',
+          reason: 'manual_outcome_required',
+        },
+      });
+
+      actions.push({
+        stageKey: targetStageKey,
+        status: 'blocked',
+        message,
+        auditActivityId,
+        validation: {
+          entry: ['Outcome decision must be explicit and cannot be auto-orchestrated.'],
+          exit: [],
+          passed: false,
+        },
+      });
+      break;
+    }
+
     const stage = stageByKey(currentFlow, targetStageKey);
     const validation = validateTransition({
       flow: currentFlow,
