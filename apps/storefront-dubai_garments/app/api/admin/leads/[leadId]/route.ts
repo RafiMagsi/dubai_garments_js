@@ -7,6 +7,55 @@ const FASTAPI_BASE_URL =
   process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ||
   'http://localhost:8000';
 
+async function getLatestLeadQuote(leadId: string) {
+  let quote = await prisma.quotes.findFirst({
+    where: { lead_id: leadId },
+    orderBy: { created_at: 'desc' },
+    select: {
+      id: true,
+      quote_number: true,
+      status: true,
+      currency: true,
+      total_amount: true,
+      created_at: true,
+      updated_at: true,
+    },
+  });
+
+  if (!quote) {
+    const latestDeal = await prisma.deals.findFirst({
+      where: { lead_id: leadId },
+      orderBy: { created_at: 'desc' },
+      select: { id: true },
+    });
+
+    if (latestDeal?.id) {
+      quote = await prisma.quotes.findFirst({
+        where: { deal_id: latestDeal.id },
+        orderBy: { created_at: 'desc' },
+        select: {
+          id: true,
+          quote_number: true,
+          status: true,
+          currency: true,
+          total_amount: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+    }
+  }
+
+  if (!quote) return null;
+
+  return {
+    ...quote,
+    total_amount: Number(quote.total_amount ?? 0),
+    created_at: quote.created_at.toISOString(),
+    updated_at: quote.updated_at.toISOString(),
+  };
+}
+
 async function getLeadDetailFromStorefrontDb(leadId: string) {
   const lead = await prisma.leads.findUnique({ where: { id: leadId } });
   if (!lead) {
@@ -47,6 +96,36 @@ async function getLeadDetailFromStorefrontDb(leadId: string) {
     }),
   ]);
 
+  let quote = await prisma.quotes.findFirst({
+    where: { lead_id: leadId },
+    orderBy: { created_at: 'desc' },
+    select: {
+      id: true,
+      quote_number: true,
+      status: true,
+      currency: true,
+      total_amount: true,
+      created_at: true,
+      updated_at: true,
+    },
+  });
+
+  if (!quote && deal?.id) {
+    quote = await prisma.quotes.findFirst({
+      where: { deal_id: deal.id },
+      orderBy: { created_at: 'desc' },
+      select: {
+        id: true,
+        quote_number: true,
+        status: true,
+        currency: true,
+        total_amount: true,
+        created_at: true,
+        updated_at: true,
+      },
+    });
+  }
+
   return NextResponse.json({
     item: {
       ...lead,
@@ -57,6 +136,14 @@ async function getLeadDetailFromStorefrontDb(leadId: string) {
           ...deal,
           expected_value: Number(deal.expected_value ?? 0),
           created_at: deal.created_at?.toISOString() ?? null,
+        }
+      : null,
+    quote: quote
+      ? {
+          ...quote,
+          total_amount: Number(quote.total_amount ?? 0),
+          created_at: quote.created_at.toISOString(),
+          updated_at: quote.updated_at.toISOString(),
         }
       : null,
     communications: communications.map((c) => ({
@@ -90,6 +177,24 @@ export async function GET(
       return fallback;
     }
     const payload = await response.json().catch(() => ({}));
+
+    if (response.ok && payload && typeof payload === 'object') {
+      const currentPayload = payload as Record<string, unknown>;
+      const quoteInPayload = currentPayload.quote as { id?: string } | null | undefined;
+      if (!quoteInPayload?.id) {
+        const latestQuote = await getLatestLeadQuote(leadId);
+        if (latestQuote) {
+          return NextResponse.json(
+            {
+              ...currentPayload,
+              quote: latestQuote,
+            },
+            { status: response.status }
+          );
+        }
+      }
+    }
+
     return NextResponse.json(payload, { status: response.status });
   } catch (error) {
     try {

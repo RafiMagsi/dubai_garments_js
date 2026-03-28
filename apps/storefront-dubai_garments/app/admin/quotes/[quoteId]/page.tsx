@@ -67,6 +67,7 @@ export default function AdminQuoteDetailPage() {
   const [statusActionSuccess, setStatusActionSuccess] = useState<string | null>(null);
   const [statusActionError, setStatusActionError] = useState<string | null>(null);
   const [targetStatus, setTargetStatus] = useState<QuoteStatus>('draft');
+  const [quoteValidityDate, setQuoteValidityDate] = useState('');
 
   function getErrorMessage(error: unknown, fallback: string) {
     if (error instanceof Error) {
@@ -79,6 +80,12 @@ export default function AdminQuoteDetailPage() {
 
   const quote = data?.item;
   const items = data?.items ?? [];
+  const currentValidityDate = quote?.valid_until ? quote.valid_until.slice(0, 10) : '';
+  const normalizedValidityDate = quoteValidityDate.trim();
+  const hasStatusMetaChanges = Boolean(
+    quote &&
+      (targetStatus !== quote.status || normalizedValidityDate !== currentValidityDate || notes.trim().length > 0)
+  );
   const timelineEvents = useMemo<RecordTimelineEvent[]>(() => {
     const activityEvents =
       activitiesQuery.data?.items?.map((activity) => ({
@@ -164,18 +171,41 @@ export default function AdminQuoteDetailPage() {
     setQuoteEmailError(null);
     setQuoteEmailDraftMeta(null);
     setTargetStatus(isQuoteStatus(quote.status) ? quote.status : 'draft');
+    setQuoteValidityDate(quote.valid_until ? quote.valid_until.slice(0, 10) : '');
   }, [quote]);
 
   async function handleStatusChange(status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired') {
-    if (!quoteId) return;
+    if (!quoteId || !quote) return;
     setStatusActionSuccess(null);
     setStatusActionError(null);
+    const normalizedValidityDate = quoteValidityDate.trim();
+    if (status === 'sent' && !normalizedValidityDate) {
+      setStatusActionError('Set quote validity date before marking quote as sent.');
+      return;
+    }
+    const currentValidityDate = quote.valid_until ? quote.valid_until.slice(0, 10) : '';
+    const hasChanges =
+      status !== quote.status ||
+      normalizedValidityDate !== currentValidityDate ||
+      notes.trim().length > 0;
+    if (!hasChanges) {
+      setStatusActionError('No changes to apply.');
+      return;
+    }
     try {
       await updateStatusMutation.mutateAsync({
         quoteId,
-        payload: { status, notes: notes || undefined },
+        payload: {
+          status,
+          notes: notes || undefined,
+          valid_until: normalizedValidityDate || undefined,
+        },
       });
-      setStatusActionSuccess(`Quote status updated to ${status}.`);
+      setStatusActionSuccess(
+        status !== quote.status
+          ? `Quote status updated to ${status}.`
+          : 'Quote details updated successfully.'
+      );
     } catch (error) {
       setStatusActionError(getErrorMessage(error, 'Failed to update quote status.'));
     }
@@ -364,6 +394,10 @@ export default function AdminQuoteDetailPage() {
                       {quote.currency} {quote.total_amount.toFixed(2)}
                     </strong>
                   </div>
+                  <div className="dg-detail-item">
+                    <span>Validity Date</span>
+                    <strong>{quote.valid_until ? new Date(quote.valid_until).toLocaleDateString() : '-'}</strong>
+                  </div>
                 </div>
               </Card>
 
@@ -416,13 +450,29 @@ export default function AdminQuoteDetailPage() {
                     <button
                       type="button"
                       className="ui-btn ui-btn-primary ui-btn-md"
-                      disabled={updateStatusMutation.isPending || targetStatus === quote.status}
+                      disabled={updateStatusMutation.isPending || !hasStatusMetaChanges}
                       onClick={() => handleStatusChange(targetStatus)}
                     >
-                      {updateStatusMutation.isPending ? 'Applying...' : `Apply ${titleCase(targetStatus)}`}
+                      {updateStatusMutation.isPending
+                        ? 'Applying...'
+                        : targetStatus === quote.status
+                        ? 'Save Changes'
+                        : `Apply ${titleCase(targetStatus)}`}
                     </button>
                   </div>
                   <p className="dg-help">Current status: {titleCase(quote.status)}</p>
+                </div>
+
+                <div className="dg-field">
+                  <FieldLabel htmlFor="quoteValidityDate">Quote Validity Date</FieldLabel>
+                  <input
+                    id="quoteValidityDate"
+                    className="dg-input"
+                    type="date"
+                    value={quoteValidityDate}
+                    onChange={(event) => setQuoteValidityDate(event.target.value)}
+                  />
+                  <p className="dg-help">Required before setting status to Sent (guardrail).</p>
                 </div>
 
                 <div className="dg-field">

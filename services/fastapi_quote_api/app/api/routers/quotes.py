@@ -238,6 +238,7 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
                       sent_at = CASE WHEN %s = 'sent' THEN COALESCE(sent_at, %s) ELSE sent_at END,
                       approved_at = CASE WHEN %s = 'approved' THEN COALESCE(approved_at, %s) ELSE approved_at END,
                       rejected_at = CASE WHEN %s IN ('rejected', 'expired') THEN COALESCE(rejected_at, %s) ELSE rejected_at END,
+                      valid_until = COALESCE(%s::date, valid_until),
                       notes = COALESCE(NULLIF(%s::text, ''), notes),
                       updated_at = NOW()
                     WHERE id = %s::uuid
@@ -268,6 +269,7 @@ def update_quote_status(quote_id: str, payload: QuoteStatusUpdateRequest) -> Dic
                         now,
                         status,
                         now,
+                        payload.valid_until,
                         payload.notes,
                         quote_id,
                     ),

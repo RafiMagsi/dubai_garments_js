@@ -674,6 +674,10 @@ export default function AgentFlowView({
             onOverrideReasonChange={setOverrideReason}
             onOverrideStageKeyChange={setOverrideStageKey}
             onOverrideForceChange={setOverrideForce}
+            manualOverrideBusy={nextMoveBusy}
+            manualOverrideStatus={nextMoveStatus}
+            manualOverrideError={nextMoveError}
+            onApplyManualOverride={() => void handleRunNextMove()}
           />
 
           <FlowHeroSection

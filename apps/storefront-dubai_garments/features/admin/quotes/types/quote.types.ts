@@ -70,6 +70,7 @@ export interface AdminQuotePdfStatusResponse {
 export interface AdminQuoteStatusUpdateInput {
   status: 'draft' | 'sent' | 'approved' | 'rejected' | 'expired';
   notes?: string;
+  valid_until?: string;
 }
 
 export interface AdminQuoteCreateItemInput {

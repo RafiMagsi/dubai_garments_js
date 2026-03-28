@@ -4656,6 +4656,61 @@ select.aflow-deal-control {
     gap: 0.55rem;
   }
 
+  .aflow-quality-priority {
+    border: 1px solid color-mix(in srgb, var(--color-border) 88%, white);
+    border-radius: 0.62rem;
+    padding: 0.62rem 0.7rem;
+    background: color-mix(in srgb, #ffffff 93%, var(--dg-card-bg));
+    display: grid;
+    gap: 0.26rem;
+  }
+
+  .aflow-quality-priority.is-critical {
+    border-color: color-mix(in srgb, var(--color-danger) 34%, var(--color-border));
+    background: color-mix(in srgb, var(--color-danger) 6%, #ffffff);
+  }
+
+  .aflow-quality-priority.is-warning {
+    border-color: color-mix(in srgb, var(--color-warning) 38%, var(--color-border));
+    background: color-mix(in srgb, var(--color-warning) 7%, #ffffff);
+  }
+
+  .aflow-quality-priority.is-healthy {
+    border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border));
+    background: color-mix(in srgb, var(--color-success) 7%, #ffffff);
+  }
+
+  .aflow-quality-kpi-rail {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .aflow-quality-kpi {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 0.56rem;
+    background: color-mix(in srgb, var(--dg-card-bg) 97%, white);
+    padding: 0.52rem 0.58rem;
+    display: grid;
+    gap: 0.14rem;
+  }
+
+  .aflow-quality-kpi-label {
+    margin: 0;
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-500);
+  }
+
+  .aflow-quality-kpi-value {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-ink-800);
+  }
+
   .aflow-quality-panel {
     border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
     border-radius: 0.58rem;
@@ -4664,6 +4719,42 @@ select.aflow-deal-control {
     display: grid;
     gap: 0.38rem;
     min-width: 0;
+  }
+
+  .aflow-quality-stream {
+    display: grid;
+    gap: 0.38rem;
+  }
+
+  .aflow-quality-item {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 0.52rem;
+    background: color-mix(in srgb, var(--dg-card-bg) 98%, white);
+    padding: 0.46rem 0.5rem;
+    display: grid;
+    gap: 0.26rem;
+  }
+
+  .aflow-quality-item-top {
+    display: flex;
+    align-items: center;
+    gap: 0.38rem;
+    flex-wrap: wrap;
+  }
+
+  .aflow-quality-item-meta {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--color-ink-500);
+  }
+
+  .aflow-quality-outcome {
+    border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
+    border-radius: 0.52rem;
+    background: color-mix(in srgb, var(--dg-card-bg) 98%, white);
+    padding: 0.5rem 0.54rem;
+    display: grid;
+    gap: 0.26rem;
   }
 
   .asgn-card {
@@ -7006,6 +7097,10 @@ select.aflow-deal-control {
 
     .aflow-quality-grid {
       grid-template-columns: 1fr;
+    }
+
+    .aflow-quality-kpi-rail {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .asgn-grid,

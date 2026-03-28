@@ -82,3 +82,4 @@ class QuoteDetailResponse(BaseModel):
 class QuoteStatusUpdateRequest(BaseModel):
   status: str
   notes: Optional[str] = None
+  valid_until: Optional[date] = None

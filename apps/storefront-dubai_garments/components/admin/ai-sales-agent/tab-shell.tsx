@@ -154,6 +154,7 @@ export default function AiSalesAgentTabShell() {
   const [activeTab, setActiveTab] = useState<AgentTabKey>('copilot');
   const [expanded, setExpanded] = useState(searchParams.get('expanded') !== 'false');
   const [leadPreviewId, setLeadPreviewId] = useState(searchParams.get('leadPreviewId') ?? '');
+  const [flowLeadId, setFlowLeadId] = useState(searchParams.get('leadId') ?? '');
   const { data: leadPreviewData } = useLeadById(leadPreviewId.trim());
   const previewLead = leadPreviewData?.item;
 
@@ -175,6 +176,8 @@ export default function AiSalesAgentTabShell() {
     setExpanded((prev) => (prev === nextExpanded ? prev : nextExpanded));
     const nextLeadPreviewId = searchParams.get('leadPreviewId') ?? '';
     setLeadPreviewId((prev) => (prev === nextLeadPreviewId ? prev : nextLeadPreviewId));
+    const nextFlowLeadId = searchParams.get('leadId') ?? '';
+    setFlowLeadId((prev) => (prev === nextFlowLeadId ? prev : nextFlowLeadId));
   }, [searchParams]);
 
   function setTabInUrl(nextTab: AgentTabKey) {
@@ -285,7 +288,7 @@ export default function AiSalesAgentTabShell() {
                     </div>
                   ) : currentTab.key === 'agent-flow' ? (
                     <div className="pins-stack">
-                      <AgentFlowView showHeader={false} />
+                      <AgentFlowView showHeader={false} initialLeadId={flowLeadId.trim()} />
                       <AssignmentPolicyPanel />
                       <AgentWorkloadPanel />
                       <AssignmentKpiTargetsPanel />

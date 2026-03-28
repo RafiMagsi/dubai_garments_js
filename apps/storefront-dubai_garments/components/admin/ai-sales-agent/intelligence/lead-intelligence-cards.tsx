@@ -2,15 +2,9 @@
 
 import { useState } from 'react';
 import type { HTMLAttributes } from 'react';
-import Link from 'next/link';
-import { useQueryClient } from '@tanstack/react-query';
 import { Button, Card, CardText, CardTitle } from '@/components/ui';
-// import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
 import {
   draftReplyFromLeadIntelligence,
-  convertLeadFromIntelligence,
-  prioritizeLeadFromIntelligence,
-  runLeadTriage,
   writeLeadIntelligenceAudit,
 } from '@/features/admin/ai-sales-agent/api';
 
@@ -257,19 +251,15 @@ export default function LeadIntelligenceCards({
   className,
   ...props
 }: LeadIntelligenceCardsProps) {
-  const queryClient = useQueryClient();
-  const [triageBusy, setTriageBusy] = useState(false);
-  const [triageStatus, setTriageStatus] = useState<string | null>(null);
-  const [triageError, setTriageError] = useState<string | null>(null);
-    const [actionBusy, setActionBusy] = useState<null | 'draft' | 'convert' | 'prioritize'>(null);
-    const [actionStatus, setActionStatus] = useState<string | null>(null);
-    const [actionError, setActionError] = useState<string | null>(null);
-    const [draftReplyPreview, setDraftReplyPreview] = useState<{
+  const [actionBusy, setActionBusy] = useState<null | 'draft'>(null);
+  const [actionStatus, setActionStatus] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [draftReplyPreview, setDraftReplyPreview] = useState<{
     subject?: string;
     message: string;
     rationale?: string;
     suggestedNextAction?: string;
-    } | null>(null);
+  } | null>(null);
 
   if (!lead) return null;
   const leadId = lead.id;
@@ -336,36 +326,21 @@ export default function LeadIntelligenceCards({
     },
   ] as const;
 
-  async function refreshLeadViews(targetLeadId: string) {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['lead', targetLeadId] }),
-      queryClient.invalidateQueries({ queryKey: ['leads'] }),
-      queryClient.invalidateQueries({ queryKey: ['activities'] }),
-    ]);
-    await Promise.all([
-      queryClient.refetchQueries({ queryKey: ['lead', targetLeadId], type: 'active' }),
-      queryClient.refetchQueries({ queryKey: ['leads'], type: 'active' }),
-      queryClient.refetchQueries({ queryKey: ['activities'], type: 'active' }),
-    ]);
-  }
-
-  async function handleRunLeadTriage() {
-    try {
-      setTriageError(null);
-      setTriageStatus(null);
-      setTriageBusy(true);
-      const result = await runLeadTriage({ leadId, dry_run: false });
-      await refreshLeadViews(leadId);
-      setTriageStatus(
-        result.persisted
-          ? 'Lead triage completed and persisted.'
-          : 'Lead triage completed (not persisted).'
-      );
-    } catch (error) {
-      setTriageError(error instanceof Error ? error.message : 'Failed to run lead triage.');
-    } finally {
-      setTriageBusy(false);
+  function handleOpenExecutionBoard() {
+    // Lead Details page embeds Agent Flow directly; prioritize in-page navigation.
+    const embeddedBoard = document.querySelector('[data-testid="lead-detail-agent-flow-section"]');
+    if (embeddedBoard instanceof HTMLElement) {
+      embeddedBoard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
     }
+
+    // Fallback for other contexts: open AI Sales Agent with Agent Flow tab and lead preloaded.
+    const params = new URLSearchParams({
+      tab: 'agent-flow',
+      expanded: 'true',
+      leadId,
+    });
+    window.location.href = `/admin/ai-sales-agent?${params.toString()}`;
   }
 
   async function handleDraftReply() {
@@ -409,84 +384,6 @@ export default function LeadIntelligenceCards({
         await writeLeadIntelligenceAudit({
             leadId,
             action: 'draft_reply',
-            outcome: 'failure',
-            details: message,
-        });
-        } catch {}
-
-    } finally {
-        setActionBusy(null);
-    }
-    }
-
-    async function handleConvertLead() {
-    try {
-        setActionError(null);
-        setActionStatus(null);
-        setActionBusy('convert');
-
-        const result = await convertLeadFromIntelligence(leadId);
-
-        await writeLeadIntelligenceAudit({
-        leadId,
-        action: 'convert',
-        outcome: 'success',
-        details: 'Lead converted to deal from intelligence card.',
-        metadata: {
-            result,
-        },
-        });
-        await refreshLeadViews(leadId);
-
-        setActionStatus('Lead converted to deal successfully.');
-    } catch (error) {
-        const message =
-        error instanceof Error ? error.message : 'Failed to convert lead.';
-        setActionError(message);
-
-        try {
-        await writeLeadIntelligenceAudit({
-            leadId,
-            action: 'convert',
-            outcome: 'failure',
-            details: message,
-        });
-        } catch {}
-
-    } finally {
-        setActionBusy(null);
-    }
-    }
-
-    async function handlePrioritizeLead() {
-    try {
-        setActionError(null);
-        setActionStatus(null);
-        setActionBusy('prioritize');
-
-        const result = await prioritizeLeadFromIntelligence(leadId);
-
-        await writeLeadIntelligenceAudit({
-        leadId,
-        action: 'prioritize',
-        outcome: 'success',
-        details: 'Lead prioritized from intelligence card.',
-        metadata: {
-            result,
-        },
-        });
-        await refreshLeadViews(leadId);
-
-        setActionStatus('Lead prioritized successfully.');
-    } catch (error) {
-        const message =
-        error instanceof Error ? error.message : 'Failed to prioritize lead.';
-        setActionError(message);
-
-        try {
-        await writeLeadIntelligenceAudit({
-            leadId,
-            action: 'prioritize',
             outcome: 'failure',
             details: message,
         });
@@ -567,24 +464,14 @@ export default function LeadIntelligenceCards({
             </div>
             <p className="dg-ai-intel-decision-title">{nextBestAction}</p>
             <div className="dg-ai-intel-decision-actions">
-              <Link href={`/admin/leads/${lead.id}`} className="dg-btn-secondary">
-                Open Lead
-              </Link>
-              <button
-                type="button"
-                className="dg-btn-primary"
-                onClick={handleRunLeadTriage}
-                disabled={triageBusy}
-                data-testid="lead-intelligence-triage-btn"
-              >
-                {triageBusy ? 'Running Triage...' : 'Run Lead Triage'}
+              <button type="button" className="dg-btn-primary" onClick={handleOpenExecutionBoard}>
+                Open Execution Board
               </button>
-              <Link href="/admin/ai-sales-agent" className="dg-btn-primary">
-                Run Agent Flow
-              </Link>
             </div>
-            {triageStatus ? <p className="dg-alert-success">{triageStatus}</p> : null}
-            {triageError ? <p className="dg-alert-error">{triageError}</p> : null}
+            <p className="dg-help">
+              Lifecycle actions (triage, qualification, conversion, quote, outcome) are managed from Lead-to-Close
+              Execution Board.
+            </p>
           </div>
         </div>
       </div>
@@ -600,29 +487,9 @@ export default function LeadIntelligenceCards({
           >
             {actionBusy === 'draft' ? 'Drafting...' : 'Draft Reply'}
           </Button>
-
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleConvertLead}
-            disabled={actionBusy !== null}
-            data-testid="lead-intelligence-convert-btn"
-          >
-            {actionBusy === 'convert' ? 'Converting...' : 'Convert to Deal'}
-          </Button>
-
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handlePrioritizeLead}
-            disabled={actionBusy !== null}
-            data-testid="lead-intelligence-prioritize-btn"
-          >
-            {actionBusy === 'prioritize' ? 'Prioritizing...' : 'Prioritize Lead'}
-          </Button>
         </div>
         <p className="dg-ai-intel-action-help">
-          Convert to Deal creates a deal from this lead. Prioritize Lead updates lead status to Qualified.
+          Draft Reply is assistive only. Stage progression actions are intentionally centralized in the Execution Board.
         </p>
 
         <div className="dg-ai-intel-divider" />

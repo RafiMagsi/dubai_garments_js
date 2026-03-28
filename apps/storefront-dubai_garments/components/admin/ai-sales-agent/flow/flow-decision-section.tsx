@@ -42,8 +42,6 @@ export function FlowDecisionSection({
   getStageActionLink,
   nextMoveGuidance,
 }: FlowDecisionSectionProps) {
-  const isQuoteGuidance = nextMoveGuidance.theme === 'quote';
-
   return (
     <FlowDecisionCard>
       <div className="aflow-decision-grid">
@@ -86,17 +84,17 @@ export function FlowDecisionSection({
             </span>
           </div>
           <div className="aflow-next-move">{flow.recommendedNextMove}</div>
-          <div className={`aflow-next-move-guide ${isQuoteGuidance ? 'is-quote' : ''}`.trim()}>
+          <div className="aflow-next-move-guide is-quote">
             <div className="aflow-stage-guidance-top">
               <p className="aflow-next-move-guide-title">{nextMoveGuidance.title}</p>
-              {isQuoteGuidance ? <span className="dg-ai-badge dg-ai-badge-blue">Quote Stage</span> : null}
+              <span className="dg-ai-badge dg-ai-badge-blue">Stage Playbook</span>
             </div>
             <ul className="aflow-guidance-list">
               {nextMoveGuidance.points.map((point, index) => (
                 <li key={`next-move-guidance-${index}`}>{point}</li>
               ))}
             </ul>
-            {isQuoteGuidance && nextMoveGuidance.playbook.length > 0 ? (
+            {nextMoveGuidance.playbook.length > 0 ? (
               <div className="aflow-quote-playbook">
                 {nextMoveGuidance.playbook.map((step, index) => (
                   <div className="aflow-quote-playbook-step" key={`next-move-playbook-${index}`}>

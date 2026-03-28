@@ -33,6 +33,9 @@ export interface Lead {
 
 export interface LeadActivity {
   id: string;
+  lead_id?: string | null;
+  deal_id?: string | null;
+  quote_id?: string | null;
   activity_type: string;
   title: string;
   details?: string | null;
@@ -54,6 +57,15 @@ export interface LeadDetailResponse {
     expected_value?: number | null;
     probability_pct?: number | null;
     created_at?: string | null;
+  } | null;
+  quote?: {
+    id: string;
+    quote_number?: string | null;
+    status?: string | null;
+    currency?: string | null;
+    total_amount?: number | null;
+    created_at?: string | null;
+    updated_at?: string | null;
   } | null;
   communications?: LeadCommunication[];
   activities: LeadActivity[];

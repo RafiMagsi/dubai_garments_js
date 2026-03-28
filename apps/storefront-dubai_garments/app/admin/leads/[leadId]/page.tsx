@@ -7,27 +7,20 @@ import AdminPageHeader from '@/components/admin/common/page-header';
 import RecordTimeline, { RecordTimelineEvent } from '@/components/admin/common/record-timeline';
 import AdminShell from '@/components/admin/admin-shell';
 import { PageShell, Panel, StatusBadge, Toolbar } from '@/components/ui';
-import { useConvertLeadToDeal } from '@/features/admin/deals/hooks/use-deals';
 import CreateQuoteCard, { DealQuoteCreateInput } from '@/components/admin/deals/create-quote-card';
 import { LeadStatus, useLeadById, useSendLeadEmail, useUpdateLeadStatus } from '@/features/admin/leads';
 import { useCreateQuote } from '@/features/admin/quotes';
 import { useProducts } from '@/features/products';
 import { formatAed, getStartingUnitPriceAED } from '@/features/products/utils/product-pricing';
 import {
-  formatDateTime,
   shortCode,
   titleCase,
 } from '@/features/admin/shared/view-format';
 import LeadIntelligenceCards from '@/components/admin/ai-sales-agent/lead-intelligence-cards';
 import AgentFlowView from '@/components/admin/ai-sales-agent/agent-flow-view';
-import DealLinkCard from '@/components/admin/leads/deal-link-card';
-import type { ConvertLeadToDealInput } from '@/features/admin/deals/types/deal.types';
+import LinkedRecordsSnapshotCard from '@/components/admin/leads/linked-records-snapshot-card';
 
 const statusOptions: LeadStatus[] = ['new', 'qualified', 'quoted', 'won', 'lost'];
-
-function statusPillClass(status: string) {
-  return `dg-status-pill dg-status-pill-${status.toUpperCase()}`;
-}
 
 function productPriceLabel(name: string, startingPrice: number | null) {
   return `${name} - ${startingPrice !== null ? `${formatAed(startingPrice)} / unit` : 'On request'}`;
@@ -52,7 +45,6 @@ export default function AdminLeadDetailsPage() {
   const leadId = typeof params.leadId === 'string' ? params.leadId : '';
   const { data, isLoading, isError, error } = useLeadById(leadId);
   const updateStatusMutation = useUpdateLeadStatus();
-  const convertToDealMutation = useConvertLeadToDeal();
   const createQuoteMutation = useCreateQuote();
   const { data: products = [] } = useProducts();
   const sendLeadEmailMutation = useSendLeadEmail();
@@ -64,11 +56,11 @@ export default function AdminLeadDetailsPage() {
   const [emailRecipient, setEmailRecipient] = useState('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailMessage, setEmailMessage] = useState('');
-  const [dealSuccess, setDealSuccess] = useState<string | null>(null);
-  const [dealError, setDealError] = useState<string | null>(null);
   const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
-  const [sessionUserId, setSessionUserId] = useState<string>('');
+  const [statusDraft, setStatusDraft] = useState<LeadStatus>('new');
+  const [statusOverrideEnabled, setStatusOverrideEnabled] = useState(false);
+  const [statusOverrideReason, setStatusOverrideReason] = useState('');
   const [quoteSuccess, setQuoteSuccess] = useState<string | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [quoteModalOpen, setQuoteModalOpen] = useState(false);
@@ -76,6 +68,22 @@ export default function AdminLeadDetailsPage() {
 
   const lead = data?.item;
   const deal = data?.deal;
+  const linkedQuote = useMemo(() => {
+    if (data?.quote?.id) return data.quote;
+
+    const activityWithQuote = (data?.activities ?? []).find((activity) => Boolean(activity.quote_id));
+    if (!activityWithQuote?.quote_id) return null;
+
+    return {
+      id: activityWithQuote.quote_id,
+      quote_number: null,
+      status: null,
+      currency: null,
+      total_amount: null,
+      created_at: activityWithQuote.created_at || activityWithQuote.occurred_at,
+      updated_at: activityWithQuote.created_at || activityWithQuote.occurred_at,
+    };
+  }, [data?.activities, data?.quote]);
   const communications = useMemo(() => data?.communications ?? [], [data?.communications]);
   const timelineEvents = useMemo<RecordTimelineEvent[]>(() => {
     const hiddenTimelineActivityTypes = new Set(['ai_flow_orchestration_audit']);
@@ -150,6 +158,7 @@ export default function AdminLeadDetailsPage() {
 
   useEffect(() => {
     if (!lead) return;
+    setStatusDraft(lead.status);
     setEmailRecipient(lead.email || '');
     setEmailSubject(`Regarding your quote request ${shortCode(lead.id)}`);
     setEmailMessage(
@@ -160,55 +169,42 @@ export default function AdminLeadDetailsPage() {
     setEmailDraftMeta(null);
   }, [lead]);
 
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      try {
-        const response = await fetch('/api/auth/session', { cache: 'no-store' });
-        const payload = (await response.json()) as { authenticated?: boolean; user?: { id?: string } };
-        if (!isMounted || !payload?.authenticated || !payload?.user?.id) return;
-        setSessionUserId(payload.user.id);
-      } catch {
-        // Keep silent; owner assignment will fall back to unassigned.
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   async function handleStatusUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!lead) return;
     setStatusSuccess(null);
     setStatusError(null);
-    const formData = new FormData(event.currentTarget);
-    const status = String(formData.get('status') || '').toLowerCase() as LeadStatus;
+
+    if (!statusOverrideEnabled) {
+      setStatusError('Enable Manual Override to update lead status.');
+      return;
+    }
+
+    const reason = statusOverrideReason.trim();
+    if (reason.length < 8) {
+      setStatusError('Manual override reason is required (minimum 8 characters).');
+      return;
+    }
+
+    const status = statusDraft;
+    if (status === lead.status) {
+      setStatusError('Select a different status before saving the override.');
+      return;
+    }
+
     try {
       await updateStatusMutation.mutateAsync({
         leadId: lead.id,
-        payload: { status },
+        payload: {
+          status,
+          notes: `Manual override reason: ${reason}`,
+        },
       });
-      setStatusSuccess(`Lead status updated to ${titleCase(status)}.`);
+      setStatusSuccess(`Lead status updated to ${titleCase(status)} via manual override.`);
+      setStatusOverrideEnabled(false);
+      setStatusOverrideReason('');
     } catch (error) {
       setStatusError(error instanceof Error ? error.message : 'Failed to update lead status.');
-    }
-  }
-
-  async function handleCreateDeal(payload: ConvertLeadToDealInput) {
-    if (!lead) return;
-    setDealSuccess(null);
-    setDealError(null);
-
-    try {
-      const result = await convertToDealMutation.mutateAsync({
-        leadId: lead.id,
-        payload,
-      });
-
-      setDealSuccess(`Deal created successfully: #${shortCode(result.id)}`);
-    } catch (error) {
-      setDealError(error instanceof Error ? error.message : 'Failed to create deal.');
     }
   }
 
@@ -425,9 +421,29 @@ export default function AdminLeadDetailsPage() {
             <div className="dg-side-stack dg-record-rail">
               <div className="dg-card">
                 <h2 className="dg-title-sm">Update Lead Status</h2>
+                <p className="dg-help">Status changes here are restricted to explicit manual overrides.</p>
                 {statusSuccess ? <div className="dg-alert-success">{statusSuccess}</div> : null}
                 {statusError ? <div className="dg-alert-error">{statusError}</div> : null}
                 <form className="dg-config-form" onSubmit={handleStatusUpdate}>
+                  <div className="dg-field">
+                    <label className="dg-form-row" htmlFor="manual-status-override-toggle">
+                      <input
+                        id="manual-status-override-toggle"
+                        type="checkbox"
+                        checked={statusOverrideEnabled}
+                        onChange={(event) => {
+                          setStatusOverrideEnabled(event.target.checked);
+                          if (!event.target.checked) {
+                            setStatusOverrideReason('');
+                          }
+                        }}
+                      />
+                      <span className="dg-label">Enable Manual Override</span>
+                    </label>
+                    <p className="dg-help">
+                      Use only when lifecycle stage automation cannot represent the required status transition.
+                    </p>
+                  </div>
                   <div className="dg-field">
                     <label htmlFor="status" className="dg-label">
                       Status
@@ -436,7 +452,9 @@ export default function AdminLeadDetailsPage() {
                       id="status"
                       name="status"
                       className="dg-select"
-                      defaultValue={lead.status}
+                      value={statusDraft}
+                      onChange={(event) => setStatusDraft(event.target.value as LeadStatus)}
+                      disabled={!statusOverrideEnabled}
                     >
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>
@@ -445,17 +463,33 @@ export default function AdminLeadDetailsPage() {
                       ))}
                     </select>
                   </div>
+                  <div className="dg-field">
+                    <label htmlFor="status-override-reason" className="dg-label">
+                      Override Reason
+                    </label>
+                    <textarea
+                      id="status-override-reason"
+                      className="dg-textarea"
+                      rows={3}
+                      value={statusOverrideReason}
+                      onChange={(event) => setStatusOverrideReason(event.target.value)}
+                      placeholder="Why this override is required..."
+                      disabled={!statusOverrideEnabled}
+                    />
+                  </div>
                   <button
                     type="submit"
                     className="ui-btn ui-btn-primary ui-btn-md"
-                    disabled={updateStatusMutation.isPending}
+                    disabled={updateStatusMutation.isPending || !statusOverrideEnabled}
                   >
-                    {updateStatusMutation.isPending ? 'Saving...' : 'Save Status'}
+                    {updateStatusMutation.isPending ? 'Saving...' : 'Save Manual Override'}
                   </button>
                 </form>
               </div>
             </div>
           </div>
+
+          <LinkedRecordsSnapshotCard lead={lead} deal={deal} quote={linkedQuote} />
 
           <section data-testid="lead-detail-agent-flow-section">
             <AgentFlowView

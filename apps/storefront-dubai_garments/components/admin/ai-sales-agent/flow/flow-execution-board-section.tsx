@@ -55,6 +55,10 @@ type FlowExecutionBoardSectionProps = {
   onOverrideReasonChange: (next: string) => void;
   onOverrideStageKeyChange: (next: AgentFlowResponse['activeStageKey']) => void;
   onOverrideForceChange: (next: boolean) => void;
+  manualOverrideBusy: boolean;
+  manualOverrideStatus: string | null;
+  manualOverrideError: string | null;
+  onApplyManualOverride: () => void;
 };
 
 export function FlowExecutionBoardSection({
@@ -99,9 +103,12 @@ export function FlowExecutionBoardSection({
   onOverrideReasonChange,
   onOverrideStageKeyChange,
   onOverrideForceChange,
+  manualOverrideBusy,
+  manualOverrideStatus,
+  manualOverrideError,
+  onApplyManualOverride,
 }: FlowExecutionBoardSectionProps) {
   const selectedStageActionLink = selectedStage ? getStageActionLink(selectedStage.key) : null;
-  const isQuoteGuidance = selectedStageGuidance?.theme === 'quote';
   const outcome = flow.outcomeSummary;
   const [createDealModalOpen, setCreateDealModalOpen] = useState(false);
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
@@ -167,10 +174,10 @@ export function FlowExecutionBoardSection({
             <CardText>{stageStatusMessage(selectedStage.status, selectedStageEvidence.length > 0, selectedStage.key)}</CardText>
             <CardText>{selectedStage.description}</CardText>
             {selectedStageGuidance ? (
-              <div className={`aflow-stage-guidance ${isQuoteGuidance ? 'is-quote' : ''}`.trim()}>
+              <div className="aflow-stage-guidance is-quote">
                 <div className="aflow-stage-guidance-top">
                   <p className="aflow-kicker">Stage Guidance</p>
-                  {isQuoteGuidance ? <span className="dg-ai-badge dg-ai-badge-blue">Quote Playbook</span> : null}
+                  <span className="dg-ai-badge dg-ai-badge-blue">Stage Playbook</span>
                 </div>
                 <p className="aflow-stage-guidance-headline">{selectedStageGuidance.headline}</p>
                 <ul className="aflow-guidance-list">
@@ -184,7 +191,7 @@ export function FlowExecutionBoardSection({
                     <strong>Done when:</strong> {selectedStageGuidance.completionSignal}
                   </li>
                 </ul>
-                {isQuoteGuidance && selectedStageGuidance.playbook.length > 0 ? (
+                {selectedStageGuidance.playbook.length > 0 ? (
                   <div className="aflow-quote-playbook">
                     {selectedStageGuidance.playbook.map((step, index) => (
                       <div className="aflow-quote-playbook-step" key={`${selectedStage.key}-playbook-${index}`}>
@@ -447,6 +454,19 @@ export function FlowExecutionBoardSection({
                     />
                     <span>Force override if previous stages are incomplete</span>
                   </label>
+                  <div className="aflow-stage-action-row">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="aflow-glow-btn aflow-next-move-btn"
+                      onClick={onApplyManualOverride}
+                      disabled={manualOverrideBusy || !overrideReason.trim()}
+                    >
+                      {manualOverrideBusy ? 'Applying...' : 'Apply Manual Override'}
+                    </Button>
+                  </div>
+                  {manualOverrideStatus ? <p className="aflow-next-move-status">{manualOverrideStatus}</p> : null}
+                  {manualOverrideError ? <p className="aflow-next-move-error">{manualOverrideError}</p> : null}
                 </div>
               ) : (
                 <p className="aflow-empty">Run normal active-stage orchestration without override.</p>
