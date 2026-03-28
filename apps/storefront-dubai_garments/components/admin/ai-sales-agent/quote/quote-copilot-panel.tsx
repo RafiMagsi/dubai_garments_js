@@ -50,7 +50,6 @@ export default function QuoteCopilotPanel() {
         dealId: recommendation.dealId || undefined,
         quoteId: recommendation.quoteId || undefined,
         acceptedRecommendations,
-        dry_run: true,
       });
 
       setCopilotResponse(result);

@@ -46,7 +46,6 @@ export async function POST(request: Request) {
               },
               body: JSON.stringify({
                 leadId: payload.leadId,
-                dry_run: false,
               }),
             });
           } catch {

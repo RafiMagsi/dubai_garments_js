@@ -35,7 +35,6 @@ export default function AutomationRunResultsCard({
 
       const result = await rerunAutomationRun({
         runId,
-        dry_run: true,
       });
 
       const guardrailLabel = result.guardrailPassed ? 'Guardrails passed' : 'Guardrails blocked';

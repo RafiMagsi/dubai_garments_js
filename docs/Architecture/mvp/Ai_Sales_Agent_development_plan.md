@@ -66,7 +66,7 @@ Primary outcomes:
 ### Day 3 - done
 1. Implement `AIA-004` copilot execute endpoint with RBAC whitelist.
 2. Add audit write path into `ai_logs` for all copilot actions.
-3. Add action simulation mode (`dry_run=true`) for safe demos.
+3. Add action audit + RBAC safeguards for safe live execution.
 
 ### Day 4 - done
 1. Build copilot UI input in admin header (global visibility).

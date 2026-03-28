@@ -1,18 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, Card, CardText, CardTitle, SelectField, TextField } from '@/components/ui';
-import {
-  executeAssignmentPolicy,
-  getAssignmentPolicy,
-  updateAssignmentPolicy,
-} from '@/features/admin/ai-sales-agent/api';
-import type {
-  AssignmentMode,
-  AssignmentPolicyAgent,
-  AssignmentPolicyConfig,
-  AssignmentPolicyExecuteEnvelope,
-} from '@/features/admin/ai-sales-agent/types';
+import { getAssignmentPolicy, updateAssignmentPolicy } from '@/features/admin/ai-sales-agent/api';
+import type { AssignmentMode, AssignmentPolicyAgent, AssignmentPolicyConfig } from '@/features/admin/ai-sales-agent/types';
 import { AisFieldLabel } from '@/components/admin/ai-sales-agent/reusable';
 
 const modeOptions: Array<{ value: AssignmentMode; label: string }> = [
@@ -73,7 +64,6 @@ function formatSkillsMap(map: Record<string, string[]>) {
 export default function AssignmentPolicyPanel() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [executing, setExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -83,12 +73,6 @@ export default function AssignmentPolicyPanel() {
   const [fallbackAssigneeUserId, setFallbackAssigneeUserId] = useState('');
   const [capacityInput, setCapacityInput] = useState('');
   const [skillsInput, setSkillsInput] = useState('');
-
-  const [leadId, setLeadId] = useState('');
-  const [dealId, setDealId] = useState('');
-  const [manualAssigneeUserId, setManualAssigneeUserId] = useState('');
-  const [reason, setReason] = useState('');
-  const [executeResult, setExecuteResult] = useState<AssignmentPolicyExecuteEnvelope | null>(null);
 
   async function load() {
     try {
@@ -110,11 +94,6 @@ export default function AssignmentPolicyPanel() {
   useEffect(() => {
     void load();
   }, []);
-
-  const sortedAgents = useMemo(
-    () => [...agents].sort((a, b) => a.weightedLoad - b.weightedLoad),
-    [agents]
-  );
 
   async function handleSave() {
     if (!config) return;
@@ -141,36 +120,15 @@ export default function AssignmentPolicyPanel() {
     }
   }
 
-  async function handleExecute() {
-    try {
-      setExecuting(true);
-      setError(null);
-      setSuccess(null);
-      setExecuteResult(null);
-      const result = await executeAssignmentPolicy({
-        leadId: leadId.trim() || undefined,
-        dealId: dealId.trim() || undefined,
-        manualAssigneeUserId: manualAssigneeUserId.trim() || undefined,
-        reason: reason.trim() || undefined,
-        dry_run: false,
-      });
-      setExecuteResult(result);
-      setSuccess(`Assignment executed using ${result.mode} mode.`);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to execute assignment policy.');
-    } finally {
-      setExecuting(false);
-    }
-  }
-
   return (
     <Card className="asgn-card">
       <div className="asgn-head">
         <div>
-          <p className="aflow-kicker">Assignment Policy Engine</p>
-          <CardTitle>Sales Agent Assignment Management</CardTitle>
-          <CardText>Configure routing rules and assign leads/deals with deterministic manager controls.</CardText>
+          <p className="aflow-kicker">Assignment Policy</p>
+          <CardTitle>Routing Defaults and Capacity Rules</CardTitle>
+          <CardText>
+            Configure how new ownership is assigned. Live reassignment actions are handled in Operations Board.
+          </CardText>
         </div>
       </div>
 
@@ -178,7 +136,7 @@ export default function AssignmentPolicyPanel() {
         <p className="aflow-empty">Loading assignment policy...</p>
       ) : (
         <>
-          <div className="asgn-grid">
+          <div className="asgn-grid asgn-grid--policy">
             <div className="asgn-panel">
               <AisFieldLabel>Assignment Mode</AisFieldLabel>
               <SelectField
@@ -240,7 +198,14 @@ export default function AssignmentPolicyPanel() {
             </div>
 
             <div className="asgn-panel">
-              <AisFieldLabel>Capacity Weights</AisFieldLabel>
+              <p className="aflow-mini-title">Advanced Rules (Optional)</p>
+              <CardText>
+                Use only when you need explicit per-agent capacity weights or skill tags. Leave empty for default behavior.
+              </CardText>
+
+              <div className="dg-mt-3">
+                <AisFieldLabel>Capacity Weights</AisFieldLabel>
+              </div>
               <TextField
                 className="dg-mt-1"
                 value={capacityInput}
@@ -258,92 +223,21 @@ export default function AssignmentPolicyPanel() {
                 onChange={(event) => setSkillsInput(event.target.value)}
                 placeholder="userId:uniform,jacket; userId2:cap,hoodie"
               />
-              <CardText>Format: `userId:tag,tag; userId2:tag`</CardText>
+              <CardText>Format: `userId:tag,tag; userId2:tag`.</CardText>
             </div>
+          </div>
 
-            <div className="asgn-panel">
-              <AisFieldLabel>Execute Assignment (Lead ID / Deal ID)</AisFieldLabel>
-              <TextField
-                className="dg-mt-1"
-                value={leadId}
-                onChange={(event) => setLeadId(event.target.value)}
-                placeholder="Lead ID"
-              />
-              <TextField
-                className="dg-mt-2"
-                value={dealId}
-                onChange={(event) => setDealId(event.target.value)}
-                placeholder="Deal ID"
-              />
-              <SelectField
-                className="dg-mt-2"
-                value={manualAssigneeUserId}
-                onChange={(event) => setManualAssigneeUserId(event.target.value)}
-              >
-                <option value="">No manual assignee</option>
-                {agents.map((agent) => (
-                  <option key={`manual-${agent.id}`} value={agent.id}>
-                    {agent.fullName}
-                  </option>
-                ))}
-              </SelectField>
-              <TextField
-                className="dg-mt-2"
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder="Optional reason"
-              />
-              <div className="asgn-actions">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => void handleSave()}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save Policy'}
-                </Button>
-                <Button type="button" size="sm" onClick={() => void handleExecute()} disabled={executing}>
-                  {executing ? 'Assigning...' : 'Run Assignment'}
-                </Button>
-              </div>
-            </div>
+          <div className="asgn-actions">
+            <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading || saving}>
+              Reload
+            </Button>
+            <Button type="button" size="sm" onClick={() => void handleSave()} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Policy'}
+            </Button>
           </div>
 
           {success ? <p className="asgn-success">{success}</p> : null}
           {error ? <p className="asgn-error">{error}</p> : null}
-
-          {executeResult ? (
-            <div className="asgn-result">
-              <p className="aflow-mini-title">Execution Result</p>
-              <p className="aflow-empty">
-                Mode: <strong>{executeResult.mode}</strong> · Selected: <strong>{executeResult.selectedAssigneeName ?? 'n/a'}</strong> · Applied:{' '}
-                <strong>{executeResult.assignmentApplied ? 'Yes' : 'No'}</strong>
-              </p>
-              <ul className="aflow-mini-list">
-                {executeResult.reasoning.map((line, index) => (
-                  <li key={`reasoning-${index}`}>{line}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          <div className="asgn-agent-grid">
-            {sortedAgents.map((agent) => (
-              <div className="asgn-agent-card" key={`agent-${agent.id}`}>
-                <p className="asgn-agent-name">{agent.fullName}</p>
-                <p className="asgn-agent-meta">
-                  {agent.role} · Load {agent.weightedLoad}
-                </p>
-                <p className="asgn-agent-meta">
-                  Leads {agent.openLeadCount} · Deals {agent.openDealCount} · Capacity {agent.capacityWeight}
-                </p>
-                <p className="asgn-agent-tags">
-                  {agent.skillTags.length > 0 ? agent.skillTags.join(', ') : 'No skill tags'}
-                </p>
-              </div>
-            ))}
-          </div>
         </>
       )}
     </Card>

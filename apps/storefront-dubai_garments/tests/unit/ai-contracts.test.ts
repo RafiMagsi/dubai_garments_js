@@ -31,14 +31,12 @@ describe('AI Sales Agent contracts', () => {
     expect(
       LeadTriageRequestSchema.safeParse({
         leadId: '550e8400-e29b-41d4-a716-446655440001',
-        dry_run: false,
       }).success
     ).toBe(true);
 
     expect(
       LeadTriageRequestSchema.safeParse({
         leadId: 'invalid-id',
-        dry_run: false,
       }).success
     ).toBe(false);
   });

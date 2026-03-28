@@ -20,7 +20,6 @@ function daysBetween(value?: Date | string | null) {
 export async function runPipelineInsights(input: {
   leadId?: string;
   dealId?: string;
-  dryRun?: boolean;
   context: PipelineInsightsContext;
 }) {
   let lead = null;
@@ -190,25 +189,23 @@ Task: Assess stall signals, risk score/reasons, urgency queue, and next action f
   const failureReason = runtimeResult.failureReason;
   const data = runtimeResult.data;
 
-  if (!input.dryRun) {
-    await prisma.activities.create({
-      data: {
-        user_id: input.context.userId,
-        lead_id: lead?.id ?? null,
-        deal_id: deal?.id ?? null,
-        activity_type: 'ai_pipeline_insight',
-        title: 'AI Pipeline Insight',
-        details: `Generated pipeline insight with risk score ${data.riskScore}.`,
-        metadata: {
-          source,
-          provider,
-          fallbackUsed,
-          failureReason,
-          data,
-        },
+  await prisma.activities.create({
+    data: {
+      user_id: input.context.userId,
+      lead_id: lead?.id ?? null,
+      deal_id: deal?.id ?? null,
+      activity_type: 'ai_pipeline_insight',
+      title: 'AI Pipeline Insight',
+      details: `Generated pipeline insight with risk score ${data.riskScore}.`,
+      metadata: {
+        source,
+        provider,
+        fallbackUsed,
+        failureReason,
+        data,
       },
-    });
-  }
+    },
+  });
 
   return {
     leadId: lead?.id ?? null,
@@ -220,7 +217,6 @@ Task: Assess stall signals, risk score/reasons, urgency queue, and next action f
     schemaValid,
     processingMs,
     failureReason,
-    dryRun: !!input.dryRun,
     data,
   };
 }

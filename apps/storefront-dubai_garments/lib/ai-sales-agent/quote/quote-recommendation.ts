@@ -36,7 +36,10 @@ function detectVariant(texts: string[]): string | null {
 function buildMissingData(params: {
   quantity: number | null;
   variant: string | null;
-  lead: any;
+  lead: {
+    company_name?: string | null;
+    contact_name?: string | null;
+  } | null;
 }): Array<{ field: string; reason: string }> {
   const missing: Array<{ field: string; reason: string }> = [];
 
@@ -68,7 +71,6 @@ export async function runQuoteRecommendation(input: {
   leadId: string;
   dealId?: string;
   quoteId?: string;
-  dryRun?: boolean;
   context: QuoteRecommendationContext;
 }) {
   const lead = await prisma.leads.findFirst({
@@ -199,7 +201,6 @@ Task: Produce product suggestions, missing-data checks, and quote readiness outp
     schemaValid,
     processingMs,
     failureReason,
-    dryRun: !!input.dryRun,
     leadId: input.leadId,
     dealId: input.dealId ?? null,
     quoteId: input.quoteId ?? null,

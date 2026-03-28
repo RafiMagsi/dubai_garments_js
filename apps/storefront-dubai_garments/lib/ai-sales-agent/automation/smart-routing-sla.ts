@@ -28,7 +28,6 @@ function daysBetween(value?: Date | string | null) {
 export async function runSmartRoutingSla(input: {
   leadId?: string;
   dealId?: string;
-  dryRun?: boolean;
   context: RoutingContext;
 }) {
   let lead: Awaited<ReturnType<typeof prisma.leads.findFirst>> = null;
@@ -157,48 +156,46 @@ Important: Owner assignment is deterministic and handled by system rules.`,
   };
   let assignmentApplied = false;
 
-  if (!input.dryRun) {
-    if (data.recommendedOwner) {
-      if (lead && lead.assigned_to_user_id !== data.recommendedOwner) {
-        await prisma.leads.update({
-          where: { id: lead.id },
-          data: { assigned_to_user_id: data.recommendedOwner },
-        });
-        assignmentApplied = true;
-      }
-
-      if (deal && deal.owner_user_id !== data.recommendedOwner) {
-        await prisma.deals.update({
-          where: { id: deal.id },
-          data: { owner_user_id: data.recommendedOwner },
-        });
-        assignmentApplied = true;
-      }
+  if (data.recommendedOwner) {
+    if (lead && lead.assigned_to_user_id !== data.recommendedOwner) {
+      await prisma.leads.update({
+        where: { id: lead.id },
+        data: { assigned_to_user_id: data.recommendedOwner },
+      });
+      assignmentApplied = true;
     }
 
-    await prisma.activities.create({
-      data: {
-        user_id: input.context.userId,
-        lead_id: lead?.id ?? null,
-        deal_id: deal?.id ?? null,
-        activity_type: 'ai_smart_routing_sla',
-        title: 'AI Smart Routing + SLA',
-        details: `Generated ${data.slaBucket} routing guidance.`,
-        metadata: {
-          source,
-          provider,
-          fallbackUsed,
-          failureReason,
-          recommendedOwner: data.recommendedOwner,
-          routingReason: data.routingReason,
-          slaBucket: data.slaBucket,
-          slaReason: data.slaReason,
-          recommendedAction: data.recommendedAction,
-          assignmentApplied,
-        },
-      },
-    });
+    if (deal && deal.owner_user_id !== data.recommendedOwner) {
+      await prisma.deals.update({
+        where: { id: deal.id },
+        data: { owner_user_id: data.recommendedOwner },
+      });
+      assignmentApplied = true;
+    }
   }
+
+  await prisma.activities.create({
+    data: {
+      user_id: input.context.userId,
+      lead_id: lead?.id ?? null,
+      deal_id: deal?.id ?? null,
+      activity_type: 'ai_smart_routing_sla',
+      title: 'AI Smart Routing + SLA',
+      details: `Generated ${data.slaBucket} routing guidance.`,
+      metadata: {
+        source,
+        provider,
+        fallbackUsed,
+        failureReason,
+        recommendedOwner: data.recommendedOwner,
+        routingReason: data.routingReason,
+        slaBucket: data.slaBucket,
+        slaReason: data.slaReason,
+        recommendedAction: data.recommendedAction,
+        assignmentApplied,
+      },
+    },
+  });
 
   return {
     leadId: lead?.id ?? null,
@@ -210,7 +207,6 @@ Important: Owner assignment is deterministic and handled by system rules.`,
     schemaValid,
     processingMs,
     failureReason,
-    dryRun: !!input.dryRun,
     data,
   };
 }

@@ -242,8 +242,7 @@ async function executeStageAction(input: {
           userId: context.userId,
           role: context.role,
           requestId: context.requestId ?? undefined,
-        },
-        false
+        }
       );
       return {
         message: `Lead triage persisted (${triage.data.classification}, score ${triage.data.score}).`,
@@ -284,7 +283,6 @@ async function executeStageAction(input: {
         mode: 'first_reply',
         tone: 'formal',
         channel: 'email',
-        dryRun: false,
         context: {
           userId: context.userId,
           role: context.role,
@@ -357,7 +355,6 @@ async function executeStageAction(input: {
         leadId,
         dealId: dealId ?? undefined,
         quoteId: quoteId ?? undefined,
-        dryRun: false,
         context: {
           userId: context.userId,
           role: context.role,

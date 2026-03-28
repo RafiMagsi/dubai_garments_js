@@ -34,7 +34,6 @@ type ResolveInput = {
   dealId?: string;
   manualAssigneeUserId?: string;
   reason?: string;
-  dryRun?: boolean;
 };
 
 async function upsertSetting(input: {
@@ -182,8 +181,20 @@ async function getActiveAgents(config: AssignmentPolicyConfig): Promise<Candidat
 }
 
 function tokenizeLeadSignals(input: {
-  lead: any | null;
-  deal: any | null;
+  lead:
+    | {
+        source?: string | null;
+        notes?: string | null;
+        ai_product?: string | null;
+        company_name?: string | null;
+      }
+    | null;
+  deal:
+    | {
+        title?: string | null;
+        notes?: string | null;
+      }
+    | null;
 }) {
   const text = [
     String(input.lead?.source ?? ''),
@@ -340,56 +351,53 @@ export async function executeAssignmentPolicyEngine(input: ResolveInput, context
   }
 
   let assignmentApplied = false;
-  if (!input.dryRun) {
-    if (lead && lead.assigned_to_user_id !== selectedCandidate.id) {
-      await prisma.leads.update({
-        where: { id: lead.id },
-        data: { assigned_to_user_id: selectedCandidate.id },
-      });
-      assignmentApplied = true;
-    }
+  if (lead && lead.assigned_to_user_id !== selectedCandidate.id) {
+    await prisma.leads.update({
+      where: { id: lead.id },
+      data: { assigned_to_user_id: selectedCandidate.id },
+    });
+    assignmentApplied = true;
+  }
 
-    if (deal && deal.owner_user_id !== selectedCandidate.id) {
-      await prisma.deals.update({
-        where: { id: deal.id },
-        data: { owner_user_id: selectedCandidate.id },
-      });
-      assignmentApplied = true;
-    }
+  if (deal && deal.owner_user_id !== selectedCandidate.id) {
+    await prisma.deals.update({
+      where: { id: deal.id },
+      data: { owner_user_id: selectedCandidate.id },
+    });
+    assignmentApplied = true;
+  }
 
-    if (mode === 'round_robin') {
-      await upsertSetting({
-        key: SETTINGS_KEYS.rrCursor,
-        value: selectedCandidate.id,
-        description: 'Last selected assignee cursor for round-robin assignment mode',
-        updatedByUserId: context.userId,
-      });
-    }
-
-    await prisma.activities.create({
-      data: {
-        user_id: context.userId,
-        lead_id: lead?.id ?? null,
-        deal_id: deal?.id ?? null,
-        activity_type: 'ai_assignment_policy',
-        title: 'AI Assignment Policy Engine',
-        details: `Policy ${mode} selected ${selectedCandidate.fullName}.`,
-        metadata: {
-          requestId: context.requestId ?? null,
-          mode,
-          selectedAssigneeUserId: selectedCandidate.id,
-          selectedAssigneeName: selectedCandidate.fullName,
-          assignmentApplied,
-          fallbackUsed,
-          reason: input.reason ?? null,
-          reasoning,
-        },
-      },
+  if (mode === 'round_robin') {
+    await upsertSetting({
+      key: SETTINGS_KEYS.rrCursor,
+      value: selectedCandidate.id,
+      description: 'Last selected assignee cursor for round-robin assignment mode',
+      updatedByUserId: context.userId,
     });
   }
 
+  await prisma.activities.create({
+    data: {
+      user_id: context.userId,
+      lead_id: lead?.id ?? null,
+      deal_id: deal?.id ?? null,
+      activity_type: 'ai_assignment_policy',
+      title: 'AI Assignment Policy Engine',
+      details: `Policy ${mode} selected ${selectedCandidate.fullName}.`,
+      metadata: {
+        requestId: context.requestId ?? null,
+        mode,
+        selectedAssigneeUserId: selectedCandidate.id,
+        selectedAssigneeName: selectedCandidate.fullName,
+        assignmentApplied,
+        fallbackUsed,
+        reason: input.reason ?? null,
+        reasoning,
+      },
+    },
+  });
+
   return {
-    dryRun: !!input.dryRun,
     mode,
     leadId: lead?.id ?? null,
     dealId: deal?.id ?? null,
@@ -400,4 +408,3 @@ export async function executeAssignmentPolicyEngine(input: ResolveInput, context
     reasoning,
   };
 }
-

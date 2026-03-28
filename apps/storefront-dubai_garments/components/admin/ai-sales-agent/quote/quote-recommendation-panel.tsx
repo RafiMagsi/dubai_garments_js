@@ -20,7 +20,6 @@ export default function QuoteRecommendationPanel({
   const [leadId, setLeadId] = useState('');
   const [dealId, setDealId] = useState('');
   const [quoteId, setQuoteId] = useState('');
-  const [dryRun, setDryRun] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<QuoteRecommendationEnvelope | null>(null);
@@ -47,7 +46,6 @@ export default function QuoteRecommendationPanel({
         leadId: leadId.trim(),
         dealId: dealId.trim() || undefined,
         quoteId: quoteId.trim() || undefined,
-        dry_run: dryRun,
       });
 
       setResponse(result);
@@ -102,15 +100,6 @@ export default function QuoteRecommendationPanel({
         </div>
 
         <div className="qrec-actions">
-          <label className="dg-flex dg-items-center dg-gap-2 dg-text-sm">
-            <input
-              type="checkbox"
-              checked={dryRun}
-              onChange={(event) => setDryRun(event.target.checked)}
-            />
-            Dry run
-          </label>
-
           <Button type="button" onClick={handleRun} disabled={loading}>
             {loading ? 'Analyzing...' : 'Run Quote Recommendation'}
           </Button>

@@ -322,7 +322,7 @@ export default function AgentFlowView({
       setTriageStatus(null);
       setTriageBusy(true);
 
-      await runLeadTriage({ leadId: flow.leadId, dry_run: false });
+      await runLeadTriage({ leadId: flow.leadId });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['lead', flow.leadId] }),
         queryClient.invalidateQueries({ queryKey: ['leads'] }),

@@ -1,4 +1,4 @@
-# n8n Test Workflow: SendGrid Inbound Reply Simulation
+# n8n Test Workflow: SendGrid Inbound Reply Test
 
 ## Purpose
 Test customer reply detection without real SendGrid inbound traffic.
@@ -8,7 +8,7 @@ Test customer reply detection without real SendGrid inbound traffic.
 
 ## What It Does
 - Uses `Manual Trigger`
-- Sends two simulated inbound payloads to FastAPI:
+- Sends two sample inbound payloads to FastAPI:
   - One with quote number in subject (`Re: Q-...`)
   - One generic fallback payload without quote number
 

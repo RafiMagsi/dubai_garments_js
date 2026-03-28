@@ -203,7 +203,7 @@ test.describe.serial('AI Sales Agent regression', () => {
     await expectVisibleByTestId(page, 'quote-recommendation-missing-card');
 
     const response = await page.request.post('/api/admin/ai-sales-agent/quote-recommendation', {
-      data: { leadId, dry_run: false },
+      data: { leadId },
     });
     expect(response.ok()).toBeTruthy();
     const payload = (await response.json()) as {

@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
       fallbackUsed: result.fallbackUsed,
       schemaValid: result.schemaValid,
       failureReason: result.failureReason,
-      dryRun: result.dryRun,
       data: result.data,
       processingMs: result.processingMs ?? Date.now() - startedAt,
       requestId,

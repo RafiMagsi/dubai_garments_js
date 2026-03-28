@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, CardText, CardTitle, Panel } from '@/components/ui';
 import LeadIntelligenceCards from './lead-intelligence-cards';
@@ -18,10 +18,7 @@ import AutomationRunsPanel from '@/components/admin/ai-sales-agent/automation-ru
 import GlobalAiSalesCopilot from '@/components/admin/ai-sales-agent/global-copilot';
 import ModelSettingsPanel from '@/components/admin/ai-sales-agent/model-settings-panel';
 import AiImpactKpiBoard from '@/components/admin/ai-sales-agent/ai-impact-kpi-board';
-import AssignmentPolicyPanel from '@/components/admin/ai-sales-agent/assignment-policy-panel';
-import AgentWorkloadPanel from '@/components/admin/ai-sales-agent/agent-workload-panel';
-import AgentPipelineBoard from '@/components/admin/ai-sales-agent/agent-pipeline-board';
-import AssignmentKpiTargetsPanel from '@/components/admin/ai-sales-agent/assignment-kpi-targets-panel';
+import SalesAgentsWorkspace from '@/components/admin/ai-sales-agent/sales-agents-workspace';
 
 type AgentTabKey =
   | 'copilot'
@@ -30,6 +27,7 @@ type AgentTabKey =
   | 'quote-copilot'
   | 'pipeline-insights'
   | 'agent-flow'
+  | 'sales-agents'
   | 'automation-runs'
   | 'model-settings';
 
@@ -120,6 +118,18 @@ const tabs: AgentTab[] = [
     features: ['Intake-to-close map', 'Step-level visibility', 'Execution audit links'],
   },
   {
+    key: 'sales-agents',
+    label: 'Sales Agents',
+    eyebrow: 'Manager Operations',
+    title: 'Sales Agent Command Workspace',
+    description: 'Manage ownership policy, workload balance, pipeline execution, and rebalance signals in one board.',
+    kpiLabel: 'Rebalance Coverage',
+    kpiValue: 'Live',
+    kpiDelta: 'Manager control',
+    health: 'healthy',
+    features: ['Assignment policy controls', 'Workload and SLA visibility', 'Pipeline rebalance actions'],
+  },
+  {
     key: 'automation-runs',
     label: 'Automation Runs',
     eyebrow: 'Execution Layer',
@@ -151,34 +161,17 @@ export default function AiSalesAgentTabShell() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<AgentTabKey>('copilot');
-  const [expanded, setExpanded] = useState(searchParams.get('expanded') !== 'false');
-  const [leadPreviewId, setLeadPreviewId] = useState(searchParams.get('leadPreviewId') ?? '');
-  const [flowLeadId, setFlowLeadId] = useState(searchParams.get('leadId') ?? '');
+  const validTabKeys = useMemo(() => new Set(tabs.map((tab) => tab.key)), []);
+  const tabParam = searchParams.get('tab');
+  const activeTab: AgentTabKey =
+    tabParam && validTabKeys.has(tabParam as AgentTabKey) ? (tabParam as AgentTabKey) : 'copilot';
+  const expanded = searchParams.get('expanded') !== 'false';
+  const leadPreviewId = searchParams.get('leadPreviewId') ?? '';
+  const flowLeadId = searchParams.get('leadId') ?? '';
   const { data: leadPreviewData } = useLeadById(leadPreviewId.trim());
   const previewLead = leadPreviewData?.item;
 
   const currentTab = useMemo(() => tabs.find((tab) => tab.key === activeTab) ?? tabs[0], [activeTab]);
-  const validTabKeys = useMemo(() => new Set(tabs.map((tab) => tab.key)), []);
-
-  useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (!tabParam || !validTabKeys.has(tabParam as AgentTabKey)) {
-      return;
-    }
-    const nextTab = tabParam as AgentTabKey;
-    setActiveTab((prev) => (prev === nextTab ? prev : nextTab));
-  }, [searchParams, validTabKeys]);
-
-  useEffect(() => {
-    const expandedParam = searchParams.get('expanded');
-    const nextExpanded = expandedParam !== 'false';
-    setExpanded((prev) => (prev === nextExpanded ? prev : nextExpanded));
-    const nextLeadPreviewId = searchParams.get('leadPreviewId') ?? '';
-    setLeadPreviewId((prev) => (prev === nextLeadPreviewId ? prev : nextLeadPreviewId));
-    const nextFlowLeadId = searchParams.get('leadId') ?? '';
-    setFlowLeadId((prev) => (prev === nextFlowLeadId ? prev : nextFlowLeadId));
-  }, [searchParams]);
 
   function setTabInUrl(nextTab: AgentTabKey) {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -226,8 +219,6 @@ export default function AiSalesAgentTabShell() {
                 size="sm"
                 variant={isActive ? 'primary' : 'secondary'}
                 onClick={() => {
-                  setActiveTab(tab.key);
-                  setExpanded(true);
                   setTabInUrl(tab.key);
                   setUiStateInUrl({ expanded: true });
                 }}
@@ -243,13 +234,7 @@ export default function AiSalesAgentTabShell() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() =>
-                setExpanded((v) => {
-                  const next = !v;
-                  setUiStateInUrl({ expanded: next });
-                  return next;
-                })
-              }
+              onClick={() => setUiStateInUrl({ expanded: !expanded })}
             >
               {expanded ? 'Collapse Overview' : 'Expand Overview'}
             </Button>
@@ -289,11 +274,9 @@ export default function AiSalesAgentTabShell() {
                   ) : currentTab.key === 'agent-flow' ? (
                     <div className="pins-stack">
                       <AgentFlowView showHeader={false} initialLeadId={flowLeadId.trim()} />
-                      <AssignmentPolicyPanel />
-                      <AgentWorkloadPanel />
-                      <AssignmentKpiTargetsPanel />
-                      <AgentPipelineBoard />
                     </div>
+                  ) : currentTab.key === 'sales-agents' ? (
+                    <SalesAgentsWorkspace />
                   ) : currentTab.key === 'quote-copilot' ? (
                     <QuoteCopilotPanel />
                   ) : currentTab.key === 'reply-studio' ? (
@@ -316,10 +299,7 @@ export default function AiSalesAgentTabShell() {
                         <input
                           className="dg-input"
                           value={leadPreviewId}
-                          onChange={(event) => {
-                            setLeadPreviewId(event.target.value);
-                            setUiStateInUrl({ leadPreviewId: event.target.value });
-                          }}
+                          onChange={(event) => setUiStateInUrl({ leadPreviewId: event.target.value })}
                           placeholder="Paste a Lead ID"
                           data-testid="ai-sales-agent-lead-preview-input"
                         />

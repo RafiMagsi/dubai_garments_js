@@ -65,7 +65,7 @@ Continuously improve AI quality, reliability, and cost.
 ### Day 10
 1. Implement `OPS-P5-007` spend guardrails and alert thresholds.
 2. Add alert routing and throttle behavior.
-3. Run simulated high-cost scenarios to verify alerts.
+3. Run high-cost scenario checks to verify alerts.
 
 ## Week 3 - Evaluation Automation and Governance
 ### Day 11

@@ -93,7 +93,6 @@ async function applyReassign(input: {
   dealId?: string;
   targetUserId: string;
   reason?: string;
-  dryRun?: boolean;
 }): Promise<AssignmentChange> {
   const sanitizedTargetUserId = sanitizeUuid(input.targetUserId);
   if (!sanitizedTargetUserId) {
@@ -129,12 +128,11 @@ async function applyReassign(input: {
   }
 
   const result = await executeAssignmentPolicyEngine(
-      {
-        leadId: lead?.id ?? undefined,
-        dealId: deal?.id ?? undefined,
-        manualAssigneeUserId: sanitizedTargetUserId,
-        reason: input.reason,
-        dryRun: input.dryRun,
+    {
+      leadId: lead?.id ?? undefined,
+      dealId: deal?.id ?? undefined,
+      manualAssigneeUserId: sanitizedTargetUserId,
+      reason: input.reason,
     },
     input.context
   );
@@ -142,7 +140,7 @@ async function applyReassign(input: {
   const fromUserId = lead?.assigned_to_user_id ?? deal?.owner_user_id ?? null;
   let activityIds = { timelineActivityId: null as string | null, auditActivityId: null as string | null };
 
-  if (!input.dryRun && result.assignmentApplied) {
+  if (result.assignmentApplied) {
     activityIds = await writeAssignmentEvents({
       context: input.context,
       leadId: lead?.id ?? null,
@@ -181,7 +179,6 @@ async function applyBulkRebalance(input: {
   filters?: AssignmentOperationsRequest['filters'];
   limit: number;
   reason?: string;
-  dryRun?: boolean;
 }) {
   const board = await getAgentPipelineBoard(input.context, {
     team: input.filters?.team,
@@ -221,13 +218,12 @@ async function applyBulkRebalance(input: {
         leadId: candidate.itemType === 'lead' ? candidate.itemId : undefined,
         dealId: candidate.itemType === 'deal' ? candidate.itemId : undefined,
         reason: input.reason,
-        dryRun: input.dryRun,
       },
       input.context
     );
 
     let activityIds = { timelineActivityId: null as string | null, auditActivityId: null as string | null };
-    if (!input.dryRun && result.assignmentApplied) {
+    if (result.assignmentApplied) {
       activityIds = await writeAssignmentEvents({
         context: input.context,
         leadId: candidate.itemType === 'lead' ? candidate.itemId : null,
@@ -266,7 +262,6 @@ async function applyAutoAssignUnowned(input: {
   context: OperationsContext;
   limit: number;
   reason?: string;
-  dryRun?: boolean;
 }) {
   const [leads, deals] = await Promise.all([
     prisma.leads.findMany({
@@ -303,13 +298,12 @@ async function applyAutoAssignUnowned(input: {
         dealId: item.itemType === 'deal' ? item.id : undefined,
         manualAssigneeUserId: lock?.ownerUserId ?? undefined,
         reason: input.reason,
-        dryRun: input.dryRun,
       },
       input.context
     );
 
     let activityIds = { timelineActivityId: null as string | null, auditActivityId: null as string | null };
-    if (!input.dryRun && result.assignmentApplied) {
+    if (result.assignmentApplied) {
       activityIds = await writeAssignmentEvents({
         context: input.context,
         leadId: item.itemType === 'lead' ? item.id : null,
@@ -349,7 +343,6 @@ async function applyLockOwner(input: {
   customerId: string;
   targetUserId: string;
   reason?: string;
-  dryRun?: boolean;
 }): Promise<AssignmentChange> {
   const sanitizedTargetUserId = sanitizeUuid(input.targetUserId);
   if (!sanitizedTargetUserId) {
@@ -358,26 +351,24 @@ async function applyLockOwner(input: {
   const ownerName = await resolveOwnerName(sanitizedTargetUserId);
   let activityIds = { timelineActivityId: null as string | null, auditActivityId: null as string | null };
 
-  if (!input.dryRun) {
-    await setStrategicOwnerLock({
-      customerId: input.customerId,
-      ownerUserId: sanitizedTargetUserId,
-      reason: input.reason,
-      updatedByUserId: input.context.userId,
-    });
+  await setStrategicOwnerLock({
+    customerId: input.customerId,
+    ownerUserId: sanitizedTargetUserId,
+    reason: input.reason,
+    updatedByUserId: input.context.userId,
+  });
 
-    activityIds = await writeAssignmentEvents({
-      context: input.context,
-      customerId: input.customerId,
-      fromUserId: null,
-      toUserId: sanitizedTargetUserId,
-      action: 'lock_owner',
-      reason: input.reason?.trim() || 'Strategic account owner lock applied.',
-      metadata: {
-        strategicAccount: true,
-      },
-    });
-  }
+  activityIds = await writeAssignmentEvents({
+    context: input.context,
+    customerId: input.customerId,
+    fromUserId: null,
+    toUserId: sanitizedTargetUserId,
+    action: 'lock_owner',
+    reason: input.reason?.trim() || 'Strategic account owner lock applied.',
+    metadata: {
+      strategicAccount: true,
+    },
+  });
 
   return {
     leadId: null,
@@ -394,7 +385,6 @@ async function applyLockOwner(input: {
 }
 
 export async function runAssignmentOperation(input: AssignmentOperationsRequest, context: OperationsContext) {
-  const dryRun = !!input.dry_run;
   const limit = Math.max(1, Math.min(100, Number(input.limit ?? 12)));
   let changes: AssignmentChange[] = [];
 
@@ -408,7 +398,6 @@ export async function runAssignmentOperation(input: AssignmentOperationsRequest,
       dealId: input.dealId,
       targetUserId: input.targetUserId,
       reason: input.reason,
-      dryRun,
     });
     changes = [change];
   } else if (input.action === 'bulk_rebalance') {
@@ -417,14 +406,12 @@ export async function runAssignmentOperation(input: AssignmentOperationsRequest,
       filters: input.filters,
       limit,
       reason: input.reason,
-      dryRun,
     });
   } else if (input.action === 'auto_assign_unowned') {
     changes = await applyAutoAssignUnowned({
       context,
       limit,
       reason: input.reason,
-      dryRun,
     });
   } else if (input.action === 'lock_owner') {
     if (!input.customerId || !input.targetUserId) {
@@ -435,7 +422,6 @@ export async function runAssignmentOperation(input: AssignmentOperationsRequest,
       customerId: input.customerId,
       targetUserId: input.targetUserId,
       reason: input.reason,
-      dryRun,
     });
     changes = [change];
   }
@@ -447,7 +433,6 @@ export async function runAssignmentOperation(input: AssignmentOperationsRequest,
 
   return {
     action: input.action,
-    dryRun,
     summary: `${input.action} processed ${changes.length} record(s): ${changedCount} changed, ${skippedCount} skipped.`,
     changedCount,
     skippedCount,

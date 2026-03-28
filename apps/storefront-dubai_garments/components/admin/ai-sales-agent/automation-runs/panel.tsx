@@ -22,7 +22,6 @@ export default function AutomationRunsPanel() {
   const [page, setPage] = useState(1);
   const [workflowName, setWorkflowName] = useState('');
   const [status, setStatus] = useState<'success' | 'failed' | 'pending' | ''>('');
-  const [dryRun, setDryRun] = useState(true);
   const [leadId, setLeadId] = useState('');
   const [dealId, setDealId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,7 +59,6 @@ export default function AutomationRunsPanel() {
       const result = await runSmartRoutingSla({
         leadId: leadId.trim() || undefined,
         dealId: dealId.trim() || undefined,
-        dry_run: dryRun,
       });
 
       setRoutingResponse(result);
@@ -85,11 +83,9 @@ export default function AutomationRunsPanel() {
         <SmartRoutingQueryCard
           leadId={leadId}
           dealId={dealId}
-          dryRun={dryRun}
           loading={loading}
           onLeadIdChange={setLeadId}
           onDealIdChange={setDealId}
-          onDryRunChange={setDryRun}
           onRunRouting={handleRoutingCheck}
         />
       </div>

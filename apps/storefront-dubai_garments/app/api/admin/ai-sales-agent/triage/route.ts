@@ -55,8 +55,7 @@ export async function POST(request: NextRequest) {
       // LLM enablement for triage is deferred to a later phase.
       result = await runLeadTriage(
         parsed.data.leadId,
-        triageContext,
-        parsed.data.dry_run
+        triageContext
       );
     } finally {
       limiter.release();
@@ -64,7 +63,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
         ok: true,
-        dryRun: parsed.data.dry_run,
         source: result.source,
         provider: result.provider,
         model: result.model,

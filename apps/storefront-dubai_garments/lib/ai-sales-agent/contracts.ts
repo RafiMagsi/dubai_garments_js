@@ -99,7 +99,6 @@ export const CopilotExecuteRequestSchema = z.object({
   leadId: z.string().uuid().optional(),
   dealId: z.string().uuid().optional(),
   channel: z.enum(['email', 'whatsapp']).optional(),
-  dry_run: z.boolean().optional().default(false),
   payload: z
     .object({
       tone: z.enum(['professional', 'friendly', 'persuasive']).optional(),
@@ -113,7 +112,6 @@ export const CopilotExecuteRequestSchema = z.object({
 export const CopilotExecuteSuccessSchema = z.object({
   ok: z.literal(true),
   action: CopilotActionSchema,
-  dryRun: z.boolean(),
   executed: z.boolean(),
   result: z.record(z.string(), z.any()),
   auditId: z.string().nullable(),
@@ -125,7 +123,6 @@ export type CopilotExecuteRequest = z.infer<typeof CopilotExecuteRequestSchema>;
 
 export const LeadTriageRequestSchema = z.object({
   leadId: z.string().uuid(),
-  dry_run: z.boolean().optional().default(false),
 });
 
 export const LeadIntentSchema = z.enum([
@@ -155,7 +152,6 @@ export const LeadTriageOutputSchema = z.object({
 
 export const LeadTriageResponseSchema = z.object({
   ok: z.literal(true),
-  dryRun: z.boolean(),
   source: z.enum(['model', 'fallback']),
   persisted: z.boolean(),
   leadId: z.string(),
@@ -187,7 +183,6 @@ export const ReplyStudioRequestSchema = z.object({
   tone: ReplyStudioToneSchema.optional().default('formal'),
   channel: z.enum(['email', 'whatsapp']).optional().default('email'),
   userNotes: z.string().max(2000).optional(),
-  dry_run: z.boolean().optional().default(false),
 });
 
 export const ReplyStudioDraftSchema = z.object({
@@ -209,7 +204,6 @@ export const ReplyStudioResponseSchema = z.object({
   provider: z.string(),
   fallbackUsed: z.boolean(),
   failureReason: z.string().nullable(),
-  dryRun: z.boolean(),
   processingMs: z.number().optional(),
   data: ReplyStudioDraftSchema,
   requestId: z.string().nullable(),
@@ -225,7 +219,6 @@ export const QuoteRecommendationRequestSchema = z.object({
   leadId: z.string().uuid(),
   dealId: z.string().uuid().optional(),
   quoteId: z.string().uuid().optional(),
-  dry_run: z.boolean().optional().default(false),
 });
 
 export const QuoteRecommendationProductSchema = z.object({
@@ -259,7 +252,6 @@ export const QuoteRecommendationResponseSchema = z.object({
   provider: z.string(),
   fallbackUsed: z.boolean(),
   failureReason: z.string().nullable(),
-  dryRun: z.boolean(),
   processingMs: z.number().optional(),
   data: QuoteRecommendationPayloadSchema,
   requestId: z.string().nullable(),
@@ -281,7 +273,6 @@ export const QuoteCopilotRequestSchema = z.object({
   dealId: z.string().uuid().optional(),
   quoteId: z.string().uuid().optional(),
   acceptedRecommendations: z.array(QuoteCopilotAcceptedItemSchema).default([]),
-  dry_run: z.boolean().optional().default(false),
 });
 
 export const QuoteCopilotSummarySchema = z.object({
@@ -322,7 +313,6 @@ export const QuoteCopilotResponseSchema = z.object({
   provider: z.string(),
   fallbackUsed: z.boolean(),
   failureReason: z.string().nullable(),
-  dryRun: z.boolean(),
   data: z.object({
     summary: QuoteCopilotSummarySchema,
     upsellSuggestions: z.array(QuoteCopilotUpsellSchema),
@@ -343,7 +333,6 @@ export type QuoteCopilotResponse = z.infer<typeof QuoteCopilotResponseSchema>;
 export const PipelineInsightRequestSchema = z.object({
   leadId: z.string().uuid().optional(),
   dealId: z.string().uuid().optional(),
-  dry_run: z.boolean().optional().default(true),
 });
 
 export const PipelineInsightReasonSchema = z.object({
@@ -376,7 +365,6 @@ export const PipelineInsightResponseSchema = z.object({
   provider: z.string(),
   fallbackUsed: z.boolean(),
   failureReason: z.string().nullable(),
-  dryRun: z.boolean(),
   data: PipelineInsightPayloadSchema,
   processingMs: z.number().optional(),
   requestId: z.string().nullable(),
@@ -403,7 +391,6 @@ export const PipelineInsightExecuteRequestSchema = z.object({
     })
     .optional()
     .default({}),
-  dry_run: z.boolean().optional().default(true),
 });
 
 export const PipelineInsightExecuteResponseSchema = z.object({
@@ -411,7 +398,6 @@ export const PipelineInsightExecuteResponseSchema = z.object({
   action: PipelineInsightExecuteActionSchema,
   leadId: z.string().nullable(),
   dealId: z.string().nullable(),
-  dryRun: z.boolean(),
   outcome: z.string(),
   requestId: z.string().nullable(),
 });
@@ -454,7 +440,6 @@ export const AutomationRunDetailResponseSchema = z.object({
 export const SmartRoutingSlaRequestSchema = z.object({
   leadId: z.string().uuid().optional(),
   dealId: z.string().uuid().optional(),
-  dry_run: z.boolean().optional().default(true),
 });
 
 export const SmartRoutingSlaResponseSchema = z.object({
@@ -465,7 +450,6 @@ export const SmartRoutingSlaResponseSchema = z.object({
   provider: z.string(),
   fallbackUsed: z.boolean(),
   failureReason: z.string().nullable(),
-  dryRun: z.boolean(),
   data: z.object({
     recommendedOwner: z.string().nullable(),
     routingReason: z.string(),
@@ -485,13 +469,11 @@ export type SmartRoutingSlaResponse = z.infer<typeof SmartRoutingSlaResponseSche
 export const AutomationRunRerunRequestSchema = z.object({
   runId: z.string(),
   note: z.string().optional(),
-  dry_run: z.boolean().optional().default(true),
 });
 
 export const AutomationRunRerunResponseSchema = z.object({
   ok: z.literal(true),
   runId: z.string(),
-  dryRun: z.boolean(),
   guardrailPassed: z.boolean(),
   outcome: z.string(),
   requestId: z.string().nullable(),
@@ -756,12 +738,10 @@ export const AssignmentPolicyExecuteRequestSchema = z.object({
   dealId: z.string().uuid().optional(),
   manualAssigneeUserId: z.string().uuid().optional(),
   reason: z.string().max(400).optional(),
-  dry_run: z.boolean().optional().default(false),
 });
 
 export const AssignmentPolicyExecuteResponseSchema = z.object({
   ok: z.literal(true),
-  dryRun: z.boolean(),
   mode: AssignmentModeSchema,
   leadId: z.string().uuid().nullable(),
   dealId: z.string().uuid().nullable(),
@@ -911,13 +891,11 @@ export const AssignmentOperationsRequestSchema = z.object({
     })
     .optional(),
   limit: z.number().int().min(1).max(100).optional(),
-  dry_run: z.boolean().optional().default(false),
 });
 
 export const AssignmentOperationsResponseSchema = z.object({
   ok: z.literal(true),
   action: AssignmentOperationTypeSchema,
-  dryRun: z.boolean(),
   requestId: z.string().nullable(),
   summary: z.string(),
   changedCount: z.number().int(),

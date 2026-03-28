@@ -6,22 +6,18 @@ import { AisFieldLabel } from '@/components/admin/ai-sales-agent/reusable';
 type Props = {
   leadId: string;
   dealId: string;
-  dryRun: boolean;
   loading: boolean;
   onLeadIdChange: (value: string) => void;
   onDealIdChange: (value: string) => void;
-  onDryRunChange: (value: boolean) => void;
   onRunRouting: () => void;
 };
 
 export default function SmartRoutingQueryCard({
   leadId,
   dealId,
-  dryRun,
   loading,
   onLeadIdChange,
   onDealIdChange,
-  onDryRunChange,
   onRunRouting,
 }: Props) {
   return (
@@ -55,14 +51,6 @@ export default function SmartRoutingQueryCard({
       </div>
 
       <div className="pins-actions">
-        <label className="dg-flex dg-items-center dg-gap-2 dg-text-sm">
-          <input
-            type="checkbox"
-            checked={dryRun}
-            onChange={(event) => onDryRunChange(event.target.checked)}
-          />
-          Dry run
-        </label>
         <Button type="button" variant="secondary" onClick={onRunRouting} disabled={loading}>
           {loading ? 'Running...' : 'Run Smart Routing + SLA'}
         </Button>

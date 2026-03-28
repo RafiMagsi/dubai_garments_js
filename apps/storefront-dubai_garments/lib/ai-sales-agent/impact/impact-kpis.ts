@@ -133,7 +133,7 @@ export async function getAiImpactKpis(): Promise<ImpactResponse> {
       return meta.outcome === 'success';
     }
     if (row.activity_type === 'ai_pipeline_insight_execution') {
-      return meta.dryRun === false;
+      return true;
     }
     if (row.activity_type === 'ai_copilot_action') {
       return meta.executed === true;
@@ -168,7 +168,7 @@ export async function getAiImpactKpis(): Promise<ImpactResponse> {
     }
     const meta = safeMeta(row.metadata);
     if (row.activity_type === 'ai_pipeline_insight_execution') {
-      return meta.dryRun === false;
+      return true;
     }
     return meta.assignmentApplied === true || meta.slaBucket === 'on_track';
   };
@@ -210,4 +210,3 @@ export async function getAiImpactKpis(): Promise<ImpactResponse> {
     },
   };
 }
-

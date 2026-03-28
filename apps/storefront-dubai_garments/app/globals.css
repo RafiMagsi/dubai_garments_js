@@ -857,6 +857,16 @@
         gap: 1.5rem;
     }
 
+    .dg-lead-detail-page .dg-lead-zone {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .dg-lead-detail-page .dg-lead-zone + .dg-lead-zone {
+        border-top: 1px solid color-mix(in srgb, var(--color-border) 82%, white);
+        padding-top: 1rem;
+    }
+
     .dg-lead-detail-page .dg-lead-detail-section-head {
         margin-top: 0.25rem;
         margin-bottom: 0.9rem;
@@ -869,6 +879,10 @@
     }
 
     .dg-lead-detail-page .dg-lead-detail-section-head .dg-muted-sm {
+        margin: 0;
+    }
+
+    .dg-lead-detail-page .dg-lead-zone .dg-lead-detail-section-head {
         margin: 0;
     }
 
@@ -4775,6 +4789,11 @@ select.aflow-deal-control {
     gap: 0.55rem;
   }
 
+  .asgn-grid--policy {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.62rem;
+  }
+
   .asgn-panel {
     border: 1px solid color-mix(in srgb, var(--color-border) 90%, white);
     border-radius: 0.58rem;
@@ -4813,21 +4832,6 @@ select.aflow-deal-control {
     gap: 0.3rem;
   }
 
-  .asgn-agent-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
-  }
-
-  .asgn-agent-card {
-    border: 1px solid color-mix(in srgb, var(--color-border) 92%, white);
-    border-radius: 0.54rem;
-    padding: 0.46rem;
-    background: color-mix(in srgb, var(--dg-card-bg) 98%, white);
-    display: grid;
-    gap: 0.16rem;
-  }
-
   .asgn-agent-name {
     margin: 0;
     font-size: 0.76rem;
@@ -4846,6 +4850,7 @@ select.aflow-deal-control {
   .asgn-workload-card {
     display: grid;
     gap: 0.55rem;
+    align-content: start;
   }
 
   .asgn-workload-head {
@@ -5149,7 +5154,7 @@ select.aflow-deal-control {
 
   .asgn-pipe-grid-twenty .asgn-pipe-lanes {
     gap: 0.52rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .asgn-pipe-lane {
@@ -5321,19 +5326,49 @@ select.aflow-deal-control {
   }
 
   .asgn-pipe-ops {
-    border-top: 1px solid color-mix(in srgb, var(--color-border) 85%, white);
-    padding-top: 0.45rem;
     display: grid;
     gap: 0.38rem;
+  }
+
+  .asgn-pipe-ops-shell {
+    border: 1px solid color-mix(in srgb, var(--color-border) 88%, white);
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--dg-card-bg) 98%, white);
+    padding: 0.62rem;
   }
 
   .asgn-pipe-op-grid {
     display: grid;
     gap: 0.45rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .asgn-pipe-grid-twenty .asgn-pipe-op-grid {
     gap: 0.55rem;
+  }
+
+  .asgn-pipe-op-grid > * {
+    min-width: 0;
+  }
+
+  .asgn-pipe-advanced {
+    border: 1px dashed color-mix(in srgb, var(--color-border) 86%, white);
+    border-radius: 0.52rem;
+    background: color-mix(in srgb, #ffffff 92%, var(--dg-card-bg));
+    padding: 0.45rem 0.52rem;
+  }
+
+  .asgn-pipe-advanced > summary {
+    cursor: pointer;
+    font-size: 0.68rem;
+    color: #334155;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    list-style: none;
+  }
+
+  .asgn-pipe-advanced > summary::-webkit-details-marker {
+    display: none;
   }
 
   html[data-dg-theme='twenty'] .asgn-pipe-grid-twenty .asgn-pipe-col {
@@ -5485,6 +5520,82 @@ select.aflow-deal-control {
   html[data-dg-theme='twenty'] .asgn-kpi-targets-card-twenty .asgn-kpi-targets-panel {
     border-color: #e5e9f6;
     background: linear-gradient(180deg, #ffffff, #fcfdff);
+  }
+
+  .sales-agents-workspace {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .sales-agents-toolbar {
+    border: 1px solid color-mix(in srgb, var(--color-border) 84%, white);
+    background: linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--color-brand-50) 70%, white),
+      color-mix(in srgb, #ffffff 94%, var(--dg-card-bg))
+    );
+    border-radius: 0.72rem;
+    padding: 0.85rem 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+  }
+
+  .sales-agents-toolbar-copy {
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .sales-agents-kicker {
+    margin: 0;
+    font-size: 0.69rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #4f46e5;
+  }
+
+  .sales-agents-toolbar h3 {
+    margin: 0.2rem 0 0;
+    font-size: 1.05rem;
+    color: #0f172a;
+  }
+
+  .sales-agents-toolbar p {
+    margin: 0.38rem 0 0;
+    color: #475569;
+    font-size: 0.8rem;
+    max-width: 62ch;
+  }
+
+  .sales-agents-toolbar-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .sales-agents-view-btn {
+    min-width: 138px;
+    justify-content: center;
+  }
+
+  .sales-agents-view-btn.is-active {
+    box-shadow: 0 8px 18px -14px color-mix(in srgb, var(--color-brand-500) 35%, transparent);
+  }
+
+  .sales-agents-stage {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .sales-agents-top-grid {
+    display: grid;
+    gap: 0.72rem;
+    grid-template-columns: 1.15fr 0.85fr;
+    align-items: start;
   }
 
   .aflow-board-head {
@@ -7104,7 +7215,7 @@ select.aflow-deal-control {
     }
 
     .asgn-grid,
-    .asgn-agent-grid,
+    .asgn-grid--policy,
     .asgn-workload-grid,
     .asgn-workload-kpis,
     .asgn-kpi-targets-grid,
@@ -7112,6 +7223,10 @@ select.aflow-deal-control {
     .asgn-pipe-filters,
     .asgn-pipe-grid,
     .asgn-pipe-lanes {
+      grid-template-columns: 1fr;
+    }
+
+    .asgn-pipe-op-grid {
       grid-template-columns: 1fr;
     }
 
@@ -7200,6 +7315,24 @@ select.aflow-deal-control {
       justify-content: flex-start;
     }
 
+  }
+
+  @media (max-width: 1120px) {
+    .sales-agents-toolbar {
+      padding: 0.78rem 0.8rem;
+    }
+
+    .sales-agents-toolbar-actions {
+      width: 100%;
+    }
+
+    .sales-agents-view-btn {
+      min-width: 120px;
+    }
+
+    .sales-agents-top-grid {
+      grid-template-columns: 1fr;
+    }
   }
 
   @media (max-width: 780px) {

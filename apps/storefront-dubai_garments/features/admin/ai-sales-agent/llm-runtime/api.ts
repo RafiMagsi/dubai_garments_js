@@ -70,7 +70,7 @@ export async function executeCopilot(input: CopilotExecuteRequest): Promise<AiSa
 }
 
 export async function runLeadTriage(
-  input: { leadId: string; dry_run?: boolean }
+  input: { leadId: string }
 ): Promise<LeadTriageEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/triage', {
     method: 'POST',
@@ -377,20 +377,26 @@ export async function approveAndSendReplyStudio(input: {
     credentials: 'include',
   });
 
-  const json = (await response.json()) as any;
+  const json: unknown = await response.json();
 
   if (!response.ok) {
-    throw new Error(json.message || 'Failed to approve and send reply.');
+    const message =
+      typeof json === 'object' &&
+      json !== null &&
+      'message' in json &&
+      typeof (json as { message?: unknown }).message === 'string'
+        ? (json as { message: string }).message
+        : 'Failed to approve and send reply.';
+    throw new Error(message);
   }
 
-  return json;
+  return json as { ok?: boolean; activityId?: string; requestId?: string };
 }
 
 export async function runQuoteRecommendation(input: {
   leadId: string;
   dealId?: string;
   quoteId?: string;
-  dry_run?: boolean;
 }): Promise<QuoteRecommendationEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/quote-recommendation', {
     method: 'POST',
@@ -418,7 +424,6 @@ export async function runQuoteCopilot(input: {
     suggestedQuantity: number | null;
     suggestedVariant: string | null;
   }>;
-  dry_run?: boolean;
 }): Promise<QuoteCopilotEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/quote-copilot', {
     method: 'POST',
@@ -439,7 +444,6 @@ export async function runQuoteCopilot(input: {
 export async function runPipelineInsights(input: {
   leadId?: string;
   dealId?: string;
-  dry_run?: boolean;
 }): Promise<PipelineInsightEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/pipeline-insights', {
     method: 'POST',
@@ -466,7 +470,6 @@ export async function executePipelineInsightAction(input: {
     suggestedStage?: string;
     note?: string;
   };
-  dry_run?: boolean;
 }): Promise<PipelineInsightExecuteEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/pipeline-insights/execute', {
     method: 'POST',
@@ -509,7 +512,6 @@ export async function getAutomationRunDetails(input: {
 export async function runSmartRoutingSla(input: {
   leadId?: string;
   dealId?: string;
-  dry_run?: boolean;
 }): Promise<SmartRoutingSlaEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/smart-routing-sla', {
     method: 'POST',
@@ -530,7 +532,6 @@ export async function runSmartRoutingSla(input: {
 export async function rerunAutomationRun(input: {
   runId: string;
   note?: string;
-  dry_run?: boolean;
 }): Promise<AutomationRunRerunEnvelope> {
   const response = await fetch('/api/admin/ai-sales-agent/automation-runs/rerun', {
     method: 'POST',

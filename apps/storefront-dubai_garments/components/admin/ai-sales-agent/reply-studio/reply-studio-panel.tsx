@@ -17,7 +17,6 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
   const [mode, setMode] = useState<'first_reply' | 'followup_reply' | 'clarification_questions'>('first_reply');
   const [tone, setTone] = useState<'concise' | 'formal' | 'persuasive'>('formal');
   const [channel, setChannel] = useState<'email' | 'whatsapp'>('email');
-  const [dryRun, setDryRun] = useState(true);
   const [userNotes, setUserNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +57,6 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
         tone,
         channel,
         userNotes: userNotes.trim() || undefined,
-        dry_run: dryRun,
       });
 
       setResponse(result);
@@ -214,15 +212,6 @@ export default function ReplyStudioPanel({ showHeading = true }: ReplyStudioPane
         </div>
 
         <div className="ars-actions">
-          <label className="dg-flex dg-items-center dg-gap-2 dg-text-sm">
-            <input
-              type="checkbox"
-              checked={dryRun}
-              onChange={(event) => setDryRun(event.target.checked)}
-            />
-            Dry run
-          </label>
-
           <Button type="button" onClick={handleRun} disabled={loading}>
             {loading ? 'Generating trusted draft...' : 'Run Reply Studio'}
           </Button>

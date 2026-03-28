@@ -84,7 +84,6 @@ export async function runQuoteCopilot(input: {
     suggestedQuantity: number | null;
     suggestedVariant: string | null;
   }>;
-  dryRun?: boolean;
   context: QuoteCopilotContext;
 }) {
   const lead = await prisma.leads.findFirst({
@@ -279,47 +278,45 @@ Task: Generate a structured quote summary and upsell/cross-sell suggestions.`,
     pricingRiskHints.push('No immediate pricing risks detected for current inputs.');
   }
 
-  if (!input.dryRun) {
-    await prisma.activities.create({
-      data: {
-        user_id: input.context.userId,
-        lead_id: input.leadId,
-        activity_type: 'ai_quote_copilot',
-        title: 'AI Quote Copilot summary generated',
-        details: `Generated quote copilot summary from ${acceptedCount} accepted recommendation(s).`,
-        metadata: {
-          source,
-          provider,
-          fallbackUsed,
-          failureReason,
-          acceptedCount,
-          acceptedItems,
-          generationMode,
-          canProceed: summary.canProceed,
-          suggestedNextAction: summary.suggestedNextAction,
-          upsellSuggestions,
-          quoteIntelligence: {
-            estimatedSubtotalAED: estimatedSubtotalAED > 0 ? Number(estimatedSubtotalAED.toFixed(2)) : null,
-            marginSafety: {
-              status: marginSafetyStatus,
-              estimatedGrossMarginPct,
-              guidance: marginGuidance,
-            },
-            discountGuidance: {
-              requestedDiscountPct,
-              suggestedDiscountPct,
-              maxSafeDiscountPct,
-              reason:
-                requestedDiscountPct != null
-                  ? 'Discount guidance was tuned against requested discount signal from lead/deal context.'
-                  : 'No explicit discount requested; using conservative default discount recommendation.',
-            },
-            pricingRiskHints,
+  await prisma.activities.create({
+    data: {
+      user_id: input.context.userId,
+      lead_id: input.leadId,
+      activity_type: 'ai_quote_copilot',
+      title: 'AI Quote Copilot summary generated',
+      details: `Generated quote copilot summary from ${acceptedCount} accepted recommendation(s).`,
+      metadata: {
+        source,
+        provider,
+        fallbackUsed,
+        failureReason,
+        acceptedCount,
+        acceptedItems,
+        generationMode,
+        canProceed: summary.canProceed,
+        suggestedNextAction: summary.suggestedNextAction,
+        upsellSuggestions,
+        quoteIntelligence: {
+          estimatedSubtotalAED: estimatedSubtotalAED > 0 ? Number(estimatedSubtotalAED.toFixed(2)) : null,
+          marginSafety: {
+            status: marginSafetyStatus,
+            estimatedGrossMarginPct,
+            guidance: marginGuidance,
           },
+          discountGuidance: {
+            requestedDiscountPct,
+            suggestedDiscountPct,
+            maxSafeDiscountPct,
+            reason:
+              requestedDiscountPct != null
+                ? 'Discount guidance was tuned against requested discount signal from lead/deal context.'
+                : 'No explicit discount requested; using conservative default discount recommendation.',
+          },
+          pricingRiskHints,
         },
       },
-    });
-  }
+    },
+  });
 
   return {
     leadId: input.leadId,
@@ -332,8 +329,7 @@ Task: Generate a structured quote summary and upsell/cross-sell suggestions.`,
     schemaValid,
     processingMs,
     failureReason,
-      dryRun: !!input.dryRun,
-      data: {
+    data: {
       summary,
       upsellSuggestions,
       quoteIntelligence: {

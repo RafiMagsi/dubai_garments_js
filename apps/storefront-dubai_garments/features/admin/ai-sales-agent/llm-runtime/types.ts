@@ -17,7 +17,6 @@ export type CopilotExecuteRequest = {
   leadId?: string;
   dealId?: string;
   channel?: 'email' | 'whatsapp';
-  dry_run?: boolean;
   payload?: {
     tone?: 'professional' | 'friendly' | 'persuasive';
     userNotes?: string;
@@ -36,7 +35,6 @@ export type CopilotEnvelope = {
   model?: string;
   fallbackUsed?: boolean;
   processingMs?: number;
-  dryRun?: boolean;
   executed?: boolean;
   data?: unknown;
   result?: Record<string, unknown>;
@@ -66,7 +64,6 @@ export type LeadTriageOutput = {
 
 export type LeadTriageEnvelope = {
   ok: boolean;
-  dryRun: boolean;
   source: 'model' | 'fallback';
   provider?: string;
   model?: string;
@@ -221,7 +218,6 @@ export type ReplyStudioRequest = {
   tone?: ReplyStudioTone;
   channel?: 'email' | 'whatsapp';
   userNotes?: string;
-  dry_run?: boolean;
 };
 
 export type ReplyStudioDraft = {
@@ -276,13 +272,11 @@ export type AssignmentPolicyExecuteRequest = {
   dealId?: string;
   manualAssigneeUserId?: string;
   reason?: string;
-  dry_run?: boolean;
 };
 
 export type AssignmentPolicyExecuteEnvelope = {
   ok: true;
   requestId?: string | null;
-  dryRun: boolean;
   mode: AssignmentMode;
   leadId: string | null;
   dealId: string | null;
@@ -314,14 +308,12 @@ export type AssignmentOperationsRequest = {
     ownerUserId?: string;
   };
   limit?: number;
-  dry_run?: boolean;
 };
 
 export type AssignmentOperationsEnvelope = {
   ok: true;
   requestId?: string | null;
   action: AssignmentOperationAction;
-  dryRun: boolean;
   summary: string;
   changedCount: number;
   skippedCount: number;
@@ -505,7 +497,6 @@ export type ReplyStudioEnvelope = {
   fallbackUsed: boolean;
   schemaValid?: boolean;
   failureReason: string | null;
-  dryRun: boolean;
   processingMs?: number;
   data: ReplyStudioDraft;
   requestId?: string | null;
@@ -515,7 +506,6 @@ export type QuoteRecommendationRequest = {
   leadId: string;
   dealId?: string;
   quoteId?: string;
-  dry_run?: boolean;
 };
 
 export type QuoteRecommendationItem = {
@@ -542,7 +532,6 @@ export type QuoteRecommendationEnvelope = {
   fallbackUsed: boolean;
   schemaValid?: boolean;
   failureReason: string | null;
-  dryRun: boolean;
   processingMs?: number;
   data: {
     summary: string;
@@ -567,7 +556,6 @@ export type QuoteCopilotRequest = {
   dealId?: string;
   quoteId?: string;
   acceptedRecommendations: QuoteCopilotAcceptedItem[];
-  dry_run?: boolean;
 };
 
 export type QuoteCopilotUpsell = {
@@ -587,7 +575,6 @@ export type QuoteCopilotEnvelope = {
   fallbackUsed: boolean;
   schemaValid?: boolean;
   failureReason: string | null;
-  dryRun: boolean;
   processingMs?: number;
   data: {
     summary: {
@@ -640,7 +627,6 @@ export type PipelineInsightEnvelope = {
   fallbackUsed: boolean;
   schemaValid?: boolean;
   failureReason: string | null;
-  dryRun: boolean;
   processingMs?: number;
   data: {
     summary: string;
@@ -665,7 +651,6 @@ export type PipelineInsightExecuteEnvelope = {
   action: PipelineInsightExecuteAction;
   leadId: string | null;
   dealId: string | null;
-  dryRun: boolean;
   outcome: string;
   requestId?: string | null;
 };
@@ -709,7 +694,6 @@ export type SmartRoutingSlaEnvelope = {
   fallbackUsed: boolean;
   schemaValid?: boolean;
   failureReason: string | null;
-  dryRun: boolean;
   data: {
     recommendedOwner: string | null;
     routingReason: string;
@@ -724,7 +708,6 @@ export type SmartRoutingSlaEnvelope = {
 export type AutomationRunRerunEnvelope = {
   ok: true;
   runId: string;
-  dryRun: boolean;
   guardrailPassed: boolean;
   outcome: string;
   requestId?: string | null;

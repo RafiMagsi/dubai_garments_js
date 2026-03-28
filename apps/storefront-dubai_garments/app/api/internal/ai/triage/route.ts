@@ -43,13 +43,11 @@ export async function POST(request: NextRequest) {
       {
         userId: null,
         role: 'admin',
-      },
-      parsed.data.dry_run
+      }
     );
 
     return NextResponse.json({
       ok: true,
-      dryRun: parsed.data.dry_run,
       source: result.source,
       provider: result.provider,
       fallbackUsed: result.fallbackUsed,

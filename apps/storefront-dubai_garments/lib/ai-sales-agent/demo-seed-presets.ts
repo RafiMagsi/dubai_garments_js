@@ -395,7 +395,6 @@ async function upsertScenario(scenario: (typeof DEMO_SCENARIOS)[number], ctx: De
         preset: DEMO_NAMESPACE,
         action: 'draft_reply',
         executed: true,
-        dryRun: false,
       },
       occurredAt: addDays(today, -1),
     },
@@ -433,7 +432,6 @@ async function upsertScenario(scenario: (typeof DEMO_SCENARIOS)[number], ctx: De
       metadata: {
         preset: DEMO_NAMESPACE,
         action: 'draft_followup',
-        dryRun: false,
         source: 'pipeline_insights_panel',
       },
       occurredAt: addDays(today, 0),
@@ -591,7 +589,7 @@ async function computeDeterministicSnapshot() {
     }
     if (row.activity_type === 'ai_pipeline_insight_execution') {
       const meta = row.metadata as Record<string, unknown> | null;
-      return meta?.dryRun === false;
+      return !!meta;
     }
     return false;
   }).length;
@@ -599,7 +597,7 @@ async function computeDeterministicSnapshot() {
   const riskAlertsResolved = activityRows.filter((row) => {
     if (row.activity_type !== 'ai_pipeline_insight_execution') return false;
     const meta = row.metadata as Record<string, unknown> | null;
-    return meta?.dryRun === false;
+    return !!meta;
   }).length;
 
   const timeSavedMinutes = activityRows.reduce((sum, row) => {

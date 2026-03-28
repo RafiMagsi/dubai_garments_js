@@ -34,11 +34,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await executeAssignmentPolicyEngine(parsed.data, {
+    const result = await executeAssignmentPolicyEngine(
+      {
+        leadId: parsed.data.leadId,
+        dealId: parsed.data.dealId,
+        manualAssigneeUserId: parsed.data.manualAssigneeUserId,
+        reason: parsed.data.reason,
+      },
+      {
       userId: session.sub,
       role: session.role,
       requestId,
-    });
+      }
+    );
 
     return NextResponse.json({
       ok: true,
@@ -50,4 +58,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, message, requestId }, { status: 500 });
   }
 }
-

@@ -79,7 +79,6 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
   const [channel, setChannel] = useState<'email' | 'whatsapp'>(
     (searchParams.get('copilotChannel') as 'email' | 'whatsapp') || 'email'
   );
-  const [dryRun, setDryRun] = useState(searchParams.get('copilotDryRun') !== 'false');
   const [isLoading, setIsLoading] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +93,6 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
     params.set('copilotIntent', activeIntent);
     params.set('copilotTone', tone);
     params.set('copilotChannel', channel);
-    params.set('copilotDryRun', String(dryRun));
     if (copilotLeadInput.trim()) params.set('copilotLeadId', copilotLeadInput);
     else params.delete('copilotLeadId');
     if (copilotDealInput.trim()) params.set('copilotDealId', copilotDealInput);
@@ -130,14 +128,12 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
     if (nextChannel === 'email' || nextChannel === 'whatsapp') {
       setChannel((prev) => (prev === nextChannel ? prev : nextChannel));
     }
-    const nextDryRun = searchParams.get('copilotDryRun') !== 'false';
-    setDryRun((prev) => (prev === nextDryRun ? prev : nextDryRun));
   }, [searchParams]);
 
   useEffect(() => {
     syncCopilotQueryParam();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIntent, copilotLeadInput, copilotDealInput, triageLeadInput, tone, channel, dryRun]);
+  }, [activeIntent, copilotLeadInput, copilotDealInput, triageLeadInput, tone, channel]);
 
   function applyIntent(intent: CopilotIntent, prompt: string) {
     setActiveIntent(intent);
@@ -163,22 +159,26 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
                     },
             });
 
+            const resultData = (result as { data?: unknown }).data as
+              | { items?: unknown[]; message?: unknown; deals?: unknown[] }
+              | undefined;
+
             const hasFollowupItems =
-            isCopilotEnvelope(result) &&
-            result.intent === 'followups_today' &&
-            Array.isArray((result as any).data?.items) &&
-            (result as any).data.items.length > 0;
+              isCopilotEnvelope(result) &&
+              result.intent === 'followups_today' &&
+              Array.isArray(resultData?.items) &&
+              resultData.items.length > 0;
 
             const hasDraftReply =
-            isCopilotEnvelope(result) &&
-            result.intent === 'draft_reply' &&
-            !!(result as any).data?.message;
+              isCopilotEnvelope(result) &&
+              result.intent === 'draft_reply' &&
+              !!resultData?.message;
 
             const hasAtRiskDeals =
-            isCopilotEnvelope(result) &&
-            result.intent === 'at_risk_deals' &&
-            Array.isArray((result as any).data?.deals) &&
-            (result as any).data.deals.length > 0;
+              isCopilotEnvelope(result) &&
+              result.intent === 'at_risk_deals' &&
+              Array.isArray(resultData?.deals) &&
+              resultData.deals.length > 0;
 
             const hasData = hasFollowupItems || hasDraftReply || hasAtRiskDeals;
 
@@ -207,7 +207,6 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             leadId: input.leadId ?? normalizedLeadId,
             dealId: input.dealId ?? normalizedDealId,
             channel: input.channel ?? channel,
-            dry_run: dryRun,
             payload: {
                 tone,
                 userNotes: userNotes.trim() || undefined,
@@ -246,7 +245,6 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
 
             const result = await runLeadTriage({
             leadId: normalizedLeadId,
-            dry_run: dryRun,
             });
 
             await Promise.all([
@@ -300,7 +298,7 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="dg-badge">{dryRun ? 'Dry Run' : 'Live'}</span>
+            <span className="dg-badge">Live</span>
             <Button variant="secondary" size="sm" onClick={() => setExpanded((v) => !v)}>
               {expanded ? 'Hide' : 'Open'}
             </Button>
@@ -484,15 +482,9 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
 
       {expanded ? (
         <div className="copilot-advanced" style={{ borderTop: '1px solid var(--color-border)', padding: 18, display: 'grid', gap: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#334155' }}>
-              <input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} />
-              <span>Demo safe mode (no destructive side effects)</span>
-            </label>
-            <small style={{ color: '#64748b', fontSize: 12 }}>
-              Advanced controls affect execution safety and response behavior.
-            </small>
-          </div>
+          <small style={{ color: '#64748b', fontSize: 12 }}>
+            Advanced controls affect execution behavior.
+          </small>
 
           {uiState === 'loading' ? (
             <div className="dg-mt-4 dg-rounded-2xl dg-border dg-border-indigo-200 dg-bg-indigo-50 dg-p-4">
@@ -508,7 +500,7 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
                 <div>
                     <div className="dg-text-sm dg-font-semibold">Ai Sales Agent is analyzing...</div>
                     <div className="dg-text-xs dg-text-neutral-600">
-                    Running {activeIntent} with {dryRun ? 'safe demo mode' : 'live mode'}.
+                    Running {activeIntent} in live mode.
                     </div>
                 </div>
                 </div>
@@ -552,9 +544,9 @@ export default function GlobalAiSalesCopilot({ compact = false }: Props) {
             <div className="dg-mt-4">
                 <AiSalesAgentActionCards
                 response={response}
+                showTrustBadges={false}
                 onExecute={handleExecute}
                 isExecuting={isExecuting}
-                dryRun={dryRun}
                 />
             </div>
             ) : null}

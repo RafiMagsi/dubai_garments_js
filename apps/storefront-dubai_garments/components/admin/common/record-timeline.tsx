@@ -20,6 +20,77 @@ type RecordTimelineProps = {
   errorText?: string | null;
 };
 
+const SYNTHETIC_ID_PREFIX = 'system:';
+const CANONICAL_OVERLAP_WINDOW_MS = 5 * 60 * 1000;
+const DUPLICATE_WINDOW_MS = 30 * 1000;
+
+function isSyntheticEvent(event: RecordTimelineEvent) {
+  return event.id.startsWith(SYNTHETIC_ID_PREFIX);
+}
+
+function toTimestamp(value: string) {
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeText(value?: string | null) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function timelineTypeFamily(type: string) {
+  const normalized = type.toLowerCase();
+  if (normalized.includes('lead_created')) return 'lead_created';
+  if (normalized.includes('lead_updated') || normalized.includes('lead_status_changed')) return 'lead_updated';
+  if (normalized.includes('deal_created')) return 'deal_created';
+  if (normalized.includes('deal_updated') || normalized.includes('deal_stage_changed')) return 'deal_updated';
+  if (normalized.includes('quote_created')) return 'quote_created';
+  if (normalized.includes('quote_updated') || normalized.includes('quote_status_changed')) return 'quote_updated';
+  if (normalized.includes('email_sent')) return 'email_sent';
+  return normalized;
+}
+
+function dedupKey(event: RecordTimelineEvent) {
+  return [timelineTypeFamily(event.type), normalizeText(event.title), normalizeText(event.details)].join('|');
+}
+
+function dedupeEvents(events: RecordTimelineEvent[]) {
+  const sorted = [...events].sort((a, b) => toTimestamp(b.occurredAt) - toTimestamp(a.occurredAt));
+
+  const canonical = sorted.filter((event) => !isSyntheticEvent(event));
+  const synthetic = sorted.filter((event) => isSyntheticEvent(event));
+
+  const canonicalDeduped: RecordTimelineEvent[] = [];
+  for (const event of canonical) {
+    const existing = canonicalDeduped.find((item) => {
+      if (dedupKey(item) !== dedupKey(event)) return false;
+      return Math.abs(toTimestamp(item.occurredAt) - toTimestamp(event.occurredAt)) <= DUPLICATE_WINDOW_MS;
+    });
+    if (!existing) canonicalDeduped.push(event);
+  }
+
+  const syntheticDeduped: RecordTimelineEvent[] = [];
+  for (const event of synthetic) {
+    const hasCanonicalOverlap = canonicalDeduped.some((item) => {
+      if (timelineTypeFamily(item.type) !== timelineTypeFamily(event.type)) return false;
+      return Math.abs(toTimestamp(item.occurredAt) - toTimestamp(event.occurredAt)) <= CANONICAL_OVERLAP_WINDOW_MS;
+    });
+    if (hasCanonicalOverlap) continue;
+
+    const existingSynthetic = syntheticDeduped.find((item) => {
+      if (dedupKey(item) !== dedupKey(event)) return false;
+      return Math.abs(toTimestamp(item.occurredAt) - toTimestamp(event.occurredAt)) <= DUPLICATE_WINDOW_MS;
+    });
+    if (!existingSynthetic) syntheticDeduped.push(event);
+  }
+
+  return [...canonicalDeduped, ...syntheticDeduped].sort(
+    (a, b) => toTimestamp(b.occurredAt) - toTimestamp(a.occurredAt)
+  );
+}
+
 function statusFromType(type: string): 'info' | 'warning' | 'success' | 'danger' | 'neutral' {
   const normalized = type.toLowerCase();
   if (normalized.includes('fail') || normalized.includes('error') || normalized.includes('lost')) return 'danger';
@@ -36,9 +107,7 @@ export default function RecordTimeline({
   isLoading = false,
   errorText = null,
 }: RecordTimelineProps) {
-  const sortedEvents = [...events].sort((a, b) => {
-    return new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime();
-  });
+  const sortedEvents = dedupeEvents(events);
 
   return (
     <div className="dg-card">

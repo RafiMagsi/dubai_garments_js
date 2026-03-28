@@ -26,7 +26,7 @@ Deterministic deploy/build/auth/migrations baseline.
 ### Day 2
 1. Implement `OPS-P0-002` no-output timeout and health gate checks.
 2. Add CI/deploy status markers per stage (`START`, `PASS`, `FAIL`).
-3. Run first end-to-end dry run on local/staging.
+3. Run first end-to-end deployment rehearsal on local/staging.
 
 ### Day 3
 1. Implement `OPS-P0-003` strict env-doctor checks by service.

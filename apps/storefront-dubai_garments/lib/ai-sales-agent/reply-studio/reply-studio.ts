@@ -19,9 +19,27 @@ function normalizeText(value: string | null | undefined) {
 }
 
 function buildReplyStudioContext(params: {
-  lead: any;
-  deal?: any | null;
-  quote?: any | null;
+  lead: {
+    company_name?: string | null;
+    contact_name?: string | null;
+    email?: string | null;
+    notes?: string | null;
+    ai_product?: string | null;
+  } | null;
+  deal?:
+    | {
+        stage?: string | null;
+        notes?: string | null;
+        value?: number | null;
+      }
+    | null;
+  quote?:
+    | {
+        status?: string | null;
+        notes?: string | null;
+        total_amount?: unknown;
+      }
+    | null;
 }) {
   const { lead, deal, quote } = params;
 
@@ -129,7 +147,6 @@ export async function runReplyStudio(input: {
   tone: ReplyStudioTone;
   channel: 'email' | 'whatsapp';
   userNotes?: string;
-  dryRun?: boolean;
   context: ReplyStudioContext;
 }) {
   const lead = await prisma.leads.findFirst({
@@ -210,27 +227,25 @@ Task: Generate structured reply drafts for first reply, follow-up, or clarificat
   const processingMs = runtimeResult.processingMs;
   const failureReason = runtimeResult.failureReason;
 
-  if (!input.dryRun) {
-    await prisma.activities.create({
-      data: {
-        user_id: input.context.userId,
-        lead_id: input.leadId,
-        activity_type: 'ai_reply_studio',
-        title: `AI Reply Studio: ${input.mode}`,
-        details: `Generated ${input.mode} draft with ${input.tone} tone.`,
-        metadata: {
-          source,
-          provider,
-          fallbackUsed,
-          failureReason,
-          mode: input.mode,
-          tone: input.tone,
-          channel: input.channel,
-          confidence: data.confidence,
-        },
+  await prisma.activities.create({
+    data: {
+      user_id: input.context.userId,
+      lead_id: input.leadId,
+      activity_type: 'ai_reply_studio',
+      title: `AI Reply Studio: ${input.mode}`,
+      details: `Generated ${input.mode} draft with ${input.tone} tone.`,
+      metadata: {
+        source,
+        provider,
+        fallbackUsed,
+        failureReason,
+        mode: input.mode,
+        tone: input.tone,
+        channel: input.channel,
+        confidence: data.confidence,
       },
-    });
-  }
+    },
+  });
 
   return {
     source,
@@ -240,7 +255,6 @@ Task: Generate structured reply drafts for first reply, follow-up, or clarificat
     schemaValid,
     processingMs,
     failureReason,
-    dryRun: !!input.dryRun,
     data,
   };
 }

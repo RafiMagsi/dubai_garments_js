@@ -36,26 +36,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { action, leadId, dealId, payload, dry_run } = parsed.data;
+    const { action, leadId, dealId, payload } = parsed.data;
 
     let outcome = '';
 
     if (action === 'draft_followup') {
-      outcome = dry_run
-        ? 'Simulated follow-up draft trigger from pipeline insight.'
-        : 'Follow-up draft trigger recorded from pipeline insight.';
+      outcome = 'Follow-up draft trigger recorded from pipeline insight.';
     }
 
     if (action === 'assign_owner') {
-      outcome = dry_run
-        ? `Simulated owner assignment to ${payload?.ownerUserId || 'unassigned target'}.`
-        : `Owner assignment suggestion recorded for ${payload?.ownerUserId || 'unassigned target'}.`;
+      outcome = `Owner assignment suggestion recorded for ${payload?.ownerUserId || 'unassigned target'}.`;
     }
 
     if (action === 'move_stage_suggestion') {
-      outcome = dry_run
-        ? `Simulated stage move suggestion to ${payload?.suggestedStage || 'next stage'}.`
-        : `Stage move suggestion recorded for ${payload?.suggestedStage || 'next stage'}.`;
+      outcome = `Stage move suggestion recorded for ${payload?.suggestedStage || 'next stage'}.`;
     }
 
     await prisma.activities.create({
@@ -70,7 +64,6 @@ export async function POST(request: NextRequest) {
           requestId,
           action,
           payload,
-          dryRun: dry_run,
           source: 'pipeline_insights_panel',
         },
       },
@@ -81,7 +74,6 @@ export async function POST(request: NextRequest) {
       action,
       leadId: leadId ?? null,
       dealId: dealId ?? null,
-      dryRun: dry_run,
       outcome,
       processingMs: Date.now() - startedAt,
       requestId,

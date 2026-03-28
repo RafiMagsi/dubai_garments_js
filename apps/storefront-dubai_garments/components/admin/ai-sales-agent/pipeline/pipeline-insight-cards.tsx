@@ -35,7 +35,6 @@ export default function PipelineInsightCards({ response, compact = false }: Prop
           action === 'move_stage_suggestion'
             ? { suggestedStage: 'qualified' }
             : undefined,
-        dry_run: true,
       });
 
       setExecutionStatus(result.outcome);

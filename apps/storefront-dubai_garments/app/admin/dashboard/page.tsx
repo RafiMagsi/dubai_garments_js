@@ -81,7 +81,6 @@ export default function AdminDashboardPage() {
       try {
         const result = await runPipelineInsights({
           leadId: firstLead.id,
-          dry_run: true,
         });
 
         if (!mounted) return;

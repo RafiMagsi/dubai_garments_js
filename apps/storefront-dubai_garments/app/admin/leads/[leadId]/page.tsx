@@ -19,6 +19,7 @@ import {
 import LeadIntelligenceCards from '@/components/admin/ai-sales-agent/lead-intelligence-cards';
 import AgentFlowView from '@/components/admin/ai-sales-agent/agent-flow-view';
 import LinkedRecordsSnapshotCard from '@/components/admin/leads/linked-records-snapshot-card';
+import LeadZoneSection from '@/components/admin/leads/lead-zone-section';
 
 const statusOptions: LeadStatus[] = ['new', 'qualified', 'quoted', 'won', 'lost'];
 
@@ -377,9 +378,15 @@ export default function AdminLeadDetailsPage() {
 
         {lead && (
           <div className="dg-lead-detail-sections">
-          <div className="dg-record-detail-grid">
-            <div className="dg-side-stack">
-              <div className="dg-card">
+            <LeadZoneSection
+              zone="Record Context"
+              title="Lead Profile, Manual Status Control, and Linked Records"
+              description="Primary customer context and explicit override controls for deterministic lifecycle handling."
+              testId="lead-zone-record-context"
+            >
+              <div className="dg-record-detail-grid">
+                <div className="dg-side-stack">
+                  <div className="dg-card">
                 <div className="dg-admin-head">
                   <div>
                     <p className="dg-eyebrow">Lead Profile</p>
@@ -415,11 +422,11 @@ export default function AdminLeadDetailsPage() {
                     <strong>{lead.timeline_date || '-'}</strong>
                   </div>
                 </div>
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            <div className="dg-side-stack dg-record-rail">
-              <div className="dg-card">
+                <div className="dg-side-stack dg-record-rail">
+                  <div className="dg-card">
                 <h2 className="dg-title-sm">Update Lead Status</h2>
                 <p className="dg-help">Status changes here are restricted to explicit manual overrides.</p>
                 {statusSuccess ? <div className="dg-alert-success">{statusSuccess}</div> : null}
@@ -485,49 +492,64 @@ export default function AdminLeadDetailsPage() {
                     {updateStatusMutation.isPending ? 'Saving...' : 'Save Manual Override'}
                   </button>
                 </form>
-              </div>
-            </div>
-          </div>
-
-          <LinkedRecordsSnapshotCard lead={lead} deal={deal} quote={linkedQuote} />
-
-          <section data-testid="lead-detail-agent-flow-section">
-            <AgentFlowView
-              showHeader={false}
-              initialLeadId={lead.id}
-              compact
-              onOpenCreateQuoteModal={() => handleQuoteModalOpenChange(true)}
-              refreshSignal={flowRefreshSignal}
-            />
-          </section>
-
-          <section data-testid="lead-detail-intelligence-section">
-            <div className="dg-lead-detail-section-head">
-              <p className="dg-eyebrow">AI Intelligence</p>
-              <p className="dg-muted-sm">
-                Persistent intelligence profile and recommendations for this lead.
-              </p>
-            </div>
-            <LeadIntelligenceCards lead={lead} title="Lead Intelligence" />
-          </section>
-
-          <div className="dg-record-detail-grid">
-            <div className="dg-side-stack">
-              <div className="dg-card">
-                <h2 className="dg-title-sm">Customer Request</h2>
-                <p className="dg-section-copy">{lead.notes || 'No message submitted.'}</p>
+                  </div>
+                </div>
               </div>
 
-              <RecordTimeline
-                title="Lead Timeline"
-                events={timelineEvents}
-                emptyText="No activities or communications yet for this lead."
-                isLoading={isLoading}
-                errorText={isError ? (error instanceof Error ? error.message : 'Failed to load lead timeline.') : null}
-              />
-            </div>
+              <LinkedRecordsSnapshotCard lead={lead} deal={deal} quote={linkedQuote} />
+            </LeadZoneSection>
 
-            <div className="dg-side-stack dg-record-rail">
+            <LeadZoneSection
+              zone="Lifecycle Orchestration"
+              title="Lead-to-Close Stage Execution"
+              description="Single authority surface for stage progression, guardrails, and deterministic lifecycle actions."
+              testId="lead-zone-lifecycle-orchestration"
+            >
+              <section data-testid="lead-detail-agent-flow-section">
+                <AgentFlowView
+                  showHeader={false}
+                  initialLeadId={lead.id}
+                  compact
+                  onOpenCreateQuoteModal={() => handleQuoteModalOpenChange(true)}
+                  refreshSignal={flowRefreshSignal}
+                />
+              </section>
+            </LeadZoneSection>
+
+            <LeadZoneSection
+              zone="Intelligence"
+              title="AI Lead Intelligence"
+              description="Persistent scoring, reasoning, confidence signals, and actionable recommendations."
+              testId="lead-zone-intelligence"
+            >
+              <section data-testid="lead-detail-intelligence-section">
+                <LeadIntelligenceCards lead={lead} title="Lead Intelligence" />
+              </section>
+            </LeadZoneSection>
+
+            <LeadZoneSection
+              zone="Communications and Audit"
+              title="Customer Request, Outreach, and Timeline Audit"
+              description="Customer message context, outbound communications, and full chronological audit evidence."
+              testId="lead-zone-communications-audit"
+            >
+              <div className="dg-record-detail-grid">
+                <div className="dg-side-stack">
+                  <div className="dg-card">
+                    <h2 className="dg-title-sm">Customer Request</h2>
+                    <p className="dg-section-copy">{lead.notes || 'No message submitted.'}</p>
+                  </div>
+
+                  <RecordTimeline
+                    title="Lead Timeline"
+                    events={timelineEvents}
+                    emptyText="No activities or communications yet for this lead."
+                    isLoading={isLoading}
+                    errorText={isError ? (error instanceof Error ? error.message : 'Failed to load lead timeline.') : null}
+                  />
+                </div>
+
+                <div className="dg-side-stack dg-record-rail">
 
               <div className="dg-card">
                 <h2 className="dg-title-sm">Email Communication</h2>
@@ -594,9 +616,10 @@ export default function AdminLeadDetailsPage() {
                     </button>
                   </div>
                 </form>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </LeadZoneSection>
 
           <CreateQuoteCard
             dealLeadQuantity={lead.requested_qty}

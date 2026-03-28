@@ -49,9 +49,7 @@ export async function POST(request: NextRequest) {
       !!run.workflow_name;
 
     const outcome = guardrailPassed
-      ? parsed.data.dry_run
-        ? 'Simulated rerun passed guardrails.'
-        : 'Rerun request recorded.'
+      ? 'Rerun request recorded.'
       : 'Rerun blocked by guardrails: run is active or workflow is invalid.';
 
     await prisma.activities.create({
@@ -64,7 +62,6 @@ export async function POST(request: NextRequest) {
           runId: run.id,
           workflowName: run.workflow_name,
           guardrailPassed,
-          dryRun: parsed.data.dry_run,
           note: parsed.data.note ?? null,
           requestId,
         },
@@ -74,7 +71,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       runId: run.id,
-      dryRun: parsed.data.dry_run,
       guardrailPassed,
       outcome,
       requestId,

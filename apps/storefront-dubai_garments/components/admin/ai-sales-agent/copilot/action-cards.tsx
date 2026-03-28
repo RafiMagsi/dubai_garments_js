@@ -2,6 +2,7 @@
 
 import { Button, Card, CardText, CardTitle } from '@/components/ui';
 import { AisTrustBadges } from '@/components/admin/ai-sales-agent/reusable';
+import { useRouter } from 'next/navigation';
 import type {
   AiSalesAgentEnvelope,
   LeadTriageEnvelope,
@@ -37,6 +38,7 @@ type RiskDeal = {
 
 type ActionCardsProps = {
   response: AiSalesAgentEnvelope;
+  showTrustBadges?: boolean;
   onExecute?: (action: {
     action: 'draft_reply' | 'schedule_followup' | 'mark_deal_at_risk';
     leadId?: string;
@@ -45,7 +47,6 @@ type ActionCardsProps = {
     payload?: Record<string, unknown>;
   }) => void;
   isExecuting?: boolean;
-  dryRun?: boolean;
 };
 
 function isLeadTriageEnvelope(response: AiSalesAgentEnvelope): response is LeadTriageEnvelope {
@@ -205,10 +206,12 @@ function toTitleFromEnum(value: string) {
 
 export default function AiSalesAgentActionCards({
   response,
+  showTrustBadges = true,
   onExecute,
   isExecuting = false,
-  dryRun = true,
 }: ActionCardsProps) {
+  const router = useRouter();
+
   if (!response?.ok) return null;
 
   const runtimeMeta = {
@@ -333,9 +336,11 @@ export default function AiSalesAgentActionCards({
             {String(triage.classification).toUpperCase()}
           </span>
         </div>
-        <div style={{ marginTop: 12 }}>
-          <AisTrustBadges {...runtimeMeta} />
-        </div>
+        {showTrustBadges ? (
+          <div style={{ marginTop: 12 }}>
+            <AisTrustBadges {...runtimeMeta} />
+          </div>
+        ) : null}
 
         <div
           style={{
@@ -451,9 +456,11 @@ export default function AiSalesAgentActionCards({
             </div>
             <Badge text="AI Suggested Queue" tone="blue" />
           </div>
-          <div style={{ marginTop: 10 }}>
-            <AisTrustBadges {...runtimeMeta} />
-          </div>
+          {showTrustBadges ? (
+            <div style={{ marginTop: 10 }}>
+              <AisTrustBadges {...runtimeMeta} />
+            </div>
+          ) : null}
         </Card>
 
         {data.items.map((item, index) => (
@@ -475,7 +482,17 @@ export default function AiSalesAgentActionCards({
                   <Badge text={item.priority.toUpperCase()} tone={item.priority === 'high' ? 'red' : item.priority === 'medium' ? 'amber' : 'green'} />
                   <Badge text={`#${index + 1}`} tone="slate" />
                 </div>
-                <Badge text="AI" tone="slate" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => router.push(`/admin/leads/${item.id}`)}
+                    disabled={isExecuting}
+                    style={{ height: 28, paddingInline: 10, fontSize: 12 }}
+                  >
+                    Open Lead
+                  </Button>
+                  <Badge text="AI" tone="slate" />
+                </div>
               </div>
               <CardTitle>{item.title}</CardTitle>
               <CardText>{item.reason}</CardText>
@@ -516,11 +533,11 @@ export default function AiSalesAgentActionCards({
                   }
                   disabled={isExecuting}
                 >
-                  {isExecuting ? 'Processing...' : dryRun ? 'Simulate Action' : 'Execute Action'}
+                  {isExecuting ? 'Processing...' : 'Execute Action'}
                 </Button>
               ) : null}
             </div>
-            <AisTrustBadges {...runtimeMeta} />
+            {showTrustBadges ? <AisTrustBadges {...runtimeMeta} /> : null}
 
             {data.subject ? <Box title="Subject" value={data.subject} /> : null}
             <Box title="Message" value={data.message} />
@@ -560,9 +577,11 @@ export default function AiSalesAgentActionCards({
             </div>
             <Badge text="Deal Risk Queue" tone="red" />
           </div>
-          <div style={{ marginTop: 10 }}>
-            <AisTrustBadges {...runtimeMeta} />
-          </div>
+          {showTrustBadges ? (
+            <div style={{ marginTop: 10 }}>
+              <AisTrustBadges {...runtimeMeta} />
+            </div>
+          ) : null}
         </Card>
 
         {data.deals.map((deal) => (
@@ -594,7 +613,7 @@ export default function AiSalesAgentActionCards({
                     }
                     disabled={isExecuting}
                   >
-                    {isExecuting ? 'Running...' : dryRun ? 'Simulate Risk Flag' : 'Flag Risk'}
+                    {isExecuting ? 'Running...' : 'Flag Risk'}
                   </Button>
                 ) : null}
               </div>
@@ -635,10 +654,10 @@ export default function AiSalesAgentActionCards({
                 Action Outcome
               </p>
               <CardTitle style={{ marginTop: 6 }}>
-                {response.dryRun ? 'Simulation Complete' : 'Execution Complete'}
+                Execution Complete
               </CardTitle>
             </div>
-            <Badge text={response.dryRun ? 'Dry Run Output' : 'Live Action Applied'} tone={response.dryRun ? 'blue' : 'green'} />
+            <Badge text="Live Action Applied" tone="green" />
           </div>
 
           <pre

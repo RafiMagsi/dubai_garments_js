@@ -10,7 +10,6 @@ import PipelineInsightCards from '@/components/admin/ai-sales-agent/pipeline/pip
 export default function PipelineInsightsPanel() {
   const [leadId, setLeadId] = useState('');
   const [dealId, setDealId] = useState('');
-  const [dryRun, setDryRun] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<PipelineInsightEnvelope | null>(null);
@@ -23,7 +22,6 @@ export default function PipelineInsightsPanel() {
       const result = await runPipelineInsights({
         leadId: leadId.trim() || undefined,
         dealId: dealId.trim() || undefined,
-        dry_run: dryRun,
       });
 
       setResponse(result);
@@ -68,15 +66,6 @@ export default function PipelineInsightsPanel() {
         </div>
 
         <div className="qrec-actions pins-actions">
-          <label className="dg-flex dg-items-center dg-gap-2 dg-text-sm">
-            <input
-              type="checkbox"
-              checked={dryRun}
-              onChange={(event) => setDryRun(event.target.checked)}
-            />
-            Dry run
-          </label>
-
           <Button type="button" onClick={handleRun} disabled={loading}>
             {loading ? 'Scanning pipeline...' : 'Run Pipeline Insights'}
           </Button>

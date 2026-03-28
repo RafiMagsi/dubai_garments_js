@@ -257,8 +257,7 @@ function buildSummary(lead: {
 
 export async function runLeadTriage(
   leadId: string,
-  context: TriageTenantContext,
-  dryRun = false
+  context: TriageTenantContext
 ): Promise<{
   source: 'model' | 'fallback';
   provider: string;
@@ -360,20 +359,6 @@ export async function runLeadTriage(
   const processingMs = runtimeResult.processingMs;
   const failureReason = runtimeResult.failureReason;
 
-  if (dryRun) {
-    return {
-        source,
-        provider,
-        model,
-        fallbackUsed,
-        schemaValid,
-        processingMs,
-        failureReason,
-        persisted: false,
-        data,
-    };
-  }
-
   await prisma.leads.update({
     where: { id: leadId },
     data: {
@@ -417,8 +402,7 @@ export async function runLeadTriage(
         provider,
         fallbackUsed,
         failureReason,
-        dryRun,
-        },
+      },
     },
   });
 

@@ -47,7 +47,6 @@ export async function POST(request: NextRequest) {
         metadata: {
           requestId,
           action: input.action,
-          dryRun: input.dry_run,
           role: session.role,
           denied: true,
         },
@@ -61,20 +60,17 @@ export async function POST(request: NextRequest) {
 
     const result = await executeCopilotAction(input);
 
-    const executed = !input.dry_run;
+    const executed = true;
 
     const auditId = await writeCopilotAuditLog({
       userId: session.sub,
       leadId: input.leadId ?? null,
       dealId: input.dealId ?? null,
-      title: `${input.dry_run ? 'Simulated' : 'Executed'} copilot action: ${input.action}`,
-      details: input.dry_run
-        ? 'Dry run mode only. No persistent side effects applied.'
-        : 'Copilot action executed successfully.',
+      title: `Executed copilot action: ${input.action}`,
+      details: 'Copilot action executed successfully.',
       metadata: {
         requestId,
         action: input.action,
-        dryRun: input.dry_run,
         role: session.role,
         result,
       },
@@ -83,7 +79,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ok: true,
       action: input.action,
-      dryRun: input.dry_run,
       executed,
       result,
       auditId,

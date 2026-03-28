@@ -174,7 +174,7 @@ export default function AgentPipelineBoard() {
           <p className="aflow-kicker">Agent Pipeline View</p>
           <CardTitle>Manager Board: Workload, Stages, and Rebalance Signals</CardTitle>
           <CardText>
-            Left: agent capacity and KPI chips. Center: assigned leads/deals by stage. Right: alerts, rebalance suggestions, and assignment operations.
+            Start here for daily operations. Filter queue, review stage lanes, select an item, then run one clear action.
           </CardText>
         </div>
         <div className="asgn-pipe-kpi-rail">
@@ -386,7 +386,7 @@ export default function AgentPipelineBoard() {
         </div>
 
         <div className="asgn-pipe-col asgn-pipe-right dg-pipeline-column">
-          <p className="asgn-pipe-col-title">Alerts & Rebalance Suggestions</p>
+          <p className="asgn-pipe-col-title">Alerts and Suggestions</p>
 
           <div className="asgn-pipe-alerts">
             {data?.right.alerts.map((alert, index) => (
@@ -444,7 +444,7 @@ export default function AgentPipelineBoard() {
                       disabled={opLoading}
                       data-testid={`agent-pipeline-suggestion-open-owner-${suggestion.id}`}
                     >
-                      Open Owner
+                      Filter Owner
                     </Button>
                     <Button
                       type="button"
@@ -458,128 +458,133 @@ export default function AgentPipelineBoard() {
                       disabled={opLoading}
                       data-testid={`agent-pipeline-suggestion-open-stage-${suggestion.id}`}
                     >
-                      Open Stage Queue
+                      Filter Stage
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="asgn-pipe-ops">
-            <p className="aflow-mini-title">Assignment Operations</p>
+      <div className="asgn-pipe-ops-shell">
+        <div className="asgn-pipe-ops">
+          <p className="aflow-mini-title">Quick Actions</p>
 
-            <div className="asgn-pipe-op-grid">
-              <div>
-                <AisFieldLabel>Selected Item</AisFieldLabel>
-                <p className="aflow-empty">
-                  {selectedItem
-                    ? `${selectedItem.itemType.toUpperCase()}: ${selectedItem.title}`
-                    : 'Select a lead/deal card from center lane.'}
-                </p>
-              </div>
+          <div className="asgn-pipe-op-grid">
+            <div>
+              <AisFieldLabel>Selected Item</AisFieldLabel>
+              <p className="aflow-empty">
+                {selectedItem
+                  ? `${selectedItem.itemType.toUpperCase()}: ${selectedItem.title}`
+                  : 'Select one card from the stage lanes first.'}
+              </p>
+            </div>
 
-              <div>
-                <AisFieldLabel>Target Owner</AisFieldLabel>
-                <SelectField
-                  className="dg-mt-1"
-                  value={targetUserId}
-                  onChange={(event) => setTargetUserId(event.target.value)}
-                  data-testid="agent-pipeline-op-target-owner"
+            <div>
+              <AisFieldLabel>Target Owner</AisFieldLabel>
+              <SelectField
+                className="dg-mt-1"
+                value={targetUserId}
+                onChange={(event) => setTargetUserId(event.target.value)}
+                data-testid="agent-pipeline-op-target-owner"
+              >
+                <option value="">Select owner</option>
+                {assignableOwners.map((owner) => (
+                  <option key={`op-owner-${owner.userId}`} value={owner.userId}>
+                    {owner.fullName}
+                  </option>
+                ))}
+              </SelectField>
+              <div className="asgn-actions dg-mt-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={opLoading || !selectedItem || !targetUserId}
+                  onClick={() => {
+                    if (!selectedItem || !targetUserId) return;
+                    void runOperation(
+                      {
+                        action: 'reassign',
+                        leadId: selectedItem.itemType === 'lead' ? selectedItem.itemId : undefined,
+                        dealId: selectedItem.itemType === 'deal' ? selectedItem.itemId : undefined,
+                        targetUserId,
+                        reason: 'Manual reassignment from manager pipeline board.',
+                      },
+                      'Reassignment executed.'
+                    );
+                  }}
+                  data-testid="agent-pipeline-op-reassign"
                 >
-                  <option value="">Select owner</option>
-                  {assignableOwners.map((owner) => (
-                    <option key={`op-owner-${owner.userId}`} value={owner.userId}>
-                      {owner.fullName}
-                    </option>
-                  ))}
-                </SelectField>
-                <div className="asgn-actions dg-mt-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={opLoading || !selectedItem || !targetUserId}
-                    onClick={() => {
-                      if (!selectedItem || !targetUserId) return;
-                      void runOperation(
-                        {
-                          action: 'reassign',
-                          leadId: selectedItem.itemType === 'lead' ? selectedItem.itemId : undefined,
-                          dealId: selectedItem.itemType === 'deal' ? selectedItem.itemId : undefined,
-                          targetUserId,
-                          reason: 'Manual reassignment from manager pipeline board.',
-                        },
-                        'Reassignment executed.'
-                      );
-                    }}
-                    data-testid="agent-pipeline-op-reassign"
-                  >
-                    Reassign Lead/Deal
-                  </Button>
-                </div>
+                  Reassign Selected
+                </Button>
               </div>
+            </div>
 
-              <div>
-                <AisFieldLabel>Bulk Rebalance Limit</AisFieldLabel>
-                <TextField
-                  className="dg-mt-1"
-                  value={bulkLimit}
-                  onChange={(event) => setBulkLimit(event.target.value)}
-                  placeholder="12"
-                  data-testid="agent-pipeline-op-bulk-limit"
-                />
-                <div className="asgn-actions dg-mt-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={opLoading}
-                    onClick={() =>
-                      void runOperation(
-                        {
-                          action: 'bulk_rebalance',
-                          limit: Math.max(1, toInt(bulkLimit)),
-                          filters: {
-                            team: filters.team,
-                            stage: filters.stage,
-                            urgency: filters.urgency,
-                            inactiveDays: toInt(filters.inactiveDays),
-                            ownerUserId: filters.ownerUserId || undefined,
-                          },
-                          reason: 'Bulk rebalance from manager board with selected criteria.',
+            <div>
+              <AisFieldLabel>Batch Size</AisFieldLabel>
+              <TextField
+                className="dg-mt-1"
+                value={bulkLimit}
+                onChange={(event) => setBulkLimit(event.target.value)}
+                placeholder="12"
+                data-testid="agent-pipeline-op-bulk-limit"
+              />
+              <div className="asgn-actions dg-mt-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={opLoading}
+                  onClick={() =>
+                    void runOperation(
+                      {
+                        action: 'bulk_rebalance',
+                        limit: Math.max(1, toInt(bulkLimit)),
+                        filters: {
+                          team: filters.team,
+                          stage: filters.stage,
+                          urgency: filters.urgency,
+                          inactiveDays: toInt(filters.inactiveDays),
+                          ownerUserId: filters.ownerUserId || undefined,
                         },
-                        'Bulk rebalance completed.'
-                      )
-                    }
-                    data-testid="agent-pipeline-op-bulk"
-                  >
-                    Bulk Rebalance by Criteria
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    disabled={opLoading}
-                    onClick={() =>
-                      void runOperation(
-                        {
-                          action: 'auto_assign_unowned',
-                          limit: Math.max(1, toInt(bulkLimit)),
-                          reason: 'Auto-assigned unowned records from manager board.',
-                        },
-                        'Auto-assign unowned completed.'
-                      )
-                    }
-                    data-testid="agent-pipeline-op-auto"
-                  >
-                    Auto-Assign Unowned
-                  </Button>
-                </div>
+                        reason: 'Bulk rebalance from manager board with selected criteria.',
+                      },
+                      'Bulk rebalance completed.'
+                    )
+                  }
+                  data-testid="agent-pipeline-op-bulk"
+                >
+                  Rebalance Filtered Queue
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  disabled={opLoading}
+                  onClick={() =>
+                    void runOperation(
+                      {
+                        action: 'auto_assign_unowned',
+                        limit: Math.max(1, toInt(bulkLimit)),
+                        reason: 'Auto-assigned unowned records from manager board.',
+                      },
+                      'Auto-assign unowned completed.'
+                    )
+                  }
+                  data-testid="agent-pipeline-op-auto"
+                >
+                  Auto-Assign Unowned
+                </Button>
               </div>
+            </div>
 
-              <div>
-                <AisFieldLabel>Strategic Account Lock</AisFieldLabel>
+            <details className="asgn-pipe-advanced">
+              <summary>Advanced: Strategic Account Lock</summary>
+              <div className="dg-mt-2">
+                <AisFieldLabel>Customer ID</AisFieldLabel>
                 <TextField
                   className="dg-mt-1"
                   value={lockCustomerId}
@@ -587,6 +592,9 @@ export default function AgentPipelineBoard() {
                   placeholder="Customer ID"
                   data-testid="agent-pipeline-op-lock-customer"
                 />
+                <div className="dg-mt-2">
+                  <AisFieldLabel>Lock Owner</AisFieldLabel>
+                </div>
                 <SelectField
                   className="dg-mt-1"
                   value={lockOwnerUserId}
@@ -619,28 +627,28 @@ export default function AgentPipelineBoard() {
                     }
                     data-testid="agent-pipeline-op-lock"
                   >
-                    Lock Owner for Strategic Account
+                    Lock Strategic Owner
                   </Button>
                 </div>
               </div>
-            </div>
-
-            {operationResult ? (
-              <div className="asgn-result">
-                <p className="aflow-mini-title">Latest Operation Result</p>
-                <p className="aflow-empty">
-                  {operationResult.summary} ({operationResult.changedCount} changed / {operationResult.skippedCount} skipped)
-                </p>
-                <ul className="aflow-mini-list">
-                  {operationResult.changes.slice(0, 5).map((change, index) => (
-                    <li key={`op-change-${index}`}>
-                      {(change.leadId ? `Lead ${change.leadId}` : `Deal ${change.dealId}`)}: {change.reason}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
+            </details>
           </div>
+
+          {operationResult ? (
+            <div className="asgn-result">
+              <p className="aflow-mini-title">Latest Operation Result</p>
+              <p className="aflow-empty">
+                {operationResult.summary} ({operationResult.changedCount} changed / {operationResult.skippedCount} skipped)
+              </p>
+              <ul className="aflow-mini-list">
+                {operationResult.changes.slice(0, 5).map((change, index) => (
+                  <li key={`op-change-${index}`}>
+                    {(change.leadId ? `Lead ${change.leadId}` : `Deal ${change.dealId}`)}: {change.reason}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       </div>
     </Card>
