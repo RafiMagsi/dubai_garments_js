@@ -6654,6 +6654,19 @@ select.aflow-deal-control {
     grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
   }
 
+  .sales-agents-workspace--structured .asgn-pipe-card--manager .asgn-pipe-grid-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sales-agents-workspace--structured .asgn-pipe-card--manager .asgn-pipe-right {
+    grid-column: 1 / -1;
+  }
+
+  .sales-agents-workspace--structured .asgn-pipe-card--manager .asgn-pipe-right-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
   .sales-agents-workspace--structured .asgn-pipe-center .asgn-pipe-lanes {
     display: grid;
     grid-auto-flow: column;
@@ -6661,6 +6674,8 @@ select.aflow-deal-control {
     gap: 0.56rem;
     overflow-x: auto;
     overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-inline: contain;
     align-items: start;
     padding-bottom: 0.2rem;
     scrollbar-gutter: stable both-edges;
@@ -6680,6 +6695,8 @@ select.aflow-deal-control {
     gap: 0.7rem;
     overflow-x: auto;
     overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-inline: contain;
     align-items: start;
     padding-bottom: 0.2rem;
     scrollbar-gutter: stable both-edges;
@@ -8532,6 +8549,10 @@ select.aflow-deal-control {
     }
 
     .sales-agents-workspace--structured .asgn-pipe-grid-main {
+      grid-template-columns: 1fr;
+    }
+
+    .sales-agents-workspace--structured .asgn-pipe-card--manager .asgn-pipe-right-stack {
       grid-template-columns: 1fr;
     }
 

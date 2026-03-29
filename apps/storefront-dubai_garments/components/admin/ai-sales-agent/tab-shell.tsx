@@ -205,16 +205,12 @@ export default function AiSalesAgentTabShell() {
     };
   }, [activeTab]);
 
-  function setTabInUrl(nextTab: AgentTabKey) {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set('tab', nextTab);
-    const nextQuery = nextParams.toString();
-    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
-  }
-
-  function setUiStateInUrl(patch: Partial<{ expanded: boolean; leadPreviewId: string }>) {
+  function setUiStateInUrl(patch: Partial<{ tab: AgentTabKey; expanded: boolean; leadPreviewId: string }>) {
     const nextParams = new URLSearchParams(searchParams.toString());
 
+    if (patch.tab) {
+      nextParams.set('tab', patch.tab);
+    }
     if (typeof patch.expanded === 'boolean') {
       nextParams.set('expanded', String(patch.expanded));
     }
@@ -252,8 +248,7 @@ export default function AiSalesAgentTabShell() {
                 variant={isActive ? 'primary' : 'secondary'}
                 onClick={() => {
                   captureScrollForTabSwitch();
-                  setTabInUrl(tab.key);
-                  setUiStateInUrl({ expanded: true });
+                  setUiStateInUrl({ tab: tab.key, expanded: true });
                 }}
                 className="ais-tab-btn"
                 style={{ animationDelay: `${60 + index * 35}ms`, ...(isActive ? { boxShadow: '0 8px 16px rgba(37,99,235,0.16)' } : undefined) }}

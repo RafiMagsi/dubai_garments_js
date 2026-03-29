@@ -37,22 +37,26 @@ export default function SalesAgentsWorkspace() {
   const [activeControlPanel, setActiveControlPanel] = useState<SalesAgentsControlPanel>('policy');
   const [contentMinHeight, setContentMinHeight] = useState<number | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
-  const capturedScrollRef = useRef<number | null>(null);
   const releaseTimerRef = useRef<number | null>(null);
   const activeViewDescriptor = useMemo(() => VIEW_DESCRIPTORS[activeView], [activeView]);
 
   function captureLayoutBeforeSwitch() {
-    if (typeof window !== 'undefined') {
-      capturedScrollRef.current = window.scrollY;
-    }
+    if (typeof window === 'undefined') return;
     if (!contentRef.current) return;
     const currentHeight = contentRef.current.getBoundingClientRect().height;
-    if (Number.isFinite(currentHeight) && currentHeight > 0) {
-      setContentMinHeight(Math.ceil(currentHeight));
+    if (!Number.isFinite(currentHeight) || currentHeight <= 0) return;
+
+    const viewportHeight = window.innerHeight;
+    if (viewportHeight <= 0) return;
+
+    const cappedHeight = Math.min(Math.ceil(currentHeight), Math.ceil(viewportHeight * 0.88));
+    if (cappedHeight > 0) {
+      setContentMinHeight(cappedHeight);
     }
   }
 
   useEffect(() => {
+    if (contentMinHeight === null) return;
     if (typeof window === 'undefined') return;
     if (releaseTimerRef.current) {
       window.clearTimeout(releaseTimerRef.current);
@@ -60,12 +64,8 @@ export default function SalesAgentsWorkspace() {
 
     releaseTimerRef.current = window.setTimeout(() => {
       setContentMinHeight(null);
-      const maxScrollTop = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      if (window.scrollY > maxScrollTop) {
-        window.scrollTo({ top: maxScrollTop, behavior: 'smooth' });
-      }
       releaseTimerRef.current = null;
-    }, 700);
+    }, 260);
 
     return () => {
       if (releaseTimerRef.current) {
@@ -73,7 +73,7 @@ export default function SalesAgentsWorkspace() {
         releaseTimerRef.current = null;
       }
     };
-  }, [activeView, activeControlPanel]);
+  }, [contentMinHeight]);
 
   return (
     <div className="sales-agents-workspace sales-agents-workspace--structured" data-testid="sales-agents-workspace">
@@ -94,7 +94,6 @@ export default function SalesAgentsWorkspace() {
                 className={`sales-agents-view-btn${isActive ? ' is-active' : ''}`}
                 onClick={() => {
                   if (option.key === activeView) return;
-                  captureLayoutBeforeSwitch();
                   setActiveView(option.key);
                 }}
               >

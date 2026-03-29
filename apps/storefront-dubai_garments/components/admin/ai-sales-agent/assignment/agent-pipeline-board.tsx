@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, CardTitle, SelectField, TextField } from '@/components/ui';
 import { getAgentPipelineBoard, runAssignmentOperation } from '@/features/admin/ai-sales-agent/api';
 import type {
@@ -169,6 +169,8 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
   const [operationResult, setOperationResult] = useState<AssignmentOperationsEnvelope | null>(null);
 
   const [focusedAgentUserId, setFocusedAgentUserId] = useState('');
+  const stageLanesRef = useRef<HTMLDivElement | null>(null);
+  const agentsBoardRef = useRef<HTMLDivElement | null>(null);
 
   const showManagerBoard = mode === 'all' || mode === 'manager';
   const showAgentsBoard = mode === 'all' || mode === 'agents';
@@ -354,6 +356,30 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
     }
   }
 
+  useEffect(() => {
+    function bindHorizontalWheelGuard(container: HTMLDivElement | null) {
+      if (!container) return () => {};
+
+      function onWheel(event: WheelEvent) {
+        if (Math.abs(event.deltaX) < 0.5) return;
+        event.preventDefault();
+        event.stopPropagation();
+        container.scrollLeft += event.deltaX;
+      }
+
+      container.addEventListener('wheel', onWheel, { passive: false });
+      return () => container.removeEventListener('wheel', onWheel);
+    }
+
+    const unbindStageLanes = bindHorizontalWheelGuard(stageLanesRef.current);
+    const unbindAgentBoard = bindHorizontalWheelGuard(agentsBoardRef.current);
+
+    return () => {
+      unbindStageLanes();
+      unbindAgentBoard();
+    };
+  }, [showManagerBoard, showAgentsBoard, data?.center.stages.length, agentEntityLanes.length]);
+
   return (
     <div className="asgn-pipe-stack">
       {showManagerBoard ? (
@@ -472,7 +498,7 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
           <div className="asgn-pipe-grid asgn-pipe-grid-twenty asgn-pipe-grid-main" data-testid="agent-pipeline-board">
             <div className="asgn-pipe-col asgn-pipe-center">
               <p className="asgn-pipe-col-title">Stages</p>
-              <div className="asgn-pipe-lanes">
+              <div className="asgn-pipe-lanes" ref={stageLanesRef}>
                 {(data?.center.stages ?? []).map((lane) => (
                   <div
                     className={`asgn-pipe-lane ${stageToneClass(lane.key)} dg-pipeline-column--${stagePipelineClass(lane.key)}`}
@@ -878,7 +904,7 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
           </div>
 
           {agentEntityLanes.length > 0 ? (
-            <div className="asgn-agent-status-board">
+            <div className="asgn-agent-status-board" ref={agentsBoardRef}>
               {agentEntityLanes.map((lane) => (
                 <div
                   key={`agent-entity-lane-${lane.key}`}
