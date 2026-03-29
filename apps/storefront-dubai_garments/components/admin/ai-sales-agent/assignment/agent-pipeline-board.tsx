@@ -125,10 +125,12 @@ function isDisplayAgent(agent: { userId: string; fullName: string }) {
   return true;
 }
 
+type AgentEntityLaneKey = 'agent' | 'lead' | 'deal' | 'quote' | 'closed';
+
 type AgentEntityLane = {
-  key: 'lead' | 'deal' | 'quote';
+  key: AgentEntityLaneKey;
   label: string;
-  pipelineTone: 'new' | 'negotiation' | 'quoted';
+  pipelineTone: 'new' | 'negotiation' | 'quoted' | 'idle' | 'won';
   total: number;
   items: Array<{
     agent: AgentWorkloadItem & {
@@ -143,6 +145,37 @@ type AgentEntityLane = {
       value: number;
     }>;
   }>;
+};
+
+const AGENT_LANE_COPY: Record<
+  AgentEntityLaneKey,
+  { subtitle: string; emptyTitle: string; emptyNote: string }
+> = {
+  agent: {
+    subtitle: 'Click an agent card to filter all lanes by owner.',
+    emptyTitle: 'No agents available',
+    emptyNote: 'Add or activate sales agents to populate this board.',
+  },
+  lead: {
+    subtitle: 'Agents actively owning and progressing leads.',
+    emptyTitle: 'No lead owners',
+    emptyNote: 'No agents are currently holding leads.',
+  },
+  deal: {
+    subtitle: 'Agents responsible for open commercial deals.',
+    emptyTitle: 'No deal owners',
+    emptyNote: 'No agents are currently holding deals.',
+  },
+  quote: {
+    subtitle: 'Agents handling quote preparation and sends.',
+    emptyTitle: 'No quote owners',
+    emptyNote: 'No agents are currently handling quote stages.',
+  },
+  closed: {
+    subtitle: 'Closed outcomes with won/lost totals.',
+    emptyTitle: 'No closed outcomes',
+    emptyNote: 'No won/lost records are available for current filters.',
+  },
 };
 
 type AgentPipelineBoardMode = 'all' | 'manager' | 'agents';
@@ -245,6 +278,20 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
     return (data?.left.agents ?? []).filter(isDisplayAgent);
   }, [data]);
 
+  const directoryTotals = useMemo(
+    () =>
+      visibleAgents.reduce(
+        (acc, agent) => {
+          acc.leads += agent.activeLeads;
+          acc.deals += agent.activeDeals;
+          acc.closed += agent.closedDeals;
+          return acc;
+        },
+        { leads: 0, deals: 0, closed: 0 }
+      ),
+    [visibleAgents]
+  );
+
   const focusedAgent = useMemo(
     () => visibleAgents.find((agent) => agent.userId === focusedAgentUserId) ?? null,
     [visibleAgents, focusedAgentUserId]
@@ -265,6 +312,24 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
 
   const agentEntityLanes = useMemo<AgentEntityLane[]>(() => {
     const agents = boardAgents;
+    const allAgents = visibleAgents;
+
+    const agentsLaneItems = allAgents
+      .map((agent) => ({
+        agent,
+        count:
+          Math.max(agent.activeLeads, stageCount(agent, LEAD_STAGE_KEYS)) +
+          Math.max(agent.activeDeals, stageCount(agent, DEAL_STAGE_KEYS)) +
+          stageCount(agent, QUOTE_STAGE_KEYS),
+        progression: [
+          { label: 'Leads', value: Math.max(agent.activeLeads, stageCount(agent, LEAD_STAGE_KEYS)) },
+          { label: 'Deals', value: Math.max(agent.activeDeals, stageCount(agent, DEAL_STAGE_KEYS)) },
+        ],
+      }))
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.agent.fullName.localeCompare(b.agent.fullName);
+      });
 
     const leadsLaneItems = agents
       .map((agent) => ({
@@ -302,7 +367,26 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
       .filter((item) => item.count > 0)
       .sort((a, b) => b.count - a.count);
 
+    const closedLaneItems = agents
+      .map((agent) => ({
+        agent,
+        count: agent.closedDeals,
+        progression: [
+          { label: 'Won', value: agent.wonDeals },
+          { label: 'Lost', value: Math.max(0, agent.closedDeals - agent.wonDeals) },
+        ],
+      }))
+      .filter((item) => item.count > 0)
+      .sort((a, b) => b.count - a.count);
+
     return [
+      {
+        key: 'agent',
+        label: 'Agents',
+        pipelineTone: 'idle',
+        total: agentsLaneItems.length,
+        items: agentsLaneItems,
+      },
       {
         key: 'lead',
         label: 'Leads',
@@ -324,8 +408,15 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
         total: quotesLaneItems.reduce((sum, item) => sum + item.count, 0),
         items: quotesLaneItems,
       },
+      {
+        key: 'closed',
+        label: 'Closed',
+        pipelineTone: 'won',
+        total: closedLaneItems.reduce((sum, item) => sum + item.count, 0),
+        items: closedLaneItems,
+      },
     ];
-  }, [boardAgents]);
+  }, [boardAgents, visibleAgents]);
 
   const visibleAlerts = useMemo(() => data?.right.alerts ?? [], [data]);
   const visibleSuggestions = useMemo(() => data?.right.rebalanceSuggestions ?? [], [data]);
@@ -862,7 +953,7 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
       ) : null}
 
       {showAgentsBoard ? (
-        <Card className="asgn-pipe-agents-board">
+        <Card className="asgn-pipe-agents-board asgn-pipe-agents-board--v4">
           <div className="asgn-pipe-head">
             <div>
               <CardTitle>Agents Board: Lead, Deal, Quote</CardTitle>
@@ -875,34 +966,6 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
             </div>
           </div>
 
-          <div className="asgn-agent-directory-shell">
-            <p className="asgn-pipe-col-title">Focus Agent</p>
-            <div className="asgn-agent-directory">
-              <button
-                type="button"
-                className={`asgn-agent-directory-card${focusedAgentUserId ? '' : ' is-active'}`}
-                onClick={() => setFocusedAgentUserId('')}
-              >
-                <strong>All Agents</strong>
-                <span>{visibleAgents.length} owners</span>
-              </button>
-
-              {visibleAgents.map((agent) => (
-                <button
-                  key={`agent-focus-${agent.userId}`}
-                  type="button"
-                  className={`asgn-agent-directory-card${focusedAgentUserId === agent.userId ? ' is-active' : ''}`}
-                  onClick={() => setFocusedAgentUserId(agent.userId)}
-                >
-                  <strong>{agent.fullName}</strong>
-                  <span>
-                    L{agent.activeLeads} · D{agent.activeDeals}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {agentEntityLanes.length > 0 ? (
             <div className="asgn-agent-status-board" ref={agentsBoardRef}>
               {agentEntityLanes.map((lane) => (
@@ -910,68 +973,195 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
                   key={`agent-entity-lane-${lane.key}`}
                   className={`asgn-agent-status-lane asgn-agent-status-lane--${lane.pipelineTone}`}
                 >
-                  <div className="asgn-agent-entity-lane-head">
+                  <div className="asgn-agents3-lane-head">
                     <div className="dg-pipeline-stage-head">
                       <span className={`dg-pipeline-stage-chip dg-pipeline-stage-chip--${lane.pipelineTone}`}>
                         {lane.label}
                       </span>
                       <span className="dg-pipeline-stage-count">{lane.total}</span>
                     </div>
+                    <p className="asgn-agents3-lane-subtitle">{AGENT_LANE_COPY[lane.key].subtitle}</p>
                   </div>
 
-                  <div className="asgn-agent-status-cards">
-                    {lane.items.map((item) => (
-                      <div key={`agent-entity-${lane.key}-${item.agent.userId}`} className="asgn-agent-status-card">
-                        <div className="asgn-agent-entity-card-head">
-                          <div className="asgn-pipe-agent-identity">
-                            <span className="asgn-pipe-agent-avatar asgn-pipe-agent-photo">
-                              {initials(item.agent.fullName)}
-                            </span>
-                            <div className="asgn-pipe-agent-copy">
-                              <strong>{item.agent.fullName}</strong>
-                              <span>{prettyRole(item.agent.role)}</span>
+                  <div className="asgn-agents3-card-stack">
+                    {lane.key === 'agent' ? (
+                      <button
+                        type="button"
+                        className={`asgn-agents3-card asgn-agents3-card--idle asgn-agents3-card--selectable asgn-agents3-card--all${
+                          focusedAgentUserId ? '' : ' is-active'
+                        }`}
+                        onClick={() => setFocusedAgentUserId('')}
+                      >
+                        <div className="asgn-agents3-card-head">
+                          <div className="asgn-agents3-card-person">
+                            <span className="asgn-agents3-avatar">ALL</span>
+                            <div className="asgn-agents3-card-identity">
+                              <strong>All Agents</strong>
+                              <div className="asgn-agents3-card-subline">
+                                <span className="asgn-agents3-card-role">Global view</span>
+                                <span className="asgn-agents3-state">All statuses</span>
+                              </div>
                             </div>
                           </div>
-                          <span className="asgn-pipe-team-badge">{item.agent.team}</span>
+                          <div className="asgn-agents3-tags" />
                         </div>
+                        <dl className="asgn-agents3-kpis">
+                          <div className="asgn-agents3-kpi is-owned">
+                            <dt>Agents</dt>
+                            <dd>{visibleAgents.length}</dd>
+                          </div>
+                          <div className="asgn-agents3-kpi is-clear">
+                            <dt>Leads</dt>
+                            <dd>{directoryTotals.leads}</dd>
+                          </div>
+                          <div className="asgn-agents3-kpi is-warn">
+                            <dt>Deals</dt>
+                            <dd>{directoryTotals.deals}</dd>
+                          </div>
+                          <div className="asgn-agents3-kpi is-risk">
+                            <dt>Closed</dt>
+                            <dd>{directoryTotals.closed}</dd>
+                          </div>
+                        </dl>
+                      </button>
+                    ) : null}
 
-                        <div className="asgn-agent-entity-summary-row">
-                          <div className="asgn-agent-entity-summary-item">
-                            <em>Owned</em>
-                            <strong>{item.count}</strong>
-                          </div>
-                          <div className="asgn-agent-entity-summary-item">
-                            <em>SLA Risk</em>
-                            <strong>{item.agent.slaRiskCount}</strong>
-                          </div>
-                          <div className="asgn-agent-entity-summary-item">
-                            <em>Inactive</em>
-                            <strong>{item.agent.maxInactiveDays}d</strong>
-                          </div>
-                        </div>
+                    {lane.items.map((item) => {
+                      const closedWon = item.agent.wonDeals;
+                      const closedLost = Math.max(0, item.agent.closedDeals - item.agent.wonDeals);
+                      const closedWinRate = item.agent.closedDeals > 0 ? Math.round((closedWon / item.agent.closedDeals) * 100) : 0;
+                      const primaryMetricLabel = lane.key === 'closed' ? 'Closed' : 'Owned';
+                      const statusLabel =
+                        lane.key === 'agent' ? 'Filter by owner' : lane.key === 'closed' ? 'Closed outcomes' : '';
+                      const statusClass =
+                        lane.key === 'agent' || lane.key === 'closed' ? ' is-idle' : '';
 
-                        <div className="asgn-agent-entity-progress">
-                          <div className="asgn-agent-entity-progress-row">
-                            {item.progression.map((progress) => (
-                              <span
-                                key={`progress-${lane.key}-${item.agent.userId}-${progress.label}`}
-                                className="asgn-agent-entity-progress-pill"
-                              >
-                                {progress.label}
-                                <strong>{progress.value}</strong>
+                      const cardContent = (
+                        <>
+                          <div className="asgn-agents3-card-head">
+                            <div className="asgn-agents3-card-person">
+                              <span className="asgn-agents3-avatar">
+                                {initials(item.agent.fullName)}
                               </span>
-                            ))}
+                              <div className="asgn-agents3-card-identity">
+                                <strong>{item.agent.fullName}</strong>
+                              <div className="asgn-agents3-card-subline">
+                                <span className="asgn-agents3-card-role">{prettyRole(item.agent.role)}</span>
+                                  {statusLabel ? (
+                                    <span className={`asgn-agents3-state${statusClass}`}>
+                                      {statusLabel}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="asgn-agents3-tags">
+                              <span className="asgn-agents3-tag asgn-agents3-tag--team">{item.agent.team}</span>
+                            </div>
                           </div>
-                        </div>
 
-                        <p className="asgn-agent-entity-footnote">
-                          Leads {item.agent.activeLeads} · Deals {item.agent.activeDeals} · Conv{' '}
-                          {item.agent.conversionRatePct}%
-                        </p>
+                          <dl className="asgn-agents3-kpis">
+                            <div className="asgn-agents3-kpi is-owned">
+                              <dt>{primaryMetricLabel}</dt>
+                              <dd>{item.count}</dd>
+                            </div>
+                            <div
+                              className={`asgn-agents3-kpi ${
+                                item.agent.slaRiskCount > 0 ? 'is-risk' : 'is-clear'
+                              }`}
+                            >
+                              <dt>SLA Risk</dt>
+                              <dd>{item.agent.slaRiskCount}</dd>
+                            </div>
+                            <div
+                              className={`asgn-agents3-kpi ${
+                                item.agent.maxInactiveDays >= 7
+                                  ? 'is-risk'
+                                  : item.agent.maxInactiveDays >= 3
+                                    ? 'is-warn'
+                                    : 'is-clear'
+                              }`}
+                            >
+                              <dt>Inactive</dt>
+                              <dd>{item.agent.maxInactiveDays}d</dd>
+                            </div>
+                          </dl>
+
+                          <div className="asgn-agents3-progress">
+                            <div className="asgn-agents3-progress-pills">
+                              {item.progression.map((progress) => (
+                                <span
+                                  key={`progress-${lane.key}-${item.agent.userId}-${progress.label}`}
+                                  className="asgn-agents3-progress-pill"
+                                >
+                                  <em>{progress.label}</em>
+                                  <strong>{progress.value}</strong>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="asgn-agents3-foot">
+                            {lane.key === 'closed' ? (
+                              <>
+                                <span>
+                                  Won <strong>{closedWon}</strong>
+                                </span>
+                                <span>
+                                  Lost <strong>{closedLost}</strong>
+                                </span>
+                                <span>
+                                  Win Rate <strong>{closedWinRate}%</strong>
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span>
+                                  Leads <strong>{item.agent.activeLeads}</strong>
+                                </span>
+                                <span>
+                                  Deals <strong>{item.agent.activeDeals}</strong>
+                                </span>
+                                <span>
+                                  Resp <strong>{item.agent.responseRatePct}%</strong>
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </>
+                      );
+
+                      if (lane.key === 'agent') {
+                        return (
+                          <button
+                            key={`agent-entity-${lane.key}-${item.agent.userId}`}
+                            type="button"
+                            className={`asgn-agents3-card asgn-agents3-card--${lane.pipelineTone} asgn-agents3-card--selectable${
+                              focusedAgentUserId === item.agent.userId ? ' is-active' : ''
+                            }`}
+                            onClick={() => setFocusedAgentUserId(item.agent.userId)}
+                          >
+                            {cardContent}
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <article
+                          key={`agent-entity-${lane.key}-${item.agent.userId}`}
+                          className={`asgn-agents3-card asgn-agents3-card--${lane.pipelineTone}`}
+                        >
+                          {cardContent}
+                        </article>
+                      );
+                    })}
+
+                    {lane.items.length === 0 ? (
+                      <div className="asgn-agents3-empty" role="status" aria-live="polite">
+                        <p className="asgn-agents3-empty-title">{AGENT_LANE_COPY[lane.key].emptyTitle}</p>
+                        <p className="asgn-agents3-empty-note">{AGENT_LANE_COPY[lane.key].emptyNote}</p>
                       </div>
-                    ))}
-
-                    {lane.items.length === 0 ? <p className="aflow-empty">No assigned records in this board.</p> : null}
+                    ) : null}
                   </div>
                 </div>
               ))}
