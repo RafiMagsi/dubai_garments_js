@@ -5,7 +5,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import AdminShell from '@/components/admin/admin-shell';
 import { PageShell, Panel, StatusBadge, Toolbar } from '@/components/ui';
-import { DealStage, useDeals, usePipeline } from '@/features/admin/deals';
+import { DealStage, useDeals } from '@/features/admin/deals';
 import {
   formatDateTime,
   shortCode,
@@ -37,10 +37,8 @@ export default function AdminDealsPage() {
   );
 
   const dealsQuery = useDeals(filters);
-  const pipelineQuery = usePipeline();
 
   const deals = dealsQuery.data?.items ?? [];
-  const pipelineStages = pipelineQuery.data?.stages ?? [];
 
   function handleApply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,6 +55,9 @@ export default function AdminDealsPage() {
             subtitle="Manage deal progression from qualification to won/lost outcomes."
             actions={
               <Toolbar>
+                <Link href="/admin/pipeline" className="ui-btn ui-btn-primary ui-btn-md">
+                  Open in Pipeline
+                </Link>
                 <Link href="/admin/dashboard" className="ui-btn ui-btn-secondary ui-btn-md">
                   Dashboard
                 </Link>
@@ -101,39 +102,17 @@ export default function AdminDealsPage() {
               Apply
             </button>
           </form>
-        </Panel>
 
-        <Panel>
-          <div className="dg-pipeline-grid">
-          {pipelineStages.map((stage) => (
-            <article key={stage.stageKey} className="dg-card dg-pipeline-column">
-              <div className="dg-admin-head">
-                <h2 className="dg-title-sm">{stage.stageLabel}</h2>
-                <span className="dg-badge">{stage.count}</span>
-              </div>
-              <div className="dg-pipeline-cards">
-                {stage.items.length > 0 ? (
-                  stage.items.map((deal) => (
-                    <article key={deal.id} className="dg-card dg-summary-card">
-                      <p className="dg-muted-sm">
-                        <strong>#{shortCode(deal.id)}</strong>{' '}
-                        {deal.lead_contact_name || '-'}
-                      </p>
-                      <p className="dg-muted-sm">{deal.lead_product_name || '-'}</p>
-                      <p className="dg-muted-sm">
-                        Value: AED {Number(deal.expected_value || 0).toFixed(2)}
-                      </p>
-                      <Link href={`/admin/deals/${deal.id}`} className="ui-btn ui-btn-secondary ui-btn-md">
-                        Open
-                      </Link>
-                    </article>
-                  ))
-                ) : (
-                  <p className="dg-muted-sm">No deals in this stage.</p>
-                )}
-              </div>
-            </article>
-          ))}
+          <div className="dg-form-row">
+            <Link href="/admin/pipeline" className="ui-btn ui-btn-primary ui-btn-md">
+              Open in Pipeline
+            </Link>
+            <Link href="/admin/quotes" className="ui-btn ui-btn-secondary ui-btn-md">
+              Open Quotes
+            </Link>
+            <Link href="/admin/dashboard" className="ui-btn ui-btn-secondary ui-btn-md">
+              Open Dashboard
+            </Link>
           </div>
         </Panel>
 

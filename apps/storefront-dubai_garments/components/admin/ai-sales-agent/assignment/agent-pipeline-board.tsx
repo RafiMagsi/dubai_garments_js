@@ -90,6 +90,19 @@ function toInt(input: string) {
   return Math.max(0, Math.floor(parsed));
 }
 
+function shortEntityCode(value: string, size = 6) {
+  if (!value) return '-';
+  return value.slice(0, size).toUpperCase();
+}
+
+function urgencyToneClass(urgency: string) {
+  const normalized = urgency.toLowerCase();
+  if (normalized === 'high') return 'is-risk';
+  if (normalized === 'medium') return 'is-warn';
+  if (normalized === 'low') return 'is-clear';
+  return 'is-neutral';
+}
+
 function isUuidLike(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
@@ -580,34 +593,62 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
 
                     {lane.items.length > 0 ? (
                       <div className="asgn-pipe-item-list">
-                        {lane.items.map((item) => (
-                          <button
-                            type="button"
-                            className={`asgn-pipe-item dg-pipeline-card ${
-                              selectedItem?.itemId === item.itemId && selectedItem?.itemType === item.itemType
-                                ? 'is-selected'
-                                : ''
-                            }`}
-                            key={`${lane.key}-${item.itemType}-${item.itemId}`}
-                            onClick={() => {
-                              setSelectedItem(item);
-                              setTargetUserId(item.ownerUserId ?? '');
-                              if (item.customerId) {
-                                setLockCustomerId(item.customerId);
-                              }
-                            }}
-                          >
-                            <div className="asgn-pipe-item-top">
-                              <p>{item.title}</p>
-                              <span className="asgn-pipe-item-type">{item.itemType.toUpperCase()}</span>
-                            </div>
-                            <p className="asgn-pipe-item-meta">{item.ownerName}</p>
-                            <div className="asgn-pipe-item-chip-row">
-                              <span className="asgn-pipe-item-chip">Urgency {item.urgency}</span>
-                              <span className="asgn-pipe-item-chip">Inactive {item.inactiveDays}d</span>
-                            </div>
-                          </button>
-                        ))}
+                        {lane.items.map((item) => {
+                          const entityTone = stagePipelineClass(lane.key);
+                          const urgencyTone = urgencyToneClass(item.urgency);
+                          const isSelected =
+                            selectedItem?.itemId === item.itemId && selectedItem?.itemType === item.itemType;
+
+                          return (
+                            <button
+                              type="button"
+                              className={`asgn-pipe-item dg-pipeline-card dg-pipeline-card-modern dg-pipeline-card--${entityTone} ${
+                                isSelected ? 'is-selected' : ''
+                              }`}
+                              key={`${lane.key}-${item.itemType}-${item.itemId}`}
+                              onClick={() => {
+                                setSelectedItem(item);
+                                setTargetUserId(item.ownerUserId ?? '');
+                                if (item.customerId) {
+                                  setLockCustomerId(item.customerId);
+                                }
+                              }}
+                            >
+                              <div className="dg-pipeline-card-meta">
+                                <div className="dg-pipeline-card-meta-left">
+                                  <span className="asgn-pipe-item-grip" aria-hidden="true">
+                                    ...
+                                  </span>
+                                  <span className="asgn-pipe-item-type">{item.itemType.toUpperCase()}</span>
+                                </div>
+                                <span className="dg-pipeline-card-id">#{shortEntityCode(item.itemId)}</span>
+                              </div>
+
+                              <div className="asgn-pipe-item-heading">
+                                <p className="asgn-pipe-item-title">{item.title}</p>
+                                <div className="asgn-pipe-item-subline">
+                                  <span className="asgn-pipe-item-owner-avatar" aria-hidden="true">
+                                    {initials(item.ownerName || 'Unknown')}
+                                  </span>
+                                  <p className="asgn-pipe-item-company">{item.ownerName}</p>
+                                </div>
+                              </div>
+
+                              <div className="asgn-pipe-item-stats" aria-label="Pipeline item metrics">
+                                <div className={`asgn-pipe-item-stat asgn-pipe-item-stat--urgency ${urgencyTone}`}>
+                                  <span>Urgency</span>
+                                  <strong>{item.urgency}</strong>
+                                </div>
+                                <div className="asgn-pipe-item-stat asgn-pipe-item-stat--inactive">
+                                  <span>Inactive</span>
+                                  <strong>{item.inactiveDays}d</strong>
+                                </div>
+                              </div>
+
+                              <div className="asgn-pipe-item-footnote">Click to select for quick actions</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="asgn-pipe-empty-state" role="status" aria-live="polite">
