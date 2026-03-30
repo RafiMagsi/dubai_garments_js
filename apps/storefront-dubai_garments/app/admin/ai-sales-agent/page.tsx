@@ -6,7 +6,6 @@ import AdminShell from '@/components/admin/admin-shell';
 import AdminPageHeader from '@/components/admin/common/page-header';
 import { PageShell, Panel, Toolbar } from '@/components/ui';
 import AiSalesAgentTabShell from '@/components/admin/ai-sales-agent/tab-shell';
-import AiSalesLiveStatusOverview from '@/components/admin/ai-sales-agent/live-status-overview';
 
 export default function AdminAiSalesAgentPage() {
 
@@ -30,12 +29,9 @@ export default function AdminAiSalesAgentPage() {
             </Toolbar>
           }
         />
-
         <Suspense fallback={<Panel>Loading AI Sales Agent...</Panel>}>
           <AiSalesAgentTabShell />
         </Suspense>
-
-        <AiSalesLiveStatusOverview />
       </PageShell>
     </AdminShell>
   );
