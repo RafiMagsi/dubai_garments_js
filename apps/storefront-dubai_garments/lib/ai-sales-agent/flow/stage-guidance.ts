@@ -51,9 +51,9 @@ const STAGE_GUIDANCE: Record<
   },
   qualified: {
     headline: 'Confirm commercial readiness.',
-    actionHint: 'Click Mark Qualified when budget, fit, and timeline are acceptable.',
-    expectedResult: 'Lead status is moved to qualified and lifecycle advances toward reply/deal actions.',
-    completionSignal: 'Qualified shows completed and lead status = qualified.',
+    actionHint: 'Select an Assigned Agent, then click Mark Qualified when budget, fit, and timeline are acceptable.',
+    expectedResult: 'Lead moves to qualified with an explicit owner, and the same owner carries into deal/quote flow unless changed manually.',
+    completionSignal: 'Qualified is completed, lead status = qualified, and lead owner is assigned.',
     scenarios: [
       'If qualification is not ready, keep stage active and capture missing details.',
     ],

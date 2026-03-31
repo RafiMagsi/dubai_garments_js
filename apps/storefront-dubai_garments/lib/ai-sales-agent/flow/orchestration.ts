@@ -20,6 +20,7 @@ type ManualOverrideInput = {
   stageKey: AgentFlowStageKey;
   reason: string;
   force?: boolean;
+  ownerUserId?: string;
 };
 
 type OrchestrationInput = {
@@ -103,6 +104,14 @@ function validateTransition(input: {
 
   if (stage.status === 'blocked' && !manualOverride?.enabled) {
     entry.push('Stage is blocked and requires override or blocker resolution first.');
+  }
+
+  if (
+    stage.key === 'qualified' &&
+    !manualOverride?.ownerUserId &&
+    !flow.leadOwnerUserId
+  ) {
+    entry.push('Assigned agent is required for Qualified stage.');
   }
 
   if (stage.completed) {
@@ -261,13 +270,41 @@ async function executeStageAction(input: {
 
     case 'qualified': {
       if (!leadId) throw new Error('Lead ID is required to qualify lead.');
+      const lead = await prisma.leads.findUnique({ where: { id: leadId } });
+      if (!lead) {
+        throw new Error('Lead was not found for qualification.');
+      }
+      const ownerUserId = input.manualOverride?.ownerUserId ?? lead.assigned_to_user_id ?? null;
+      if (!ownerUserId) {
+        throw new Error(
+          'Mark Qualified requires selecting an assigned agent. Choose an agent and try again.'
+        );
+      }
+      const owner = await prisma.users.findUnique({
+        where: { id: ownerUserId },
+        select: { id: true, full_name: true, role: true, is_active: true },
+      });
+      if (!owner || !owner.is_active || !['sales_rep', 'sales_manager'].includes(String(owner.role))) {
+        throw new Error('Selected agent is invalid or inactive. Choose an active sales agent.');
+      }
       await prisma.leads.update({
         where: { id: leadId },
-        data: { status: 'qualified' },
+        data: { status: 'qualified', assigned_to_user_id: ownerUserId },
+      });
+      await prisma.deals.updateMany({
+        where: {
+          lead_id: leadId,
+          stage: { notIn: ['won', 'lost'] },
+        },
+        data: { owner_user_id: ownerUserId },
       });
       return {
-        message: 'Lead moved to qualified status.',
-        metadata: { action: 'mark_lead_qualified' },
+        message: `Lead moved to qualified status and assigned to ${owner.full_name}.`,
+        metadata: {
+          action: 'mark_lead_qualified',
+          ownerUserId,
+          ownerName: owner.full_name,
+        },
         leadId,
         dealId,
         quoteId,

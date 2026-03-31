@@ -150,6 +150,8 @@ export default function AgentFlowView({
   const [overrideForce, setOverrideForce] = useState(false);
   const [selectedStageKey, setSelectedStageKey] = useState<AgentFlowResponse['activeStageKey']>('lead_new');
   const [sessionUserId, setSessionUserId] = useState('');
+  const [assignableOwners, setAssignableOwners] = useState<Array<{ userId: string; fullName: string }>>([]);
+  const [selectedQualifiedOwnerUserId, setSelectedQualifiedOwnerUserId] = useState('');
   const [outcomeModalOpen, setOutcomeModalOpen] = useState(false);
 
   async function handleLoadFlow() {
@@ -288,8 +290,12 @@ export default function AgentFlowView({
     }
   }
 
-  async function handleCompleteQualifiedFromPanel() {
+  async function handleCompleteQualifiedFromPanel(ownerUserId: string) {
     if (!flow?.leadId) return;
+    if (!ownerUserId) {
+      setQualifyError('Select an owner before marking qualified.');
+      return;
+    }
     try {
       setQualifyError(null);
       setQualifyStatus(null);
@@ -303,6 +309,7 @@ export default function AgentFlowView({
           stageKey: 'qualified',
           reason: 'Qualified stage completed directly from flow panel.',
           force: true,
+          ownerUserId,
         },
       });
       const latestAction = orchestration.actions[orchestration.actions.length - 1];
@@ -441,6 +448,56 @@ export default function AgentFlowView({
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const response = await fetch('/api/admin/users', { cache: 'no-store' });
+        const payload = (await response.json()) as {
+          items?: Array<{
+            id: string;
+            full_name: string;
+            role: string;
+            is_active: boolean;
+          }>;
+        };
+        if (!isMounted || !response.ok || !Array.isArray(payload.items)) return;
+        const owners = payload.items
+          .filter((item) => item.is_active)
+          .filter((item) => ['admin', 'sales_manager', 'sales_rep', 'ops'].includes(item.role))
+          .map((item) => ({ userId: item.id, fullName: item.full_name }))
+          .sort((a, b) => a.fullName.localeCompare(b.fullName));
+        setAssignableOwners(owners);
+      } catch {
+        if (!isMounted) return;
+        setAssignableOwners([]);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (assignableOwners.length === 0) {
+      setSelectedQualifiedOwnerUserId('');
+      return;
+    }
+    const existingValid = assignableOwners.some((owner) => owner.userId === selectedQualifiedOwnerUserId);
+    if (existingValid) return;
+
+    const preferred =
+      flow?.leadOwnerUserId ??
+      flow?.dealOwnerUserId ??
+      (sessionUserId && assignableOwners.some((owner) => owner.userId === sessionUserId)
+        ? sessionUserId
+        : null) ??
+      assignableOwners[0]?.userId ??
+      '';
+
+    setSelectedQualifiedOwnerUserId(preferred);
+  }, [assignableOwners, selectedQualifiedOwnerUserId, flow?.leadOwnerUserId, flow?.dealOwnerUserId, sessionUserId]);
 
   async function handleCreateDealFromPanel(payload: ConvertLeadToDealInput) {
     if (!flow?.leadId) return;
@@ -658,6 +715,9 @@ export default function AgentFlowView({
             dealActionBusy={dealActionBusy}
             dealActionStatus={dealActionStatus}
             dealActionError={dealActionError}
+            assignableOwners={assignableOwners}
+            selectedQualifiedOwnerUserId={selectedQualifiedOwnerUserId}
+            onQualifiedOwnerUserIdChange={setSelectedQualifiedOwnerUserId}
             sessionUserId={sessionUserId}
             onCompleteQualified={handleCompleteQualifiedFromPanel}
             onRunLeadTriage={handleRunLeadTriageFromPanel}

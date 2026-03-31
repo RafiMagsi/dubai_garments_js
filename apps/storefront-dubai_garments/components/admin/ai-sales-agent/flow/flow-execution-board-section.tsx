@@ -39,8 +39,16 @@ type FlowExecutionBoardSectionProps = {
   dealActionBusy: boolean;
   dealActionStatus: string | null;
   dealActionError: string | null;
+  assignableOwners: Array<{
+    userId: string;
+    fullName: string;
+  }>;
+  selectedQualifiedOwnerUserId: string;
+  onQualifiedOwnerUserIdChange: (next: string) => void;
+  preferredDealOwnerUserId?: string | null;
+  preferredDealOwnerName?: string | null;
   sessionUserId?: string;
-  onCompleteQualified: () => void;
+  onCompleteQualified: (ownerUserId: string) => void;
   onRunLeadTriage: () => void;
   onMarkClosed: () => void;
   onMarkOutcome: (stage: 'won' | 'lost') => void;
@@ -87,6 +95,11 @@ export function FlowExecutionBoardSection({
   dealActionBusy,
   dealActionStatus,
   dealActionError,
+  assignableOwners,
+  selectedQualifiedOwnerUserId,
+  onQualifiedOwnerUserIdChange,
+  preferredDealOwnerUserId,
+  preferredDealOwnerName,
   sessionUserId,
   onCompleteQualified,
   onRunLeadTriage,
@@ -112,7 +125,9 @@ export function FlowExecutionBoardSection({
   const outcome = flow.outcomeSummary;
   const [createDealModalOpen, setCreateDealModalOpen] = useState(false);
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
-  const [ownerMode, setOwnerMode] = useState<'self' | 'unassigned'>('self');
+  const [ownerMode, setOwnerMode] = useState<'lead_owner' | 'self' | 'unassigned'>(
+    preferredDealOwnerUserId ? 'lead_owner' : 'self'
+  );
   const [valueEstimate, setValueEstimate] = useState('');
   const [notes, setNotes] = useState('');
   const probability = useMemo(() => {
@@ -331,17 +346,37 @@ export function FlowExecutionBoardSection({
             ) : null}
             {selectedStage.key === 'qualified' &&
             (selectedStage.status === 'active' || selectedStage.status === 'pending') ? (
-              <div className="aflow-stage-action-row">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="aflow-glow-btn aflow-next-move-btn"
-                  onClick={onCompleteQualified}
-                  disabled={qualifyBusy}
-                >
-                  {qualifyBusy ? 'Marking...' : 'Mark Qualified'}
-                </Button>
-              </div>
+              <>
+                <div className="dg-field">
+                  <AisFieldLabel>Assigned Agent (required)</AisFieldLabel>
+                  <SelectField
+                    className="dg-mt-1"
+                    value={selectedQualifiedOwnerUserId}
+                    onChange={(event) => onQualifiedOwnerUserIdChange(event.target.value)}
+                  >
+                    <option value="">Select agent</option>
+                    {assignableOwners.map((owner) => (
+                      <option key={`qualified-owner-${owner.userId}`} value={owner.userId}>
+                        {owner.fullName}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <p className="dg-help">
+                    This owner will carry from lead qualification into deal/quote execution unless changed manually.
+                  </p>
+                </div>
+                <div className="aflow-stage-action-row">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="aflow-glow-btn aflow-next-move-btn"
+                    onClick={() => onCompleteQualified(selectedQualifiedOwnerUserId)}
+                    disabled={qualifyBusy || !selectedQualifiedOwnerUserId}
+                  >
+                    {qualifyBusy ? 'Marking...' : 'Mark Qualified'}
+                  </Button>
+                </div>
+              </>
             ) : null}
             {selectedStage.key === 'triaged' ? (
               <div className="aflow-stage-action-row">
@@ -367,6 +402,7 @@ export function FlowExecutionBoardSection({
                       window.location.href = `/admin/deals/${flow.dealId}`;
                       return;
                     }
+                    setOwnerMode(preferredDealOwnerUserId ? 'lead_owner' : 'self');
                     setCreateDealModalOpen(true);
                   }}
                   disabled={dealActionBusy}
@@ -516,8 +552,15 @@ export function FlowExecutionBoardSection({
                   id="flow-deal-owner-mode"
                   className="aflow-deal-control"
                   value={ownerMode}
-                  onChange={(event) => setOwnerMode(event.target.value as 'self' | 'unassigned')}
+                  onChange={(event) =>
+                    setOwnerMode(event.target.value as 'lead_owner' | 'self' | 'unassigned')
+                  }
                 >
+                  {preferredDealOwnerUserId ? (
+                    <option value="lead_owner">
+                      Continue with qualified owner ({preferredDealOwnerName || 'Assigned Agent'})
+                    </option>
+                  ) : null}
                   <option value="self">Assign to me (recommended)</option>
                   <option value="unassigned">Leave unassigned</option>
                 </SelectField>
@@ -559,7 +602,12 @@ export function FlowExecutionBoardSection({
                 className="ui-btn ui-btn-primary ui-btn-md"
                 disabled={dealActionBusy}
                 onClick={() => {
-                  const ownerUserId = ownerMode === 'self' ? sessionUserId || undefined : undefined;
+                  const ownerUserId =
+                    ownerMode === 'lead_owner'
+                      ? preferredDealOwnerUserId || undefined
+                      : ownerMode === 'self'
+                      ? sessionUserId || undefined
+                      : undefined;
                   onCreateDeal({
                     owner_user_id: ownerUserId,
                     expected_value: valueEstimate ? Number(valueEstimate) : 0,

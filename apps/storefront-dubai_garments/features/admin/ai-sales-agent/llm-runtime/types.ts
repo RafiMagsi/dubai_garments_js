@@ -117,6 +117,8 @@ export type AgentFlowResponse = {
   leadId?: string | null;
   dealId?: string | null;
   quoteId?: string | null;
+  leadOwnerUserId?: string | null;
+  dealOwnerUserId?: string | null;
   stages: AgentFlowStage[];
   activeStageKey: AgentFlowStageKey;
   completionPercent: number;
@@ -183,6 +185,7 @@ export type FlowOrchestrationRequest = {
     stageKey: AgentFlowStageKey;
     reason: string;
     force?: boolean;
+    ownerUserId?: string;
   };
 };
 

@@ -26,6 +26,7 @@ type DealRow = {
 const ACTIVE_LEAD_STATUSES = ['new', 'qualified', 'quoted'];
 const CLOSED_DEAL_STAGES = ['won', 'lost'];
 const UNASSIGNED_USER_ID = '__unassigned__';
+const BACKOFFICE_OWNER_ROLES = ['sales_rep', 'sales_manager', 'admin', 'ops'] as const;
 const RESPONSE_ACTIVITY_TYPES = [
   'email_sent',
   'ai_reply_studio_approved_send',
@@ -45,7 +46,7 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
     where:
       context.role === 'sales_rep'
         ? { id: context.userId, is_active: true }
-        : { is_active: true, role: { in: ['sales_rep', 'sales_manager'] } },
+        : { is_active: true, role: { in: [...BACKOFFICE_OWNER_ROLES] } },
     select: {
       id: true,
       full_name: true,
@@ -58,7 +59,7 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
 
   if (users.length === 0 && context.role !== 'sales_rep') {
     users = await prisma.users.findMany({
-      where: { is_active: true, role: { in: ['admin', 'ops'] } },
+      where: { is_active: true, role: { in: [...BACKOFFICE_OWNER_ROLES] } },
       select: {
         id: true,
         full_name: true,
@@ -99,7 +100,7 @@ export async function getSalesAgentWorkloadModel(context: WorkloadContext) {
     prisma.activities.findMany({
       where: {
         lead_id: { not: null },
-        activity_type: { in: RESPONSE_ACTIVITY_TYPES as any },
+        activity_type: { in: [...RESPONSE_ACTIVITY_TYPES] },
       },
       select: {
         lead_id: true,

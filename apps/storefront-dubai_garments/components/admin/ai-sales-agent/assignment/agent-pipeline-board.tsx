@@ -215,6 +215,7 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
   const [operationResult, setOperationResult] = useState<AssignmentOperationsEnvelope | null>(null);
 
   const [focusedAgentUserId, setFocusedAgentUserId] = useState('');
+  const [showEmptyAgentLanes, setShowEmptyAgentLanes] = useState(true);
 
   const showManagerBoard = mode === 'all' || mode === 'manager';
   const showAgentsBoard = mode === 'all' || mode === 'agents';
@@ -256,6 +257,10 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showManagerBoard, showAgentsBoard]);
+
   const options = useMemo(() => {
     if (!data) {
       return {
@@ -283,6 +288,14 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
       cards,
       alerts: data.right.alerts.length,
     };
+  }, [data]);
+
+  const bottleneckStageKey = useMemo(() => {
+    const lanes = data?.center.stages ?? [];
+    if (!lanes.length) return null;
+    const withItems = lanes.filter((lane) => lane.total > 0);
+    if (!withItems.length) return null;
+    return withItems.sort((a, b) => b.total - a.total)[0]?.key ?? null;
   }, [data]);
 
   const visibleAgents = useMemo(() => {
@@ -429,6 +442,16 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
     ];
   }, [boardAgents, visibleAgents]);
 
+  const visibleAgentEntityLanes = useMemo(() => {
+    if (showEmptyAgentLanes) return agentEntityLanes;
+    return agentEntityLanes.filter((lane) => lane.key === 'agent' || lane.items.length > 0);
+  }, [agentEntityLanes, showEmptyAgentLanes]);
+
+  const hiddenAgentLaneCount = useMemo(
+    () => agentEntityLanes.filter((lane) => lane.key !== 'agent' && lane.items.length === 0).length,
+    [agentEntityLanes]
+  );
+
   const visibleAlerts = useMemo(() => data?.right.alerts ?? [], [data]);
   const visibleSuggestions = useMemo(() => data?.right.rebalanceSuggestions ?? [], [data]);
 
@@ -469,6 +492,33 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
             <div className="asgn-pipe-kpi-rail asgn-pipe-kpi-rail--agents asgn-pipe-kpi-rail--minimal">
               <span className="asgn-pipe-kpi-chip">Items: {selectedSummary.cards}</span>
               <span className="asgn-pipe-kpi-chip">Alerts: {selectedSummary.alerts}</span>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={loading || !bottleneckStageKey}
+                onClick={() => {
+                  if (!bottleneckStageKey) return;
+                  const nextFilters = { ...filters, stage: bottleneckStageKey };
+                  setFilters(nextFilters);
+                  void load(nextFilters);
+                }}
+              >
+                Focus Bottleneck
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={loading}
+                onClick={() => {
+                  const nextFilters = { ...filters, stage: 'lead_new' };
+                  setFilters(nextFilters);
+                  void load(nextFilters);
+                }}
+              >
+                Focus New
+              </Button>
               <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>
                 {loading ? 'Refreshing...' : 'Refresh'}
               </Button>
@@ -574,12 +624,15 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
           {opSuccess ? <p className="asgn-success">{opSuccess}</p> : null}
 
           <div className="asgn-pipe-grid asgn-pipe-grid-twenty asgn-pipe-grid-main" data-testid="agent-pipeline-board">
-            <div className="asgn-pipe-col asgn-pipe-center">
+            <div className="asgn-pipe-col asgn-pipe-center asgn-pipe-center--manager">
               <p className="asgn-pipe-col-title">Stages</p>
-              <div className="asgn-pipe-lanes">
+              <div
+                className="asgn-pipe-lanes asgn-pipe-lanes--manager"
+               
+              >
                 {(data?.center.stages ?? []).map((lane) => (
                   <div
-                    className={`asgn-pipe-lane ${stageToneClass(lane.key)} dg-pipeline-column--${stagePipelineClass(lane.key)}`}
+                    className={`asgn-pipe-lane asgn-pipe-lane--manager ${stageToneClass(lane.key)} dg-pipeline-column--${stagePipelineClass(lane.key)}`}
                     key={`lane-${lane.key}`}
                   >
                     <div className="asgn-pipe-lane-head">
@@ -602,7 +655,7 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
                           return (
                             <button
                               type="button"
-                              className={`asgn-pipe-item dg-pipeline-card dg-pipeline-card-modern dg-pipeline-card--${entityTone} ${
+                              className={`asgn-pipe-item dg-pipeline-card dg-pipeline-card--${entityTone} ${
                                 isSelected ? 'is-selected' : ''
                               }`}
                               key={`${lane.key}-${item.itemType}-${item.itemId}`}
@@ -616,9 +669,6 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
                             >
                               <div className="dg-pipeline-card-meta">
                                 <div className="dg-pipeline-card-meta-left">
-                                  <span className="asgn-pipe-item-grip" aria-hidden="true">
-                                    ...
-                                  </span>
                                   <span className="asgn-pipe-item-type">{item.itemType.toUpperCase()}</span>
                                 </div>
                                 <span className="dg-pipeline-card-id">#{shortEntityCode(item.itemId)}</span>
@@ -644,8 +694,6 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
                                   <strong>{item.inactiveDays}d</strong>
                                 </div>
                               </div>
-
-                              <div className="asgn-pipe-item-footnote">Click to select for quick actions</div>
                             </button>
                           );
                         })}
@@ -975,15 +1023,36 @@ export default function AgentPipelineBoard({ mode = 'all' }: AgentPipelineBoardP
             </div>
             <div className="asgn-pipe-kpi-rail asgn-pipe-kpi-rail--agents asgn-pipe-kpi-rail--minimal">
               <span className="asgn-pipe-kpi-chip">Agents: {visibleAgents.length}</span>
+              {hiddenAgentLaneCount > 0 ? (
+                <span className="asgn-pipe-kpi-chip">Empty lanes: {hiddenAgentLaneCount}</span>
+              ) : null}
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowEmptyAgentLanes((prev) => !prev)}
+                disabled={loading}
+              >
+                {showEmptyAgentLanes ? 'Hide Empty' : 'Show Empty'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setFocusedAgentUserId('')}
+                disabled={loading || !focusedAgentUserId}
+              >
+                All Agents
+              </Button>
               <Button type="button" size="sm" variant="secondary" onClick={() => void load()} disabled={loading}>
                 {loading ? 'Refreshing...' : 'Refresh'}
               </Button>
             </div>
           </div>
 
-          {agentEntityLanes.length > 0 ? (
+          {visibleAgentEntityLanes.length > 0 ? (
             <div className="asgn-agent-status-board">
-              {agentEntityLanes.map((lane) => (
+              {visibleAgentEntityLanes.map((lane) => (
                 <div
                   key={`agent-entity-lane-${lane.key}`}
                   className={`asgn-agent-status-lane asgn-agent-status-lane--${lane.pipelineTone}`}

@@ -36,6 +36,8 @@ export type AgentFlowResult = {
   leadId?: string | null;
   dealId?: string | null;
   quoteId?: string | null;
+  leadOwnerUserId?: string | null;
+  dealOwnerUserId?: string | null;
   stages: AgentFlowStage[];
   activeStageKey: AgentFlowStageKey;
   completionPercent: number;
@@ -262,11 +264,17 @@ function stageCompleted(
       if (lead?.status === 'qualified') {
         evidence.push('Lead status is qualified.');
       }
+      if (lead?.assigned_to_user_id) {
+        evidence.push(`Lead owner is assigned (${lead.assigned_to_user_id}).`);
+      }
       if (hasActivity(activities, 'lead_status_changed') && String(lead?.status ?? '').toLowerCase() === 'qualified') {
         evidence.push('Lead status changed activity confirms qualification.');
       }
       if (deal) {
         evidence.push('Deal exists, implying qualification gate was passed.');
+        if (lead?.assigned_to_user_id && deal.owner_user_id === lead.assigned_to_user_id) {
+          evidence.push('Deal owner matches qualified lead owner.');
+        }
       }
       if (quote) {
         evidence.push('Quote exists, implying qualification and deal progression.');
@@ -976,24 +984,26 @@ export async function resolveAgentFlow(input: {
     const closeLoopSummary = deriveCloseLoopSummary(sourceData);
     const outcomeSummary = deriveOutcomeSummary(sourceData);
 
-    return {
+  return {
     leadId: lead?.id ?? null,
     dealId: deal?.id ?? null,
     quoteId: quote?.id ?? null,
+    leadOwnerUserId: lead?.assigned_to_user_id ?? null,
+    dealOwnerUserId: deal?.owner_user_id ?? null,
     stages,
-        activeStageKey: activeStage.key,
-        completionPercent,
-        summary: summarizeFlow(stages),
-        blockers,
-        recommendedNextMove,
-        markers,
-        humanCheckpoints,
-        pendingApprovals,
-        confidenceTrend,
-        riskHints,
-        stageSlaAlerts,
-        transitionGuardrails,
-        closeLoopSummary,
-        outcomeSummary,
-    };
+    activeStageKey: activeStage.key,
+    completionPercent,
+    summary: summarizeFlow(stages),
+    blockers,
+    recommendedNextMove,
+    markers,
+    humanCheckpoints,
+    pendingApprovals,
+    confidenceTrend,
+    riskHints,
+    stageSlaAlerts,
+    transitionGuardrails,
+    closeLoopSummary,
+    outcomeSummary,
+  };
 }

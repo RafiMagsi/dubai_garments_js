@@ -18,6 +18,7 @@ const FlowOrchestrationRequestSchema = z.object({
       stageKey: AgentFlowStageKeySchema,
       reason: z.string().max(800),
       force: z.boolean().optional().default(false),
+      ownerUserId: z.string().uuid().optional(),
     })
     .optional(),
 });
@@ -74,4 +75,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
