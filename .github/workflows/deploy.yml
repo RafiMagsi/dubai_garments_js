@@ -6,10 +6,11 @@ on:
       deploy_mode:
         description: "Deployment mode"
         required: true
-        default: "docker"
+        default: "docker-prod"
         type: choice
         options:
           - docker
+          - docker-prod
           - systemd
       deploy_ref:
         description: "Git ref to deploy"
@@ -30,7 +31,7 @@ jobs:
       cancel-in-progress: false
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-      DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode || 'docker' }}
+      DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_mode || 'docker-prod' }}
       DEPLOY_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_ref || github.ref_name }}
     steps:
       - name: Checkout repository
@@ -104,16 +105,20 @@ jobs:
             SKIP_GIT_SYNC=true ./scripts/github-deploy.sh "${{ env.DEPLOY_MODE }}" "${{ env.DEPLOY_REF }}"
             
             echo "🔍 Verifying service health..."
-            # Basic health check loop to ensure zero-downtime transition
+            if [ "${{ env.DEPLOY_MODE }}" = "docker-prod" ]; then
+                HEALTH_URL="http://127.0.0.1:3005/api/health/db"
+            else
+                HEALTH_URL="http://localhost:3000/api/health/db"
+            fi
+
             MAX_RETRIES=12
             COUNT=0
-            # We check the storefront health endpoint
-            until $(curl --output /dev/null --silent --head --fail http://localhost:3000/api/health); do
+            until curl --output /dev/null --silent --head --fail "$HEALTH_URL"; do
                 printf '.'
                 sleep 5
                 COUNT=$((COUNT+1))
                 if [ $COUNT -eq $MAX_RETRIES ]; then
-                    echo "❌ Deployment health check failed after 60s!"
+                    echo "❌ Deployment health check failed for $HEALTH_URL after 60s!"
                     exit 1
                 fi
             done

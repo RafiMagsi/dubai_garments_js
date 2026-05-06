@@ -20,6 +20,23 @@ ensure_cmd() {
   fi
 }
 
+require_file() {
+  local file="$1"
+  if [ ! -f "$file" ]; then
+    echo "Missing required file: $file"
+    exit 1
+  fi
+}
+
+load_root_env() {
+  if [ -f "$ROOT_DIR/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    . "$ROOT_DIR/.env"
+    set +a
+  fi
+}
+
 sync_code() {
   if [ "$SKIP_GIT_SYNC" = "true" ]; then
     log "Skipping git sync (SKIP_GIT_SYNC=true)"
@@ -38,6 +55,33 @@ deploy_docker() {
   sync_code
 
   ./scripts/deploy-docker-core.sh
+}
+
+deploy_docker_prod() {
+  log "Deploy mode: docker-prod"
+  ensure_cmd docker
+  sync_code
+
+  require_file ".env"
+  require_file "apps/storefront-dubai_garments/.env"
+  require_file "services/fastapi_quote_api/.env"
+  require_file "docker-compose.prod.yml"
+  load_root_env
+
+  log "Building production services"
+  docker compose -f docker-compose.prod.yml build
+
+  log "Starting production services"
+  docker compose -f docker-compose.prod.yml up -d
+
+  log "Running database migrations"
+  docker compose -f docker-compose.prod.yml run --rm -T \
+    -e DATABASE_URL="postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}" \
+    -v "$STOREFRONT_DIR:/work" \
+    -w /work \
+    postgres sh ./scripts/db-migrate.sh
+
+  log "Production docker deploy completed"
 }
 
 deploy_systemd() {
@@ -77,15 +121,21 @@ cd "$ROOT_DIR"
 
 case "$MODE" in
   docker) deploy_docker ;;
+  docker-prod) deploy_docker_prod ;;
   systemd) deploy_systemd ;;
   *)
     echo "Invalid mode: $MODE"
-    echo "Usage: ./scripts/github-deploy.sh [docker|systemd] [branch]"
+    echo "Usage: ./scripts/github-deploy.sh [docker|docker-prod|systemd] [branch]"
     exit 1
     ;;
 esac
 
 echo
 echo "Deploy completed."
-echo "Storefront: http://localhost:3000"
-echo "FastAPI:    http://localhost:8000/health"
+if [ "$MODE" = "docker-prod" ]; then
+  echo "Storefront: http://127.0.0.1:3005"
+  echo "FastAPI:    internal-only via docker network"
+else
+  echo "Storefront: http://localhost:3000"
+  echo "FastAPI:    http://localhost:8000/health"
+fi
