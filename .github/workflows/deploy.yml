@@ -100,7 +100,24 @@ jobs:
             chmod +x scripts/*.sh || true
             chmod +x apps/storefront-dubai_garments/scripts/*.sh || true
 
+            echo "🚀 Starting deployment (Docker Compose)..."
             SKIP_GIT_SYNC=true ./scripts/github-deploy.sh "${{ env.DEPLOY_MODE }}" "${{ env.DEPLOY_REF }}"
+            
+            echo "🔍 Verifying service health..."
+            # Basic health check loop to ensure zero-downtime transition
+            MAX_RETRIES=12
+            COUNT=0
+            # We check the storefront health endpoint
+            until $(curl --output /dev/null --silent --head --fail http://localhost:3000/api/health); do
+                printf '.'
+                sleep 5
+                COUNT=$((COUNT+1))
+                if [ $COUNT -eq $MAX_RETRIES ]; then
+                    echo "❌ Deployment health check failed after 60s!"
+                    exit 1
+                fi
+            done
+            echo "✅ Deployment successful and healthy!"
 
   qa_regression:
     name: QA Regression

@@ -52,6 +52,7 @@ Open:
 Docker Compose and Docker Desktop setup is documented here:
 
 - [Docker Desktop Setup](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/docker-desktop-setup.md)
+- [Hestia Deployment](/Users/rafi/developer/ai_development/projects/dubai_garments/deploy/hestia/README.md)
 - [Operations Command Playbook](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/operations-command-playbook.md)
 - [Architecture Overview](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/architecture-overview.md)
 - [Project Architecture and AI Roadmap](/Users/rafi/developer/ai_development/projects/dubai_garments/docs/project-architecture-and-ai-roadmap.md)

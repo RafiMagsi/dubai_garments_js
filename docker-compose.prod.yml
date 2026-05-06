@@ -1,0 +1,187 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dubai_garments_postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dubai_garments}
+      POSTGRES_USER: ${POSTGRES_USER:-rafi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: dubai_garments_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: dubai_garments_n8n
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: ${N8N_PORT:-5678}
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE:-true}
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-admin123}
+      GENERIC_TIMEZONE: ${N8N_TIMEZONE:-Asia/Karachi}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      FASTAPI_INTERNAL_URL: http://fastapi:8000
+      AUTOMATION_SHARED_SECRET: ${AUTOMATION_SHARED_SECRET:-}
+    depends_on:
+      fastapi:
+        condition: service_started
+    ports:
+      - "127.0.0.1:${N8N_PORT:-5678}:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  fastapi:
+    build:
+      context: ./services/fastapi_quote_api
+      dockerfile: Dockerfile
+    container_name: dubai_garments_fastapi
+    restart: unless-stopped
+    env_file:
+      - ./services/fastapi_quote_api/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      REDIS_URL: redis://redis:6379/0
+      AI_SERVICE_URL: http://ai_openai:8100
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - fastapi_uploads_data:/app/uploads
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  worker_lead_ai:
+    build:
+      context: ./services/fastapi_quote_api
+      dockerfile: Dockerfile
+    container_name: dubai_garments_worker_lead_ai
+    restart: unless-stopped
+    env_file:
+      - ./services/fastapi_quote_api/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      REDIS_URL: redis://redis:6379/0
+      WORKER_QUEUES: lead_ai
+      AI_SERVICE_URL: http://ai_openai:8100
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - fastapi_uploads_data:/app/uploads
+    command: python worker.py
+
+  worker_quote_pdf:
+    build:
+      context: ./services/fastapi_quote_api
+      dockerfile: Dockerfile
+    container_name: dubai_garments_worker_quote_pdf
+    restart: unless-stopped
+    env_file:
+      - ./services/fastapi_quote_api/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      REDIS_URL: redis://redis:6379/0
+      WORKER_QUEUES: quote_pdf
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - fastapi_uploads_data:/app/uploads
+    command: python worker.py
+
+  ai_openai:
+    build:
+      context: ./services/ai_openai_service
+      dockerfile: Dockerfile
+    container_name: dubai_garments_ai_openai
+    restart: unless-stopped
+    env_file:
+      - ./services/fastapi_quote_api/.env
+
+  observability:
+    build:
+      context: ./services/observability_service
+      dockerfile: Dockerfile
+    container_name: dubai_garments_observability
+    restart: unless-stopped
+    env_file:
+      - ./services/fastapi_quote_api/.env
+    environment:
+      FASTAPI_URL: http://fastapi:8000
+      STOREFRONT_URL: http://storefront:3000
+      AI_SERVICE_URL: http://ai_openai:8100
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      REDIS_URL: redis://redis:6379/0
+      OBSERVABILITY_SERVICE_TOKEN: ${OBSERVABILITY_SERVICE_TOKEN:-}
+      OBS_SAMPLE_INTERVAL_SECONDS: ${OBS_SAMPLE_INTERVAL_SECONDS:-10}
+      OBS_HISTORY_RETENTION_DAYS: ${OBS_HISTORY_RETENTION_DAYS:-30}
+    depends_on:
+      fastapi:
+        condition: service_started
+      ai_openai:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${OBSERVABILITY_PORT:-8200}:8200"
+
+  storefront:
+    build:
+      context: ./apps/storefront-dubai_garments
+      dockerfile: Dockerfile
+    container_name: dubai_garments_storefront
+    restart: unless-stopped
+    env_file:
+      - ./apps/storefront-dubai_garments/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rafi}:${POSTGRES_PASSWORD:-secret}@postgres:5432/${POSTGRES_DB:-dubai_garments}
+      FASTAPI_BASE_URL: http://fastapi:8000
+      OBSERVABILITY_SERVICE_URL: http://observability:8200
+      OBSERVABILITY_SERVICE_TOKEN: ${OBSERVABILITY_SERVICE_TOKEN:-}
+      NEXT_PUBLIC_API_BASE_URL: /api
+      NEXT_PUBLIC_FASTAPI_BASE_URL: /api
+    depends_on:
+      fastapi:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${NEXT_PROXY_PORT:-3005}:3000"
+    command: npm run start -- --hostname 0.0.0.0 --port 3000
+
+volumes:
+  postgres_data:
+  redis_data:
+  n8n_data:
+  fastapi_uploads_data:
